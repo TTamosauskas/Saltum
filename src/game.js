@@ -226,7 +226,8 @@
   }
 
   function expireEvent(state){
-    if(state.activeEvent&&Date.now()>=state.activeEvent.expiresAt){
+    if(state.activeEvent&&state.activeEvent.consumable) return false;
+    if(state.activeEvent&&state.activeEvent.expiresAt&&Date.now()>=state.activeEvent.expiresAt){
       state.log.unshift(state.activeEvent.icon+' '+state.activeEvent.name+' terminou.');
       state.activeEvent=null;
       return true;
@@ -390,29 +391,28 @@
       state.log.unshift('☀ Fotólise ativada. '+eligible.length+' bolha(s) elegível(is) para decomposição.');
       return event;
     }
-    const now=Date.now();
     state.activeEvent={
       icon,
       name:spec.name,
       className:spec.className,
-      startedAt:now,
-      expiresAt:now+spec.duration,
-      duration:spec.duration
+      consumable:true,
+      startedAt:Date.now(),
+      expiresAt:null,
+      duration:null
     };
     const benefited=COMBOS.filter(r=>r.events&&r.events.includes(icon)).map(r=>r.label);
-    const catalyzed=executeEventCatalysis(state,icon);
     const event={
       id:nextEventId++,
       icon,
       title:icon+' '+spec.name,
-      subtitle:'Evento capturado · efeito temporário',
+      subtitle:'Catalisador capturado · 1 reação',
       benefited,
       harmed:[],
-      effects:[spec.description].concat(catalyzed?['Catalisada automaticamente: '+catalyzed]:[]),
+      effects:[spec.description,'A próxima receita compatível consumirá este catalisador.'],
       quiet:false
     };
     state.lastEvent=event;
-    state.log.unshift(icon+' '+spec.name+' foi ativado.'+(catalyzed?' '+catalyzed+' foi catalisada automaticamente.':''));
+    state.log.unshift(icon+' '+spec.name+' foi capturado como catalisador para uma reação.');
     return event;
   }
 
@@ -466,6 +466,10 @@
     state.selectedBubbleId=null;
     state.lastBornId=born.id;
     state.log.unshift(recipe.label+'.');
+    if(recipe.events&&recipe.events.length&&state.activeEvent&&recipe.events.includes(state.activeEvent.icon)){
+      state.log.unshift(state.activeEvent.icon+' '+state.activeEvent.name+' foi consumido pela reação.');
+      state.activeEvent=null;
+    }
     checkPhaseComplete(state);
     return {ok:true,recipe,born};
   }
