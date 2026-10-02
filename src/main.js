@@ -3,6 +3,16 @@
   let state = G.createGame();
   let drag = null;
   let pendingChoice = null;
+  let lastToastEventId = null;
+  window.SopaToastQueue = window.SopaToastQueue || [];
+
+  function emitTurnToast() {
+    const event = state.lastEvent;
+    if(!event || event.id===lastToastEventId) return;
+    lastToastEventId=event.id;
+    if(window.SopaToast && window.SopaToast.showEvent) window.SopaToast.showEvent(event);
+    else window.SopaToastQueue.push(event);
+  }
 
   function esc(value) {
     return String(value).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -105,6 +115,7 @@
       (state.winner!==null?'<div class="victory"><div class="victory-card"><p class="eyebrow">Vida emergente</p><h2>'+esc(state.players[state.winner].name)+' integrou um sistema viável.</h2><p>QT45 completa, protocélula formada e metabolismo sustentado.</p><button class="primary" id="restart">Jogar novamente</button></div></div>':'');
 
     bind();
+    emitTurnToast();
     state.soup.forEach(b=>{ b.isNew=false; });
     state.players.forEach(p=>p.hand.forEach(b=>{ b.isNew=false; }));
   }
