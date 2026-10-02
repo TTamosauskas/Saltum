@@ -1228,3 +1228,42 @@ h1,h2,p{margin-top:0}
   0%{opacity:0;transform:scale(.35)}
   100%{opacity:1;transform:scale(1)}
 }
+
+
+/* Cor externa de família; a identidade individual permanece dentro do SVG */
+.organic-bubble.molecule-object.kind-base{
+  border-color:#7667B8;
+  background:
+    radial-gradient(circle at 50% 45%,rgba(118,103,184,.16),transparent 70%),
+    rgba(52,42,86,.42);
+}
+.organic-bubble.molecule-object.kind-nucleoside{
+  border-color:#8A78BA;
+  background:rgba(48,39,77,.28);
+}
+.organic-bubble.molecule-object.kind-nucleotide,
+.organic-bubble.molecule-object.kind-pairpool,
+.organic-bubble.molecule-object.kind-rnapool,
+.organic-bubble.molecule-object.kind-triplet{
+  border-color:#9B85D0;
+  background:rgba(52,42,86,.24);
+}
+.organic-bubble.molecule-object.kind-rna{
+  border-color:#A58DFF;
+  background:rgba(46,35,77,.24);
+}
+.organic-bubble.molecule-object.kind-amphiphile,
+.organic-bubble.molecule-object.kind-lipid,
+.organic-bubble.molecule-object.kind-vesicle{
+  border-color:#D9C968;
+  background:rgba(71,64,24,.18);
+}
+.organic-bubble.molecule-object.kind-peptide{
+  border-color:#FF8B72;
+  background:rgba(82,38,31,.16);
+}
+.organic-bubble.molecule-object.kind-protobiont,
+.organic-bubble.molecule-object.kind-system{
+  border-color:#75D8B9;
+  background:rgba(36,82,69,.16);
+}
