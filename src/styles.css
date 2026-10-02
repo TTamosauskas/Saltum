@@ -1,0 +1,72 @@
+*{box-sizing:border-box}
+:root{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:#eaf7f4;
+  background:#041018;
+  font-synthesis:none
+}
+body{margin:0;min-width:320px;min-height:100vh;background:
+radial-gradient(circle at 50% -10%,rgba(53,146,154,.2),transparent 40%),
+linear-gradient(180deg,#061924 0%,#041018 100%)}
+button{font:inherit}
+button:disabled{opacity:.38;cursor:not-allowed}
+.app-shell{width:min(1180px,calc(100% - 32px));margin:0 auto;padding:32px 0 64px}
+.hero{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:24px}
+h1,h2,p{margin-top:0}
+h1{font-size:clamp(2.4rem,6vw,5rem);line-height:.9;margin-bottom:14px;letter-spacing:-.05em}
+h2{font-size:1.15rem;margin:0}
+.subtitle{max-width:760px;color:#9ec2c4;font-size:1.05rem}
+.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:.72rem;color:#64c8c5;margin-bottom:8px;font-weight:800}
+.panel{background:rgba(10,35,46,.8);border:1px solid rgba(142,208,205,.14);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.status-grid{display:grid;grid-template-columns:150px 1fr 1.2fr;gap:14px;margin-bottom:14px}
+.status-grid article{padding:18px;display:flex;flex-direction:column;gap:5px}
+.status-grid span,.status-grid small{color:#8fb6b9}
+.status-grid strong{font-size:1.15rem}
+.environment-panel,.recipes-panel,.log-panel{padding:22px;margin-bottom:14px}
+.section-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:18px}
+.section-heading p{max-width:520px;margin:0;color:#89aeb0;font-size:.9rem}
+.section-heading.compact{align-items:center;margin-bottom:12px}
+.environment-track{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.env-token{min-height:92px;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid transparent;background:#081e29;transition:.2s}
+.env-token span{font-size:2rem}
+.env-token small{color:#9db7b9;margin-top:3px}
+.env-token.current{transform:translateY(-5px);box-shadow:0 10px 28px rgba(0,0,0,.3)}
+.env-uv{border-color:#f4d35e}.env-lightning{border-color:#71d7ff}.env-thermal{border-color:#ff8a5c}.env-wetdry{border-color:#b78cff}.env-calm{border-color:#627983}
+.board-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}
+.soup-panel,.hand-panel{padding:22px}
+.bubble-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.bubble{aspect-ratio:1;border-radius:50%;border:3px solid #32535b;background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.18),rgba(24,73,82,.55) 35%,rgba(7,29,39,.9) 72%);color:#efffff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer}
+.bubble:hover:not(:disabled){transform:translateY(-2px)}
+.bubble small{color:#a8c3c5}
+.family-element{border-color:#78b7bb!important}.family-mineral{border-color:#d8bb6b!important}.family-simple{border-color:#77c8a6!important}.family-peptide{border-color:#f09a75!important}.family-lipid{border-color:#e9d065!important}.family-rna{border-color:#b797ff!important}
+.hand-list{display:flex;flex-direction:column;gap:9px}
+.hand-card{border:1px solid #24454e;border-left:5px solid #6a858d;border-radius:14px;padding:11px 12px;background:#09232e;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mini-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.mini-actions button,.ghost{border:1px solid #315761;background:#0a2a36;color:#dff7f5;border-radius:10px;padding:7px 9px;cursor:pointer}
+.primary{border:0;background:#5ed0bb;color:#03211f;font-weight:800;border-radius:12px;padding:11px 16px;cursor:pointer}
+.end-turn{width:100%;margin-top:14px}
+.progress-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px}
+.player-progress{padding:20px}
+.active-player{border-color:rgba(94,208,187,.55)}
+.track{margin-top:14px}
+.track-row{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px}
+.track-row small{color:#86a7aa}
+.track-bar{height:9px;background:#061921;border-radius:999px;overflow:hidden}
+.track-bar i{display:block;height:100%;background:linear-gradient(90deg,#54b9b3,#b78cff);border-radius:999px}
+.recipe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.recipe-card{text-align:left;border:1px solid #23424b;background:#071e28;color:#d6eceb;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.recipe-card.ready{border-color:#5ecfbb;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(94,207,187,.18)}
+.recipe-card span{font-size:.88rem;color:#99babb}
+.recipe-card small{line-height:1.4;color:#789da0}
+.log{display:grid;gap:6px}
+.log p{margin:0;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);color:#9bbabb}
+.victory{position:fixed;inset:0;background:rgba(2,9,13,.82);display:grid;place-items:center;padding:24px;backdrop-filter:blur(8px)}
+.victory-card{width:min(560px,100%);background:#09242e;border:1px solid #5ed0bb;border-radius:24px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.5)}
+.victory-card h2{font-size:2rem;margin-bottom:10px}
+@media(max-width:780px){
+  .app-shell{width:min(100% - 20px,1180px);padding-top:20px}
+  .hero,.section-heading{align-items:flex-start;flex-direction:column}
+  .status-grid,.board-grid,.progress-grid,.recipe-grid{grid-template-columns:1fr}
+  .environment-track{grid-template-columns:repeat(3,1fr)}
+  .bubble-grid{grid-template-columns:repeat(2,1fr)}
+}
