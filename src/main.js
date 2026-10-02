@@ -301,6 +301,10 @@
 
       node.style.left=(event.clientX-node.offsetWidth/2)+'px';
       node.style.top=(event.clientY-node.offsetHeight/2)+'px';
+      const pond=document.getElementById('soupPond');
+      const pondRect=pond&&pond.getBoundingClientRect();
+      const over=pondRect&&event.clientX>=pondRect.left&&event.clientX<=pondRect.right&&event.clientY>=pondRect.top&&event.clientY<=pondRect.bottom;
+      pond&&pond.classList.toggle('capture-target',!!over);
     });
 
     const finish=event=>{
@@ -308,6 +312,7 @@
       const moved=gesture.moved;
       gesture=null;
       node.classList.remove('incoming-dragging');
+      document.getElementById('soupPond')?.classList.remove('capture-target');
 
       if(!moved) return;
 
@@ -496,7 +501,7 @@
     if(restartCampaign) restartCampaign.onclick=()=>{
       state=G.createGame();
       menuOpen=false;pendingChoice=null;lastToastEventId=null;
-      restartRain();render();
+      render();restartRain();
     };
 
     document.querySelectorAll('[data-phase]').forEach(el=>{
