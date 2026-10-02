@@ -74,7 +74,7 @@
     if(!context){
       return '<section class="info-panel panel">'+
         '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
-        '<div class="info-copy"><strong>Capture os átomos que caem</strong><p>Clique em um átomo no alto da tela para trazê-lo à sopa. Depois clique em ingredientes compatíveis em sequência ou arraste um sobre o outro.</p></div>'+
+        '<div class="info-copy"><strong>Capture os átomos que atravessam a tela</strong><p>Clique em um átomo em movimento para sugá-lo para dentro da sopa. Depois clique em ingredientes compatíveis em sequência ou arraste um sobre o outro.</p></div>'+
       '</section>';
     }
 
@@ -112,7 +112,7 @@
     const p=G.phase(state);
     return '<div class="modal-backdrop"><div class="menu-card">'+
       '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">Cada fase começa com a sopa vazia. Somente átomos apropriados àquela etapa caem do topo; eventos aparecem como losangos luminosos.</p>'+
+      '<p class="menu-intro">Cada fase começa com a sopa vazia. Todos os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Eventos aparecem como losangos luminosos.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
@@ -138,11 +138,12 @@
     G.expireEvent(state);
     const app=document.getElementById('app');
     const p=G.phase(state);
+    const period=G.period(state);
     const objective=G.objective(state);
 
     app.innerHTML=
       '<div class="app single-app">'+
-        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+'</small><strong>'+esc(p.title)+'</strong><span>'+esc(p.chapter)+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
+        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+period.atoms.map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
         '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span><small>'+esc(objective.hint)+'</small></section>'+
         progressMarkup(objective)+
         renderEventStatus()+
