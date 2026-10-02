@@ -94,7 +94,7 @@
     return pts.join(' ');
   }
 
-  function baseShape(s,cx,cy,scale){
+  function baseShape(s,cx,cy,scale,detail){
     const accent=s.accent, sc=scale||1;
     let body='';
     if(s.rings===2){
@@ -104,6 +104,38 @@
       body+='<polygon class="chem-ring" points="'+ringPoints(cx,cy,30*sc,6,30)+'" fill="'+accent+'22" stroke="'+accent+'"/>';
     }
     body+='<text x="'+cx+'" y="'+(cy+7)+'" text-anchor="middle" fill="'+accent+'" font-size="'+(25*sc)+'" font-weight="950">'+s.base+'</text>';
+
+    if(detail){
+      const fs=10*sc;
+      const n='#3050F8', o='#FF0D0D';
+      if(s.base==='A'){
+        body+='<text x="'+(cx-39*sc)+'" y="'+(cy-7*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx-10*sc)+'" y="'+(cy-30*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+23*sc)+'" y="'+(cy-21*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+39*sc)+'" y="'+(cy+6*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+5*sc)+'" y="'+(cy+33*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx-18*sc)+'" y="'+(cy-39*sc)+'" fill="'+n+'" font-size="'+(9*sc)+'" font-weight="900">NH₂</text>';
+      }else if(s.base==='G'){
+        body+='<text x="'+(cx-39*sc)+'" y="'+(cy-7*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx-10*sc)+'" y="'+(cy-30*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+24*sc)+'" y="'+(cy-21*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+39*sc)+'" y="'+(cy+6*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+5*sc)+'" y="'+(cy+33*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx-20*sc)+'" y="'+(cy-40*sc)+'" fill="'+o+'" font-size="'+(10*sc)+'" font-weight="900">O</text>'+
+          '<text x="'+(cx-42*sc)+'" y="'+(cy+28*sc)+'" fill="'+n+'" font-size="'+(9*sc)+'" font-weight="900">NH₂</text>';
+      }else if(s.base==='U'){
+        body+='<text x="'+(cx-30*sc)+'" y="'+(cy+8*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+2*sc)+'" y="'+(cy+34*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx-14*sc)+'" y="'+(cy-35*sc)+'" fill="'+o+'" font-size="'+(10*sc)+'" font-weight="900">O</text>'+
+          '<text x="'+(cx+33*sc)+'" y="'+(cy+22*sc)+'" fill="'+o+'" font-size="'+(10*sc)+'" font-weight="900">O</text>';
+      }else if(s.base==='C'){
+        body+='<text x="'+(cx-30*sc)+'" y="'+(cy+8*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+2*sc)+'" y="'+(cy+34*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+29*sc)+'" y="'+(cy-5*sc)+'" fill="'+n+'" font-size="'+fs+'" font-weight="900">N</text>'+
+          '<text x="'+(cx+31*sc)+'" y="'+(cy+22*sc)+'" fill="'+o+'" font-size="'+(10*sc)+'" font-weight="900">O</text>'+
+          '<text x="'+(cx-14*sc)+'" y="'+(cy-35*sc)+'" fill="'+n+'" font-size="'+(9*sc)+'" font-weight="900">NH₂</text>';
+      }
+    }
     return body;
   }
 
@@ -145,7 +177,7 @@
     return '<text x="90" y="64" text-anchor="middle" fill="'+a+'" font-size="18" font-weight="900">'+s.formula+'</text>';
   }
 
-  function nucleotideModules(s,includePhosphate){
+  function nucleotideModules(s,includePhosphate,detail){
     const base={family:'Base',accent:s.accent,base:s.base,rings:s.rings};
     let body='';
     if(includePhosphate){
@@ -156,7 +188,7 @@
     body+='<polygon class="chem-ring" points="'+ringPoints(92+shift,60,24,5,-90)+'" fill="#D98A4C22" stroke="#D98A4C"/>';
     body+='<text x="'+(92+shift)+'" y="65" text-anchor="middle" fill="#D98A4C" font-size="10" font-weight="900">R</text>';
     body+=bond(116+shift,60,132+shift,60,1);
-    body+=baseShape(base,151+shift,60,.58);
+    body+=baseShape(base,151+shift,60,.58,detail);
     return body;
   }
 
@@ -201,7 +233,7 @@
     else if(s.kind==='phosphate') body=bond(90,60,90,17,1)+bond(90,60,49,60,1)+bond(90,60,131,60,1)+bond(90,60,90,103,1)+circle(90,60,20,'P')+circle(90,13,12,'O')+circle(43,60,12,'O')+circle(137,60,12,'O')+circle(90,107,12,'O');
     else if(s.kind==='skeletal') body=skeletal(s);
     else if(s.kind==='pool'&&s.variant==='sugars') body='<polygon class="chem-ring" points="'+ringPoints(67,53,27,5,-90)+'" fill="'+s.accent+'16" stroke="'+s.accent+'"/><polygon class="chem-ring" points="'+ringPoints(106,49,25,5,-90)+'" fill="'+s.accent+'12" stroke="'+s.accent+'"/><polygon class="chem-ring" points="'+ringPoints(91,80,24,5,-90)+'" fill="'+s.accent+'0e" stroke="'+s.accent+'"/><text x="90" y="113" text-anchor="middle" fill="'+s.accent+'" font-size="10" font-weight="900">POOL</text>';
-    else if(s.kind==='base') body=baseShape(s,90,58,1)+(s.pairPorts?Array.from({length:s.pairPorts},(_,i)=>'<circle cx="158" cy="'+(48+i*14)+'" r="3.5" fill="'+s.accent+'"/>').join(''):'');
+    else if(s.kind==='base') body=baseShape(s,90,58,1,detail)+(s.pairPorts?Array.from({length:s.pairPorts},(_,i)=>'<circle cx="158" cy="'+(48+i*14)+'" r="3.5" fill="'+s.accent+'"/>').join(''):'');
     else if(s.kind==='amphiphile') body='<circle cx="30" cy="60" r="18" fill="'+s.accent+'55" stroke="'+s.accent+'" stroke-width="3"/><path class="tail" d="M48 60 l18 -13 18 13 18 -13 18 13 18 -13 18 13" stroke="'+s.accent+'"/><text x="30" y="65" text-anchor="middle" fill="'+s.accent+'" font-size="9" font-weight="900">COOH</text>';
     else if(s.kind==='lipid') body='<circle cx="42" cy="38" r="14" fill="'+s.accent+'55" stroke="'+s.accent+'"/><circle cx="42" cy="82" r="14" fill="'+s.accent+'55" stroke="'+s.accent+'"/><path class="tail" d="M56 38 l20 -12 18 12 18 -12 18 12 18 -12" stroke="'+s.accent+'"/><path class="tail" d="M56 82 l20 12 18 -12 18 12 18 -12 18 12" stroke="'+s.accent+'"/>';
     else if(s.kind==='vesicle'){
@@ -216,12 +248,12 @@
       if(s.folded) body+='<circle cx="100" cy="54" r="18" fill="none" stroke="'+s.accent+'" stroke-dasharray="3 4"/>';
     }
     else if(s.kind==='protobiont') body='<circle cx="90" cy="60" r="50" fill="'+s.accent+'0e" stroke="'+s.accent+'" stroke-width="5" stroke-dasharray="3 5"/><polyline class="peptide-chain" points="45,68 64,39 88,69 109,35 137,65" stroke="#FF776D"/><circle cx="109" cy="35" r="7" fill="#FF776D55" stroke="#FF776D"/>';
-    else if(s.kind==='nucleoside') body=nucleotideModules(s,false);
-    else if(s.kind==='nucleotide') body=nucleotideModules(s,true);
+    else if(s.kind==='nucleoside') body=nucleotideModules(s,false,detail);
+    else if(s.kind==='nucleotide') body=nucleotideModules(s,true,detail);
     else if(s.kind==='pairpool'){
       const a={accent:BASE_COLORS[s.bases[0]],base:s.bases[0],rings:(s.bases[0]==='A'||s.bases[0]==='G')?2:1};
       const b={accent:BASE_COLORS[s.bases[1]],base:s.bases[1],rings:(s.bases[1]==='A'||s.bases[1]==='G')?2:1};
-      body=baseShape(a,56,57,.55)+baseShape(b,124,57,.55)+'<path d="M20 20 H10 V100 H20 M160 20 H170 V100 H160" fill="none" stroke="'+s.accent+'" stroke-width="2"/><text x="90" y="112" text-anchor="middle" fill="'+s.accent+'" font-size="9" font-weight="900">POOL</text>';
+      body=baseShape(a,56,57,.55,detail)+baseShape(b,124,57,.55,detail)+'<path d="M20 20 H10 V100 H20 M160 20 H170 V100 H160" fill="none" stroke="'+s.accent+'" stroke-width="2"/><text x="90" y="112" text-anchor="middle" fill="'+s.accent+'" font-size="9" font-weight="900">POOL</text>';
     }
     else if(s.kind==='rnapool'){
       const bases=['A','G','C','U'];
