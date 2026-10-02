@@ -55,6 +55,24 @@
       '</button>';
   }
 
+  function conditionLabel(icon){
+    return {
+      '⚡':'Descarga elétrica',
+      '☀':'UV',
+      '♨':'Hidrotermal',
+      '◐':'Úmido-seco'
+    }[icon]||icon;
+  }
+
+  function conditionMarkup(conditions){
+    if(!conditions||!conditions.length){
+      return '<div class="recipe-conditions"><span>CONDIÇÕES / CATALISADORES</span><strong>Sem evento obrigatório</strong></div>';
+    }
+    return '<div class="recipe-conditions"><span>CONDIÇÕES / CATALISADORES</span><div>'+
+      conditions.map(icon=>'<b class="condition-chip">'+icon+' '+esc(conditionLabel(icon))+'</b>').join('')+
+      '</div></div>';
+  }
+
   function progressMarkup(objective){
     const max=Math.max(1,objective.progress.max);
     const pct=Math.min(100,(objective.progress.value/max)*100);
@@ -101,7 +119,7 @@
       : '<div class="context-empty">Nenhuma reação disponível agora.</div>';
 
     const blocked=context.blocked.length
-      ? '<div class="blocked-title">Outras possibilidades</div>'+
+      ? '<div class="blocked-title">Aguardando condição ambiental</div>'+
         context.blocked.slice(0,4).map(r=>'<div class="reaction-line blocked"><span>'+esc(partnerName(r,b.resource))+'</span><strong>'+esc(r.label)+'</strong></div>').join('')
       : '';
 
@@ -199,8 +217,8 @@
   function renderRecipeCatalog(){
     return G.COMBOS.map(recipe=>{
       const condition=recipe.events&&recipe.events.length
-        ? 'Favorecida por: '+recipe.events.join(' ou ')
-        : 'Sempre disponível';
+        ? 'Condições / catalisadores: '+recipe.events.map(conditionLabel).join(' ou ')
+        : 'Condições / catalisadores: sem evento obrigatório';
       return '<div class="recipe-catalog-row" style="--recipe-color:'+recipe.color+'">'+
         '<strong>'+esc(recipe.label)+'</strong><small>'+esc(condition)+'</small></div>';
     }).join('');
@@ -248,7 +266,7 @@
     app.innerHTML=
       '<div class="app single-app">'+
         '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+period.atoms.map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
-        '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span><small>'+esc(objective.hint)+'</small></section>'+
+        '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span>'+conditionMarkup(objective.conditions)+'<small>'+esc(objective.hint)+'</small></section>'+
         progressMarkup(objective)+
         renderEventStatus()+
         renderPhotolysisStatus()+
