@@ -796,3 +796,45 @@ h1,h2,p{margin-top:0}
   color:#ff6262;
   box-shadow:0 0 18px rgba(255,43,43,.36);
 }
+
+
+/* Condições ambientais das receitas */
+.recipe-conditions{
+  width:100%;
+  margin-top:3px;
+  padding-top:6px;
+  border-top:1px solid rgba(255,255,255,.055);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+}
+.recipe-conditions>span{
+  color:#779497;
+  font-size:7px;
+  letter-spacing:.09em;
+  font-weight:900;
+}
+.recipe-conditions>strong{
+  color:#91aaac;
+  font-size:8px;
+  font-weight:700;
+}
+.recipe-conditions>div{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:4px;
+}
+.condition-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:4px 7px;
+  border-radius:999px;
+  border:1px solid rgba(133,210,211,.18);
+  background:rgba(4,24,31,.62);
+  color:#c8e0df;
+  font-size:7px;
+  font-weight:850;
+}
