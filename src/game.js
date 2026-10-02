@@ -552,6 +552,11 @@
     return true;
   }
 
+  function hasCompartment(state){
+    const vesicleIndex=PHASES.findIndex(p=>p.id==='vesicle');
+    return state.completedPhases.includes(vesicleIndex)||state.phaseIndex>vesicleIndex;
+  }
+
   function phaseStatus(state,index){
     if(index===state.phaseIndex) return 'current';
     if(state.completedPhases.includes(index)) return 'completed';
@@ -561,7 +566,7 @@
 
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
-    createGame,phase,period,objective,phaseProgress,phaseStatus,phaseRecipe,phaseConditions,recipeConditions,
+    createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,
     captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
     photolysisActive,canDecompose,decomposeBubble,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
