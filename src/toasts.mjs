@@ -1,6 +1,6 @@
 import React from 'https://esm.sh/react@18.3.1';
 import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client';
-import { ToastContainer, toast, Bounce } from 'https://esm.sh/react-toastify@11.1.0?external=react,react-dom';
+import { ToastContainer, toast, Bounce } from 'https://esm.sh/react-toastify@11.1.0?deps=react@18.3.1,react-dom@18.3.1';
 
 const rootNode = document.getElementById('toast-root');
 
