@@ -122,7 +122,7 @@ h1,h2,p{margin-top:0}
   background:rgba(255,255,255,.06);
   font-size:15px;
 }
-.active-event-badge>span::first-letter{transform:rotate(-45deg)}
+.active-event-badge>span i{font-style:normal;transform:rotate(-45deg)}
 .active-event-badge div{display:flex;flex-direction:column}
 .active-event-badge strong{font-size:9px}
 .active-event-badge small{margin-top:2px;color:#92abad;font-size:7px}
