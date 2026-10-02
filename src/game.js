@@ -21,12 +21,46 @@
     { id:'metabolism', a:'CO', b:'H₂', special:'metabolism', environments:['♨'], color:'#83dc94', label:'CO + H₂ → gradiente metabólico' }
   ];
 
+  const ENV_RULES = {
+    '☀': {
+      benefited:['amino','nt'],
+      harmed:['fatty'],
+      auto:['amino','nt'],
+      regress:[{resource:'Ácidos graxos',to:'CO',label:'Ácidos graxos expostos perderam estabilidade e recuaram para CO'}]
+    },
+    '⚡': {
+      benefited:['amino'],
+      harmed:['nt'],
+      auto:['amino'],
+      regress:[{resource:'Nucleotídeos',to:'P',label:'Nucleotídeos expostos foram desestabilizados e recuaram para P'}]
+    },
+    '♨': {
+      benefited:['fatty','metabolism'],
+      harmed:['nt'],
+      auto:['fatty'],
+      regress:[{resource:'Nucleotídeos',to:'P',label:'O calor hidrotermal desestabilizou nucleotídeos expostos e deixou P disponível'}]
+    },
+    '◐': {
+      benefited:['nt'],
+      harmed:[],
+      auto:['nt'],
+      regress:[]
+    },
+    '○': {
+      benefited:[],
+      harmed:[],
+      auto:[],
+      regress:[]
+    }
+  };
+
   const SIZE = {
     H:54, C:62, O:60, N:58, P:64, 'H₂':68, CO:72, 'H₂O':72,
     'Aminoácidos':88, 'Ácidos graxos':92, 'Nucleotídeos':88, '?':78
   };
 
   let nextId = 1;
+  let nextEventId = 1;
   function id() { return 'b' + nextId++; }
   function sample(list) { return list[Math.floor(Math.random() * list.length)]; }
   function rand(min,max) { return Math.round(min + Math.random() * (max-min)); }
@@ -75,8 +109,84 @@
     return soup;
   }
 
+  function recipeById(recipeId) {
+    return COMBOS.find(r=>r.id===recipeId) || null;
+  }
+
+  function findSoupPair(soup,recipe) {
+    const first=soup.findIndex(b=>!b.mystery && b.resource===recipe.a);
+    if(first<0) return null;
+    const second=soup.findIndex((b,i)=>i!==first && !b.mystery && b.resource===recipe.b);
+    if(second<0) return null;
+    return [first,second];
+  }
+
+  function executeFavoredSoupReaction(state,recipeId) {
+    const recipe=recipeById(recipeId);
+    if(!recipe || !recipe.out) return null;
+    const pair=findSoupPair(state.soup,recipe);
+    if(!pair) return null;
+
+    const firstIndex=pair[0], secondIndex=pair[1];
+    state.soup[firstIndex]=makeBubble(recipe.out,'soup',true);
+    state.soup[secondIndex]=makeBubble(drawKnown(),'soup',true);
+    state.lastBornId=state.soup[firstIndex].id;
+    return recipe.label;
+  }
+
+  function executeRegression(state,rule) {
+    const index=state.soup.findIndex(b=>!b.mystery && b.resource===rule.resource);
+    if(index<0) return null;
+    state.soup[index]=makeBubble(rule.to,'soup',true);
+    state.lastBornId=state.soup[index].id;
+    return rule.label;
+  }
+
+  function triggerTurnEvent(state) {
+    const icon=state.environment[0];
+    const info=ENV_INFO[icon];
+    const rules=ENV_RULES[icon];
+    const effects=[];
+
+    rules.auto.forEach(recipeId=>{
+      const effect=executeFavoredSoupReaction(state,recipeId);
+      if(effect) effects.push('Favorecida: '+effect);
+    });
+
+    rules.regress.forEach(rule=>{
+      const effect=executeRegression(state,rule);
+      if(effect) effects.push('Prejudicada: '+effect);
+    });
+
+    const benefitedLabels=rules.benefited.map(id=>{
+      const recipe=recipeById(id);
+      return recipe ? recipe.label : id;
+    });
+    const harmedLabels=rules.harmed.map(id=>{
+      const recipe=recipeById(id);
+      return recipe ? recipe.label : id;
+    });
+
+    state.lastEvent={
+      id:nextEventId++,
+      icon:icon,
+      title:icon+' '+info.name,
+      player:state.players[state.activePlayer].name,
+      benefited:benefitedLabels,
+      harmed:harmedLabels,
+      effects:effects,
+      quiet:effects.length===0
+    };
+
+    state.log.unshift(
+      'Início do turno de '+state.players[state.activePlayer].name+': '+icon+' '+info.name+
+      (effects.length ? ' — '+effects.join(' | ') : ' — ambiente sem reação automática na sopa.')
+    );
+    return state.lastEvent;
+  }
+
   function createGame() {
-    return {
+    const state={
       round:1,
       activePlayer:0,
       players:[makePlayer('Jogador 1'),makePlayer('Jogador 2')],
@@ -84,21 +194,29 @@
       environment:Array.from({length:6},drawEnvironment),
       log:['A sopa primordial desperta. Uma bolha desconhecida flutua entre os recursos.'],
       winner:null,
-      lastBornId:null
+      lastBornId:null,
+      lastEvent:null
     };
+    triggerTurnEvent(state);
+    return state;
+  }
+
+  function isRecipeEnabled(recipe,currentEnvironment) {
+    const rules=ENV_RULES[currentEnvironment];
+    if(rules.harmed.includes(recipe.id)) return false;
+    return !recipe.environments || recipe.environments.includes(currentEnvironment);
   }
 
   function recipeFor(a,b,currentEnvironment) {
     return COMBOS.find(function(recipe) {
       const pair=(recipe.a===a && recipe.b===b)||(recipe.a===b && recipe.b===a);
-      return pair && (!recipe.environments || recipe.environments.includes(currentEnvironment));
+      return pair && isRecipeEnabled(recipe,currentEnvironment);
     }) || null;
   }
 
   function possibleRecipes(resource,currentEnvironment) {
     return COMBOS.filter(function(recipe) {
-      return (recipe.a===resource || recipe.b===resource) &&
-        (!recipe.environments || recipe.environments.includes(currentEnvironment));
+      return (recipe.a===resource || recipe.b===resource) && isRecipeEnabled(recipe,currentEnvironment);
     });
   }
 
@@ -151,7 +269,7 @@
     if(!a || !b) return [];
     return COMBOS.filter(r=>{
       const pair=(r.a===a.resource&&r.b===b.resource)||(r.a===b.resource&&r.b===a.resource);
-      return pair && (!r.environments || r.environments.includes(state.environment[0]));
+      return pair && isRecipeEnabled(r,state.environment[0]);
     });
   }
 
@@ -219,8 +337,8 @@
       state.environment.shift();
       state.environment.push(drawEnvironment());
       state.players.forEach(p=>{p.collected=false;p.perturbed=false;p.selectedBubbleId=null;});
-      state.log.unshift('O ambiente avançou para '+state.environment[0]+'.');
     }
+    triggerTurnEvent(state);
   }
 
   function checkWinner(state) {
@@ -239,8 +357,14 @@
     return routes[0][0];
   }
 
+  function currentEnvironmentRules(state) {
+    const icon=state.environment[0];
+    return {icon:icon,info:ENV_INFO[icon],rules:ENV_RULES[icon]};
+  }
+
   window.SopaGame={
     ENV_INFO:ENV_INFO,
+    ENV_RULES:ENV_RULES,
     COMBOS:COMBOS,
     createGame:createGame,
     collect:collect,
@@ -252,6 +376,7 @@
     leadingRoute:leadingRoute,
     recipeFor:recipeFor,
     possibleRecipes:possibleRecipes,
-    availableCombos:availableCombos
+    availableCombos:availableCombos,
+    currentEnvironmentRules:currentEnvironmentRules
   };
 })();
