@@ -508,7 +508,7 @@
       el.onclick=()=>{
         if(G.jumpToPhase(state,Number(el.dataset.phase))){
           menuOpen=false;pendingChoice=null;lastToastEventId=null;
-          restartRain();render();
+          render();restartRain();
         }
       };
     });
