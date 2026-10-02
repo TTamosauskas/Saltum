@@ -86,6 +86,9 @@
   function renderEventStatus(){
     const active=state.activeEvent;
     if(!active) return '';
+    if(active.consumable){
+      return '<div class="active-event-badge '+active.className+'"><span><i>'+active.icon+'</i></span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">pronto para 1 reação</small></div></div>';
+    }
     const remaining=Math.max(0,active.expiresAt-Date.now());
     const seconds=Math.ceil(remaining/1000);
     return '<div class="active-event-badge '+active.className+'"><span><i>'+active.icon+'</i></span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">'+seconds+' s restantes</small></div></div>';
@@ -559,7 +562,7 @@
     }
     const active=state.activeEvent;
     const countdown=document.getElementById('activeEventCountdown');
-    if(active&&countdown){
+    if(active&&countdown&&!active.consumable){
       countdown.textContent=Math.max(0,Math.ceil((active.expiresAt-Date.now())/1000))+' s restantes';
     }
   }
