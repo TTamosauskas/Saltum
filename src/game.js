@@ -226,9 +226,7 @@
   }
 
   function isRecipeEnabled(state,recipe){
-    if(!recipe.events||!recipe.events.length) return true;
-    const icon=activeEventIcon(state);
-    return !!icon&&recipe.events.includes(icon);
+    return true;
   }
 
   function possibleRecipes(state,resource){
@@ -256,7 +254,7 @@
     const bubble=state.soup.find(b=>b.id===state.selectedBubbleId);
     if(!bubble) return null;
     const available=possibleRecipes(state,bubble.resource);
-    const blocked=allRecipesFor(bubble.resource).filter(r=>!available.some(a=>a.id===r.id));
+    const blocked=[];
     return {bubble,available,blocked};
   }
 
@@ -292,6 +290,26 @@
     return bubble;
   }
 
+  function findPairForRecipe(state,recipe){
+    const first=state.soup.findIndex(b=>b.resource===recipe.a);
+    if(first<0) return null;
+    const second=state.soup.findIndex((b,index)=>index!==first&&b.resource===recipe.b);
+    if(second<0) return null;
+    return [state.soup[first].id,state.soup[second].id];
+  }
+
+  function executeEventCatalysis(state,icon){
+    const recipes=COMBOS.filter(r=>Array.isArray(r.events)&&r.events.includes(icon));
+    for(const recipe of recipes){
+      const pair=findPairForRecipe(state,recipe);
+      if(pair){
+        const result=combine(state,pair[0],pair[1],recipe.id);
+        if(result.ok) return recipe.label;
+      }
+    }
+    return null;
+  }
+
   function activateEvent(state,icon){
     if(state.stageComplete||!EVENTS[icon]) return null;
     const spec=EVENTS[icon];
@@ -305,6 +323,7 @@
       duration:spec.duration
     };
     const benefited=COMBOS.filter(r=>r.events&&r.events.includes(icon)).map(r=>r.label);
+    const catalyzed=executeEventCatalysis(state,icon);
     const event={
       id:nextEventId++,
       icon,
@@ -312,11 +331,11 @@
       subtitle:'Evento capturado · efeito temporário',
       benefited,
       harmed:[],
-      effects:[spec.description],
+      effects:[spec.description].concat(catalyzed?['Catalisada automaticamente: '+catalyzed]:[]),
       quiet:false
     };
     state.lastEvent=event;
-    state.log.unshift(icon+' '+spec.name+' foi ativado por '+Math.round(spec.duration/1000)+' s.');
+    state.log.unshift(icon+' '+spec.name+' foi ativado.'+(catalyzed?' '+catalyzed+' foi catalisada automaticamente.':''));
     return event;
   }
 
@@ -387,8 +406,7 @@
     const missingRecipes=requiredIds.filter(id=>!ids.has(id));
 
     const amino=COMBOS.find(r=>r.id==='amino');
-    const aminoCorrect=!!amino&&amino.a==='N'&&amino.b==='H₂O'&&amino.out==='Aminoácidos'&&
-      Array.isArray(amino.events)&&amino.events.includes('☀')&&amino.events.includes('⚡');
+    const aminoCorrect=!!amino&&amino.a==='N'&&amino.b==='H₂O'&&amino.out==='Aminoácidos';
 
     return {
       phaseTargets,
