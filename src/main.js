@@ -110,6 +110,12 @@
     }
     const context=G.selectedContext(state);
     if(!context){
+      if(!compartmentActive()){
+        return '<section class="info-panel panel">'+
+          '<div class="info-tile idle"><span>AMBIENTE</span><strong>+</strong><small>selecione matéria</small></div>'+
+          '<div class="info-copy"><strong>Química dispersa</strong><p>Clique em uma partícula para interromper seu movimento. Clique depois em outra compatível para reagir. Clique no espaço vazio para liberar a seleção e fazê-la voltar ao fluxo.</p></div>'+
+        '</section>';
+      }
       return '<section class="info-panel panel">'+
         '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
         '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Clique para sugá-lo automaticamente ou arraste o átomo diretamente para dentro da sopa. Depois combine ingredientes por dois cliques em sequência ou por arraste. Dentro da sopa, arraste livremente para organizar; arraste para fora para liberar uma bolha ao fluxo.</p></div>'+
@@ -251,7 +257,14 @@
     if(state.winner){
       return '<div class="phase-complete-panel final"><small>CAMPANHA CONCLUÍDA</small><strong>VIDA<br>EMERGENTE</strong><span>A integração prebiótica foi alcançada.</span></div>';
     }
+    if(G.phase(state).id==='vesicle'){
+      return '<button class="phase-next membrane-born" id="nextPhase"><small>COMPARTIMENTO FORMADO</small><strong>PRÓXIMA<br>FASE</strong></button>';
+    }
     return '<button class="phase-next" id="nextPhase"><small>OBJETIVO CONCLUÍDO</small><strong>PRÓXIMA<br>FASE</strong></button>';
+  }
+
+  function compartmentActive(){
+    return G.hasCompartment(state);
   }
 
   function render(){
@@ -273,8 +286,8 @@
         progressMarkup(objective)+
         renderEventStatus()+
         renderPhotolysisStatus()+
-        '<section class="arena-shell"><div class="primordial-pond single-pond" id="soupPond">'+
-          '<div class="water-caustic caustic-a"></div><div class="water-caustic caustic-b"></div>'+
+        '<section class="arena-shell '+(compartmentActive()?'compartment-stage':'open-stage')+'"><div class="'+(compartmentActive()?'primordial-pond single-pond':'prebiotic-field')+'" id="soupPond">'+
+          (compartmentActive()?'<div class="water-caustic caustic-a"></div><div class="water-caustic caustic-b"></div>':'')+
           state.soup.map(renderBubble).join('')+
 
           renderPhaseCompletion()+
@@ -307,16 +320,33 @@
 
   function absorbMatter(node,resource){
     if(node.dataset.captured==='1') return;
-    node.dataset.captured='1';
-    const pond=document.getElementById('soupPond');
-    if(!pond) return;
+    const field=document.getElementById('soupPond');
+    if(!field) return;
 
     const from=node.getBoundingClientRect();
-    const to=pond.getBoundingClientRect();
-    const pondX=28+Math.random()*44;
-    const pondY=28+Math.random()*44;
-    const targetX=to.left+to.width*(pondX/100);
-    const targetY=to.top+to.height*(pondY/100);
+    const to=field.getBoundingClientRect();
+    const rawX=((from.left+from.width/2-to.left)/to.width)*100;
+    const rawY=((from.top+from.height/2-to.top)/to.height)*100;
+    const fieldX=Math.max(8,Math.min(92,rawX));
+    const fieldY=Math.max(8,Math.min(92,rawY));
+
+    node.dataset.captured='1';
+
+    if(!compartmentActive()){
+      const captured=G.captureMatter(state,resource,fieldX,fieldY);
+      if(captured){
+        const selection=G.selectBubble(state,captured.id);
+        if(selection.choices){
+          pendingChoice={sourceId:selection.sourceId,targetId:selection.targetId,recipes:selection.choices};
+        }
+      }
+      node.remove();
+      render();
+      return;
+    }
+
+    const targetX=to.left+to.width*(fieldX/100);
+    const targetY=to.top+to.height*(fieldY/100);
 
     node.style.animation='none';
     node.style.position='fixed';
@@ -338,7 +368,7 @@
     });
 
     setTimeout(()=>{
-      G.captureMatter(state,resource,pondX,pondY);
+      G.captureMatter(state,resource,fieldX,fieldY);
       node.remove();
       render();
     },690);
@@ -448,7 +478,23 @@
       const inside=rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
 
       if(inside){
-        captureDraggedMatter(node,resource,event.clientX,event.clientY);
+        if(compartmentActive()){
+          captureDraggedMatter(node,resource,event.clientX,event.clientY);
+        }else{
+          const field=document.getElementById('soupPond');
+          const fieldRect=field.getBoundingClientRect();
+          const x=Math.max(8,Math.min(92,((event.clientX-fieldRect.left)/fieldRect.width)*100));
+          const y=Math.max(8,Math.min(92,((event.clientY-fieldRect.top)/fieldRect.height)*100));
+          const captured=G.captureMatter(state,resource,x,y);
+          if(captured){
+            const selection=G.selectBubble(state,captured.id);
+            if(selection.choices){
+              pendingChoice={sourceId:selection.sourceId,targetId:selection.targetId,recipes:selection.choices};
+            }
+          }
+          node.remove();
+          render();
+        }
       }else{
         resumeIncomingAtom(node);
         setTimeout(()=>{node.dataset.suppressClick='';},0);
@@ -710,6 +756,17 @@
         }
       };
     });
+
+    const field=document.getElementById('soupPond');
+    if(field&&!compartmentActive()){
+      field.addEventListener('pointerdown',event=>{
+        if(event.target.closest('.organic-bubble')) return;
+        if(!state.selectedBubbleId) return;
+        const released=G.releaseBubble(state,state.selectedBubbleId);
+        if(released) createReleasedMatter(released.resource,event.clientX,event.clientY);
+        render();
+      });
+    }
 
     document.querySelectorAll('.organic-bubble').forEach(el=>{
       el.addEventListener('pointerdown',e=>startDrag(e,el));

@@ -165,3 +165,20 @@ Ao capturar `⚡`, `☀`, `♨` ou `◐`, o jogo arma esse catalisador para exat
 Exemplo: `N + H₂O → Aminoácidos` exige uma carga ativa de `⚡`, `☀` ou `♨`. Depois que Aminoácidos é formado, o catalisador é removido e uma nova unidade precisa ser capturada para repetir a reação.
 
 Isso elimina a ambiguidade das antigas janelas temporárias.
+
+
+## Ambiente aberto antes da vesícula
+
+A campanha agora começa sem um contorno de Sopa Primordial.
+
+Antes da formação da primeira vesícula, toda a química ocorre em ambiente aberto:
+
+- partículas atravessam livremente a tela;
+- clicar em uma partícula interrompe seu movimento e a seleciona;
+- clicar em outra partícula compatível executa a reação imediatamente;
+- clicar em espaço vazio libera a partícula selecionada de volta ao fluxo;
+- drag-and-drop continua disponível para aproximar reagentes.
+
+Ao concluir a fase **Primeira vesícula**, o contorno orgânico surge pela primeira vez. A partir desse marco, passa a existir uma distinção visual e mecânica entre interior e exterior.
+
+Nas fases seguintes, a interação volta ao modelo de compartimento: matéria exterior pode ser sugada ou arrastada para dentro, e bolhas internas podem ser organizadas ou liberadas para fora.

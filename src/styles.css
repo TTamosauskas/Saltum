@@ -838,3 +838,57 @@ h1,h2,p{margin-top:0}
   font-size:7px;
   font-weight:850;
 }
+
+
+/* Química aberta antes da compartimentalização */
+.open-stage{
+  min-height:min(89vw,560px);
+}
+.prebiotic-field{
+  position:relative;
+  width:min(91vw,555px);
+  height:min(91vw,555px);
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+}
+.prebiotic-field::before{
+  content:"";
+  position:absolute;
+  inset:7%;
+  border-radius:50%;
+  background:radial-gradient(circle at center,rgba(32,112,122,.06),transparent 70%);
+  pointer-events:none;
+}
+.open-stage .organic-bubble{
+  box-shadow:
+    inset -8px -11px 18px rgba(0,0,0,.14),
+    inset 7px 8px 14px rgba(255,255,255,.04),
+    0 5px 12px rgba(0,0,0,.16);
+}
+.compartment-stage .primordial-pond{
+  animation:pondMorph 11s ease-in-out infinite alternate,membraneArrival .8s cubic-bezier(.2,.75,.2,1) both;
+}
+@keyframes membraneArrival{
+  0%{
+    opacity:.15;
+    transform:scale(.88);
+    border-color:rgba(137,223,219,0);
+    box-shadow:0 0 0 rgba(0,0,0,0);
+  }
+  60%{
+    opacity:1;
+    transform:scale(1.025);
+    border-color:rgba(137,223,219,.7);
+  }
+  100%{
+    opacity:1;
+    transform:scale(1);
+  }
+}
+.phase-next.membrane-born{
+  border-color:rgba(236,226,116,.9);
+  background:radial-gradient(circle at 36% 30%,#fffde8,#eadc76 52%,#b99e38 100%);
+  box-shadow:0 0 0 8px rgba(234,220,118,.1),0 0 50px rgba(234,220,118,.42);
+}
