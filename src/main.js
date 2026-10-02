@@ -201,7 +201,7 @@
   function startDrag(event,el) {
     if(event.button!==undefined && event.button!==0) return;
     const id=el.dataset.bubbleId;
-    G.selectHandBubble(state,id);
+    if(state.players[state.activePlayer].selectedBubbleId!==id) G.selectHandBubble(state,id);
     drag={id:id,el:el,startX:event.clientX,startY:event.clientY,moved:false,pointerId:event.pointerId};
     el.setPointerCapture && el.setPointerCapture(event.pointerId);
     el.classList.add('dragging','selected');
