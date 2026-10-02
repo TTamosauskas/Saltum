@@ -1,6 +1,8 @@
 (function () {
   const G=window.SopaGame;
-  let state=G.createGame();
+  const editorMode=window.location.hash==='#editor';
+  let state=G.createGame(editorMode);
+  let homeOpen=true;
   let drag=null;
   let pendingChoice=null;
   let menuOpen=false;
@@ -96,13 +98,77 @@
     '</section>';
   }
 
+  function phaseStateLabel(status){
+    return {
+      current:'Fase atual',
+      completed:'Concluída',
+      available:'Disponível',
+      locked:'Bloqueada'
+    }[status]||status;
+  }
+
+  function renderCampaignTrail(){
+    return G.PHASES.map((p,index)=>{
+      const status=G.phaseStatus(state,index);
+      const clickable=status!=='locked'||state.editorMode;
+      const period=G.PERIODS[p.period];
+      return '<button type="button" class="trail-node '+status+'" data-home-phase="'+index+'" '+(clickable?'':'disabled')+'>'+
+        '<span class="trail-dot" aria-hidden="true"></span>'+
+        '<span class="trail-node-copy"><small>FASE '+(index+1)+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><em>'+esc(p.formula)+'</em></span>'+
+        '<span class="trail-state">'+esc(state.editorMode&&status==='locked'?'Editor':phaseStateLabel(status))+'</span>'+
+      '</button>';
+    }).join('');
+  }
+
+  function renderHome(){
+    const app=document.getElementById('app');
+    const current=G.phase(state);
+    app.innerHTML=
+      '<main class="campaign-home">'+
+        '<header class="campaign-home-head"><div><p class="eyebrow">Sopa Primordial</p><h1>Trilha da vida</h1><p>A matéria se acumula enquanto você transforma átomos em sistemas cada vez mais complexos.</p></div>'+
+        '<span class="campaign-mode-chip">'+(state.editorMode?'Modo editor':'Campanha')+'</span></header>'+
+        '<section class="campaign-home-current"><small>CONTINUAR</small><strong>'+esc(current.title)+'</strong><span>'+esc(current.objective)+' · '+esc(G.phaseProgress(state).label)+'</span>'+
+        '<button type="button" id="continueCampaign">Entrar na fase</button></section>'+
+        '<section class="campaign-trail-home" aria-label="Trilha de fases">'+
+          '<div class="trail-line" aria-hidden="true"></div>'+
+          renderCampaignTrail()+
+        '</section>'+
+        (state.editorMode?'<p class="editor-note">#editor ativo · todas as fases podem ser abertas diretamente.</p>':'')+
+      '</main>';
+    bindHome();
+  }
+
+  function bindHome(){
+    const continueBtn=document.getElementById('continueCampaign');
+    if(continueBtn) continueBtn.onclick=()=>{
+      homeOpen=false;
+      render();
+      restartRain();
+    };
+
+    document.querySelectorAll('[data-home-phase]').forEach(el=>{
+      el.onclick=()=>{
+        const index=Number(el.dataset.homePhase);
+        if(G.jumpToPhase(state,index)){
+          homeOpen=false;
+          pendingChoice=null;
+          menuOpen=false;
+          lastToastEventId=null;
+          render();
+          restartRain();
+        }
+      };
+    });
+  }
+
   function renderPhaseMenu(){
     return G.PHASES.map((p,index)=>{
-      const unlocked=index<=state.unlockedPhase;
-      const current=index===state.phaseIndex;
-      return '<button class="phase-list-item '+(current?'current ':'')+(unlocked?'':'locked')+'" data-phase="'+index+'" '+(unlocked?'':'disabled')+'>'+
+      const status=G.phaseStatus(state,index);
+      const unlocked=status!=='locked'||state.editorMode;
+      const current=status==='current';
+      return '<button class="phase-list-item '+status+'" data-phase="'+index+'" '+(unlocked?'':'disabled')+'>'+
         '<span>'+(index+1)+'</span><div><strong>'+esc(p.title)+'</strong><small>'+esc(p.chapter)+'</small></div>'+
-        '<em>'+(current?'ATUAL':(unlocked?'ABERTA':'BLOQUEADA'))+'</em>'+
+        '<em>'+esc(state.editorMode&&status==='locked'?'EDITOR':phaseStateLabel(status).toUpperCase())+'</em>'+
       '</button>';
     }).join('');
   }
@@ -124,7 +190,7 @@
       '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
       '<p class="menu-intro">Os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Moléculas construídas permanecem acumuladas ao avançar de fase. Bolhas liberadas para fora vagam junto ao fluxo até a troca de fase. Eventos aparecem como losangos luminosos.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
-      '<section class="menu-actions"><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
+      '<section class="menu-actions"><button id="openTrail" class="menu-action">Trilha de fases</button><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
     '</div></div>';
   }
@@ -145,6 +211,11 @@
   }
 
   function render(){
+    if(homeOpen){
+      document.getElementById('falling-layer')?.replaceChildren();
+      renderHome();
+      return;
+    }
     G.expireEvent(state);
     const app=document.getElementById('app');
     const p=G.phase(state);
@@ -550,6 +621,16 @@
     const close=document.getElementById('closeMenu');
     if(close) close.onclick=()=>{menuOpen=false;render();};
 
+    const openTrail=document.getElementById('openTrail');
+    if(openTrail) openTrail.onclick=()=>{
+      homeOpen=true;
+      menuOpen=false;
+      rainGeneration+=1;
+      if(rainTimer) clearTimeout(rainTimer);
+      document.getElementById('falling-layer')?.replaceChildren();
+      render();
+    };
+
     const restartPhase=document.getElementById('restartPhase');
     if(restartPhase) restartPhase.onclick=()=>{
       G.restartPhase(state);
@@ -559,9 +640,13 @@
 
     const restartCampaign=document.getElementById('restartCampaign');
     if(restartCampaign) restartCampaign.onclick=()=>{
-      state=G.createGame();
+      state=G.createGame(editorMode);
+      homeOpen=true;
       menuOpen=false;pendingChoice=null;lastToastEventId=null;
-      render();restartRain();
+      rainGeneration+=1;
+      if(rainTimer) clearTimeout(rainTimer);
+      document.getElementById('falling-layer')?.replaceChildren();
+      render();
     };
 
     document.querySelectorAll('[data-phase]').forEach(el=>{
@@ -597,5 +682,5 @@
 
   eventTickTimer=setInterval(tickEvent,250);
   render();
-  restartRain();
+  if(!homeOpen) restartRain();
 })();
