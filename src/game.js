@@ -88,8 +88,8 @@
     {
       id:'amino', title:'Primeiros aminoácidos', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Produza aminoácidos três vezes', formula:'N + H₂O → Aminoácidos',
-      hint:'Água acumulada pode ser reutilizada como precursor. Capture ☀ ou ⚡ e complete 3 aminoácidos.',
-      target:'Aminoácidos', targetCount:3, spawnEvents:['☀F','☀','⚡']
+      hint:'Água acumulada pode ser reutilizada como precursor. Ative ⚡, ☀ ou ♨ e complete 3 aminoácidos.',
+      target:'Aminoácidos', targetCount:3, spawnEvents:['☀F','⚡','☀','♨']
     },
     {
       id:'fatty', title:'Lipídios prebióticos', chapter:'Atmosfera primitiva', period:'atmosphere',
@@ -100,14 +100,14 @@
     {
       id:'nt', title:'Nucleotídeos', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Produza nucleotídeos três vezes', formula:'P + H₂O → Nucleotídeos',
-      hint:'P entra no fluxo deste período. Combine com H₂O sob ☀ ou ◐ até completar 3 nucleotídeos.',
+      hint:'P entra no fluxo deste período. Ative ☀ e combine com H₂O até completar 3 nucleotídeos.',
       target:'Nucleotídeos', targetCount:3, spawnEvents:['☀F','☀','◐']
     },
     {
       id:'peptide', title:'Catálise peptídica', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Forme quatro peptídeos', formula:'2 Aminoácidos → Peptídeo',
-      hint:'Use aminoácidos acumulados e complete 4 peptídeos sob ◐.',
-      target:'Peptídeo', targetCount:4, spawnEvents:['☀F','☀','⚡','◐']
+      hint:'Use aminoácidos acumulados e complete 4 peptídeos sob ◐ ou ♨.',
+      target:'Peptídeo', targetCount:4, spawnEvents:['☀F','☀','⚡','◐','♨']
     },
     {
       id:'vesicle', title:'Primeira vesícula', chapter:'Atmosfera + minerais', period:'mineral',
