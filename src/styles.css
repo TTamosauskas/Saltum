@@ -785,3 +785,14 @@ h1,h2,p{margin-top:0}
   color:#ff4a4a;
   text-shadow:0 0 15px rgba(255,43,43,.7);
 }
+
+
+.Toastify__toast.photolysis-toast{
+  border-color:#ff2b2b;
+  box-shadow:0 0 28px rgba(255,30,30,.24),0 20px 55px rgba(0,0,0,.34);
+}
+.Toastify__toast.photolysis-toast .environment-toast-icon{
+  border:1px solid #ff2b2b;
+  color:#ff6262;
+  box-shadow:0 0 18px rgba(255,43,43,.36);
+}
