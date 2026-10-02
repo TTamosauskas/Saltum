@@ -74,7 +74,7 @@
     if(!context){
       return '<section class="info-panel panel">'+
         '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
-        '<div class="info-copy"><strong>Capture os átomos que caem</strong><p>Clique em um átomo no alto da tela para trazê-lo à sopa. Depois clique em ingredientes compatíveis em sequência ou arraste um sobre o outro.</p></div>'+
+        '<div class="info-copy"><strong>Capture os átomos que atravessam a tela</strong><p>Clique em um átomo em movimento para sugá-lo para dentro da sopa. Depois clique em ingredientes compatíveis em sequência ou arraste um sobre o outro.</p></div>'+
       '</section>';
     }
 
@@ -112,7 +112,7 @@
     const p=G.phase(state);
     return '<div class="modal-backdrop"><div class="menu-card">'+
       '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">Cada fase começa com a sopa vazia. Somente átomos apropriados àquela etapa caem do topo; eventos aparecem como losangos luminosos.</p>'+
+      '<p class="menu-intro">Cada fase começa com a sopa vazia. Todos os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Eventos aparecem como losangos luminosos.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
@@ -138,11 +138,12 @@
     G.expireEvent(state);
     const app=document.getElementById('app');
     const p=G.phase(state);
+    const period=G.period(state);
     const objective=G.objective(state);
 
     app.innerHTML=
       '<div class="app single-app">'+
-        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+'</small><strong>'+esc(p.title)+'</strong><span>'+esc(p.chapter)+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
+        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+period.atoms.map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
         '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span><small>'+esc(objective.hint)+'</small></section>'+
         progressMarkup(objective)+
         renderEventStatus()+
@@ -161,6 +162,72 @@
     state.soup.forEach(b=>{b.isNew=false;});
   }
 
+  function edgePoint(edge){
+    const w=window.innerWidth;
+    const h=window.innerHeight;
+    const pad=88;
+    if(edge===0) return {x:Math.random()*w,y:-pad};
+    if(edge===1) return {x:w+pad,y:Math.random()*h};
+    if(edge===2) return {x:Math.random()*w,y:h+pad};
+    return {x:-pad,y:Math.random()*h};
+  }
+
+  function createTrajectory(){
+    const startEdge=Math.floor(Math.random()*4);
+    const options=[0,1,2,3].filter(edge=>edge!==startEdge);
+    const endEdge=options[Math.floor(Math.random()*options.length)];
+    return {start:edgePoint(startEdge),end:edgePoint(endEdge)};
+  }
+
+  function absorbAtom(node,resource){
+    if(node.dataset.captured==='1') return;
+    node.dataset.captured='1';
+    const pond=document.getElementById('soupPond');
+    if(!pond) return;
+
+    const from=node.getBoundingClientRect();
+    const to=pond.getBoundingClientRect();
+    const pondX=28+Math.random()*44;
+    const pondY=28+Math.random()*44;
+    const targetX=to.left+to.width*(pondX/100);
+    const targetY=to.top+to.height*(pondY/100);
+
+    node.style.animation='none';
+    node.style.position='fixed';
+    node.style.left=from.left+'px';
+    node.style.top=from.top+'px';
+    node.style.width=from.width+'px';
+    node.style.height=from.height+'px';
+    node.style.transform='none';
+    node.style.transition='left .68s cubic-bezier(.2,.82,.2,1), top .68s cubic-bezier(.2,.82,.2,1), transform .68s cubic-bezier(.2,.82,.2,1), opacity .62s ease, filter .62s ease';
+    node.style.pointerEvents='none';
+
+    requestAnimationFrame(()=>{
+      node.classList.add('being-absorbed');
+      node.style.left=(targetX-from.width/2)+'px';
+      node.style.top=(targetY-from.height/2)+'px';
+      node.style.transform='scale(.08) rotate(210deg)';
+      node.style.opacity='.15';
+      node.style.filter='brightness(1.9)';
+    });
+
+    setTimeout(()=>{
+      G.captureAtom(state,resource,pondX,pondY);
+      node.remove();
+      render();
+    },690);
+  }
+
+  function triggerEventObject(node,icon){
+    if(node.dataset.captured==='1') return;
+    node.dataset.captured='1';
+    G.activateEvent(state,icon);
+    node.style.pointerEvents='none';
+    node.classList.add('event-triggered');
+    setTimeout(()=>node.remove(),420);
+    render();
+  }
+
   function createFaller(){
     if(state.stageComplete||menuOpen) return;
     const layer=document.getElementById('falling-layer');
@@ -168,10 +235,14 @@
 
     const spec=G.nextFaller(state);
     const node=document.createElement('button');
-    const x=6+Math.random()*88;
-    const duration=9+Math.random()*5;
-    node.style.setProperty('--fall-x',x+'vw');
+    const path=createTrajectory();
+    const duration=10+Math.random()*7;
+    node.style.setProperty('--start-x',path.start.x+'px');
+    node.style.setProperty('--start-y',path.start.y+'px');
+    node.style.setProperty('--end-x',path.end.x+'px');
+    node.style.setProperty('--end-y',path.end.y+'px');
     node.style.setProperty('--fall-duration',duration+'s');
+    node.style.setProperty('--travel-rotate',(Math.random()>.5?1:-1)*(20+Math.random()*55)+'deg');
 
     if(spec.kind==='event'){
       const event=G.EVENTS[spec.value];
@@ -179,25 +250,16 @@
       node.dataset.kind='event';
       node.dataset.value=spec.value;
       node.innerHTML='<span>'+event.icon+'</span><small>'+esc(event.name)+'</small>';
-      node.setAttribute('aria-label','Evento '+event.name);
+      node.setAttribute('aria-label','Ativar evento '+event.name);
+      node.onclick=()=>triggerEventObject(node,spec.value);
     }else{
       node.className='falling-object falling-atom atom-'+spec.value.toLowerCase();
       node.dataset.kind='atom';
       node.dataset.value=spec.value;
       node.innerHTML='<strong>'+esc(spec.value)+'</strong>';
       node.setAttribute('aria-label','Capturar '+spec.value);
+      node.onclick=()=>absorbAtom(node,spec.value);
     }
-
-    node.onclick=function(){
-      if(node.dataset.kind==='atom'){
-        G.captureAtom(state,node.dataset.value);
-      }else{
-        G.activateEvent(state,node.dataset.value);
-      }
-      node.classList.add('captured');
-      setTimeout(()=>node.remove(),180);
-      render();
-    };
 
     node.addEventListener('animationend',()=>node.remove(),{once:true});
     layer.appendChild(node);
