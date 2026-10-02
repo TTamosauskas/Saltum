@@ -165,13 +165,13 @@
     };
   }
 
-  function buildSoup(resources){
+  function buildSoup(resources,isNew){
     return resources.map((resource,index)=>{
       const angle=(Math.PI*2*index/resources.length)+(Math.random()*.32);
       const radius=index===resources.length-1?28:24+Math.random()*9;
       const x=50+Math.cos(angle)*radius;
       const y=49+Math.sin(angle)*radius*.82;
-      return makeBubble(resource,false,x,y);
+      return makeBubble(resource,!!isNew,x,y);
     });
   }
 
@@ -179,7 +179,7 @@
     const p=PHASES[index];
     state.phaseIndex=index;
     state.phaseTurn=1;
-    state.soup=buildSoup(p.soup);
+    state.soup=buildSoup(p.soup,announce!==false);
     state.environment=p.environment.slice();
     state.selectedBubbleId=null;
     state.perturbed=false;
