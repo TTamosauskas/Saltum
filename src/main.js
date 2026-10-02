@@ -149,6 +149,14 @@
     document.querySelectorAll('[data-home-phase]').forEach(el=>{
       el.onclick=()=>{
         const index=Number(el.dataset.homePhase);
+        if(index===state.phaseIndex){
+          homeOpen=false;
+          pendingChoice=null;
+          menuOpen=false;
+          render();
+          restartRain();
+          return;
+        }
         if(G.jumpToPhase(state,index)){
           homeOpen=false;
           pendingChoice=null;
