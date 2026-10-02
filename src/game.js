@@ -144,21 +144,27 @@
     return true;
   }
 
-  function combine(state,sourceId,targetId) {
+  function availableCombos(state,sourceId,targetId) {
+    const player=state.players[state.activePlayer];
+    const a=player.hand.find(b=>b.id===sourceId);
+    const b=player.hand.find(b=>b.id===targetId);
+    if(!a || !b) return [];
+    return COMBOS.filter(r=>{
+      const pair=(r.a===a.resource&&r.b===b.resource)||(r.a===b.resource&&r.b===a.resource);
+      return pair && (!r.environments || r.environments.includes(state.environment[0]));
+    });
+  }
+
+  function combine(state,sourceId,targetId,recipeId) {
     if(sourceId===targetId || state.winner!==null) return {ok:false};
     const player=state.players[state.activePlayer];
     const a=player.hand.find(b=>b.id===sourceId);
     const b=player.hand.find(b=>b.id===targetId);
     if(!a || !b) return {ok:false};
 
-    const recipe=recipeFor(a.resource,b.resource,state.environment[0]);
-    if(!recipe) return {ok:false};
-
-    const pairMatches=COMBOS.filter(r=>{
-      const pair=(r.a===a.resource&&r.b===b.resource)||(r.a===b.resource&&r.b===a.resource);
-      return pair && (!r.environments || r.environments.includes(state.environment[0]));
-    });
-    const chosen=pairMatches.find(r=>r.special!=='metabolism') || pairMatches[0];
+    const pairMatches=availableCombos(state,sourceId,targetId);
+    if(!pairMatches.length) return {ok:false};
+    const chosen=(recipeId && pairMatches.find(r=>r.id===recipeId)) || pairMatches[0];
     player.hand=player.hand.filter(x=>x.id!==sourceId && x.id!==targetId);
     player.selectedBubbleId=null;
 
@@ -245,6 +251,7 @@
     endTurn:endTurn,
     leadingRoute:leadingRoute,
     recipeFor:recipeFor,
-    possibleRecipes:possibleRecipes
+    possibleRecipes:possibleRecipes,
+    availableCombos:availableCombos
   };
 })();
