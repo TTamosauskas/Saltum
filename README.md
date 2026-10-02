@@ -154,3 +154,14 @@ No protótipo atual:
 - H₂, H₂O, CO, Vesícula, Protobionte e Vida emergente: sem evento obrigatório.
 
 Os ícones representam condições ambientais/energéticas do jogo e funcionam como uma abstração de vias prebióticas plausíveis, em vez de catalisadores químicos universais.
+
+
+## Consumo de catalisadores
+
+Eventos ambientais usados como catalisadores agora funcionam como uma carga de uso único.
+
+Ao capturar `⚡`, `☀`, `♨` ou `◐`, o jogo arma esse catalisador para exatamente uma reação compatível. A reação consome a carga imediatamente.
+
+Exemplo: `N + H₂O → Aminoácidos` exige uma carga ativa de `⚡`, `☀` ou `♨`. Depois que Aminoácidos é formado, o catalisador é removido e uma nova unidade precisa ser capturada para repetir a reação.
+
+Isso elimina a ambiguidade das antigas janelas temporárias.
