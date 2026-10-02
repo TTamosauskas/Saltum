@@ -44,13 +44,33 @@
   function renderBubble(b){
     const selected=state.selectedBubbleId===b.id;
     const candidate=isCandidate(b);
+    const photolysisEligible=G.photolysisActive(state)&&G.canDecompose(b.resource);
     return '<button class="organic-bubble'+
       (b.isNew?' born':'')+
       (selected?' selected':'')+
       (candidate?' candidate':'')+
+      (photolysisEligible?' photolysis-eligible':'')+
       '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+'">'+
       '<span class="bubble-shine"></span><strong>'+esc(b.resource)+'</strong>'+
       '</button>';
+  }
+
+  function conditionLabel(icon){
+    return {
+      '⚡':'Descarga elétrica',
+      '☀':'UV',
+      '♨':'Hidrotermal',
+      '◐':'Úmido-seco'
+    }[icon]||icon;
+  }
+
+  function conditionMarkup(conditions){
+    if(!conditions||!conditions.length){
+      return '<div class="recipe-conditions"><span>CONDIÇÕES / CATALISADORES</span><strong>Sem evento obrigatório</strong></div>';
+    }
+    return '<div class="recipe-conditions"><span>CONDIÇÕES / CATALISADORES</span><div>'+
+      conditions.map(icon=>'<b class="condition-chip">'+icon+' '+esc(conditionLabel(icon))+'</b>').join('')+
+      '</div></div>';
   }
 
   function progressMarkup(objective){
@@ -71,7 +91,20 @@
     return '<div class="active-event-badge '+active.className+'"><span><i>'+active.icon+'</i></span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">'+seconds+' s restantes</small></div></div>';
   }
 
+  function renderPhotolysisStatus(){
+    if(!G.photolysisActive(state)) return '';
+    const eligible=state.soup.filter(b=>G.canDecompose(b.resource)).length;
+    return '<div class="photolysis-status"><span>☀</span><div><strong>FOTÓLISE ATIVA</strong><small>'+eligible+' bolha(s) com contorno vermelho podem ser decompostas</small></div></div>';
+  }
+
   function renderContext(){
+    if(G.photolysisActive(state)){
+      const eligible=state.soup.filter(b=>G.canDecompose(b.resource));
+      return '<section class="info-panel panel photolysis-context">'+
+        '<div class="info-tile photolysis-info"><span>EVENTO</span><strong>☀</strong><small>Fotólise</small></div>'+
+        '<div class="info-copy"><strong>Escolha uma bolha com contorno vermelho</strong><p>O próximo clique decompõe a molécula nos dois precursores da receita que a formou.</p><small>'+eligible.length+' alvo(s) elegível(is)</small></div>'+
+      '</section>';
+    }
     const context=G.selectedContext(state);
     if(!context){
       return '<section class="info-panel panel">'+
@@ -86,7 +119,7 @@
       : '<div class="context-empty">Nenhuma reação disponível agora.</div>';
 
     const blocked=context.blocked.length
-      ? '<div class="blocked-title">Outras possibilidades</div>'+
+      ? '<div class="blocked-title">Aguardando condição ambiental</div>'+
         context.blocked.slice(0,4).map(r=>'<div class="reaction-line blocked"><span>'+esc(partnerName(r,b.resource))+'</span><strong>'+esc(r.label)+'</strong></div>').join('')
       : '';
 
@@ -184,8 +217,8 @@
   function renderRecipeCatalog(){
     return G.COMBOS.map(recipe=>{
       const condition=recipe.events&&recipe.events.length
-        ? 'Favorecida por: '+recipe.events.join(' ou ')
-        : 'Sempre disponível';
+        ? 'Condições / catalisadores: '+recipe.events.map(conditionLabel).join(' ou ')
+        : 'Condições / catalisadores: sem evento obrigatório';
       return '<div class="recipe-catalog-row" style="--recipe-color:'+recipe.color+'">'+
         '<strong>'+esc(recipe.label)+'</strong><small>'+esc(condition)+'</small></div>';
     }).join('');
@@ -233,9 +266,10 @@
     app.innerHTML=
       '<div class="app single-app">'+
         '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+period.atoms.map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
-        '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span><small>'+esc(objective.hint)+'</small></section>'+
+        '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span>'+conditionMarkup(objective.conditions)+'<small>'+esc(objective.hint)+'</small></section>'+
         progressMarkup(objective)+
         renderEventStatus()+
+        renderPhotolysisStatus()+
         '<section class="arena-shell"><div class="primordial-pond single-pond" id="soupPond">'+
           '<div class="water-caustic caustic-a"></div><div class="water-caustic caustic-b"></div>'+
           state.soup.map(renderBubble).join('')+
@@ -534,6 +568,14 @@
     if(event.button!==undefined&&event.button!==0) return;
     if(state.stageComplete) return;
     const id=el.dataset.bubbleId;
+
+    if(G.photolysisActive(state)){
+      if(G.canDecompose(el.dataset.resource)){
+        G.decomposeBubble(state,id);
+        render();
+      }
+      return;
+    }
     drag={
       id,
       el,

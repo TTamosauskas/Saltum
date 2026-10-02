@@ -8,6 +8,7 @@ function EventToast({ event }) {
   const lines = [];
   if (event.benefited?.length) lines.push('Favorece: ' + event.benefited.join(' · '));
   if (event.harmed?.length) lines.push('Prejudica: ' + event.harmed.join(' · '));
+  if (event.targets?.length) lines.push('Elegíveis: ' + event.targets.join(' · '));
   if (event.effects?.length) lines.push(...event.effects);
   if (!event.effects?.length) lines.push('A sopa permaneceu estável neste pulso.');
 
@@ -51,7 +52,7 @@ window.SopaToast = {
     if (!event) return;
     toast(React.createElement(EventToast, { event }), {
       toastId: 'turn-event-' + event.id,
-      className: 'environment-toast'
+      className: 'environment-toast' + (event.title?.includes('Fotólise') ? ' photolysis-toast' : '')
     });
   }
 };

@@ -115,3 +115,42 @@ Ao clicar em um evento, ele executa sua ação catalítica e é anunciado por Re
 - `src/toasts.mjs`
 
 O jogo permanece totalmente estático para distribuição via GitHub Pages.
+
+
+## Fotólise
+
+A campanha também inclui um evento especial de decomposição:
+
+`☀ Fotólise`
+
+Ele usa o mesmo símbolo solar do UV, porém aparece como um losango com borda e brilho vermelho intenso para ficar visualmente distinto do UV normal.
+
+Ao clicar no losango, a Fotólise fica armada. Todas as bolhas que foram formadas por alguma receita recebem um contorno vermelho intenso.
+
+O próximo clique em uma dessas bolhas desmonta a molécula em seus dois precursores imediatos e encerra a Fotólise.
+
+Exemplos:
+
+- `H₂ → H + H`
+- `H₂O → H₂ + O`
+- `CO → C + O`
+- `Aminoácidos → N + H₂O`
+- `Vesícula → Ácidos graxos + Ácidos graxos`
+
+A decomposição segue as receitas do próprio jogo e funciona como uma abstração estratégica de fotólise.
+
+
+## Condições ambientais das receitas
+
+Receitas prebióticas passam a declarar explicitamente as condições ambientais que podem habilitá-las. A interface mostra essas opções logo abaixo da receita.
+
+No protótipo atual:
+
+- Aminoácidos: ⚡ Descarga elétrica, ☀ UV ou ♨ Hidrotermal.
+- Ácidos graxos: ♨ Hidrotermal.
+- Nucleotídeos: ☀ UV.
+- Peptídeos: ◐ Úmido-seco ou ♨ Hidrotermal.
+- QT45: ◐ Úmido-seco como abstração estratégica da etapa de polimerização.
+- H₂, H₂O, CO, Vesícula, Protobionte e Vida emergente: sem evento obrigatório.
+
+Os ícones representam condições ambientais/energéticas do jogo e funcionam como uma abstração de vias prebióticas plausíveis, em vez de catalisadores químicos universais.

@@ -707,3 +707,134 @@ h1,h2,p{margin-top:0}
     margin-top:7px;
   }
 }
+
+
+/* Fotólise: evento de decomposição */
+.falling-event.event-photolysis{
+  color:#ff2b2b;
+  border-color:#ff2b2b;
+  background:
+    radial-gradient(circle at 35% 28%,rgba(255,255,255,.78),transparent 18%),
+    radial-gradient(circle at 50% 52%,rgba(255,43,43,.36),rgba(45,4,8,.98) 72%);
+  box-shadow:
+    0 0 16px #ff4a4a,
+    0 0 38px rgba(255,20,20,.72),
+    0 0 74px rgba(255,20,20,.34);
+}
+.falling-event.event-photolysis::after{
+  border-color:#ff2b2b;
+  box-shadow:0 0 22px rgba(255,30,30,.7);
+}
+.organic-bubble.photolysis-eligible{
+  outline:4px solid #ff2727!important;
+  outline-offset:2px!important;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.08),
+    0 0 18px rgba(255,39,39,.9),
+    0 0 38px rgba(255,20,20,.48),
+    inset -8px -11px 18px rgba(0,0,0,.17)!important;
+  animation:
+    photolysisTargetPulse .8s ease-in-out infinite alternate,
+    bubbleDrift var(--drift) ease-in-out infinite var(--delay);
+  z-index:19;
+}
+@keyframes photolysisTargetPulse{
+  from{filter:brightness(1);outline-color:#ff2727}
+  to{filter:brightness(1.2);outline-color:#ff6666}
+}
+.photolysis-status{
+  position:relative;
+  z-index:3;
+  align-self:center;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  max-width:330px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(45,4,8,.9);
+  border:1px solid #ff2b2b;
+  color:#ffdada;
+  box-shadow:0 0 24px rgba(255,25,25,.28);
+}
+.photolysis-status>span{
+  width:31px;
+  height:31px;
+  display:grid;
+  place-items:center;
+  transform:rotate(45deg);
+  border:2px solid #ff2b2b;
+  border-radius:7px;
+  background:rgba(255,43,43,.08);
+  color:#fff;
+  text-shadow:0 0 8px #ff2b2b;
+}
+.photolysis-status>span::first-letter{transform:rotate(-45deg)}
+.photolysis-status div{display:flex;flex-direction:column}
+.photolysis-status strong{font-size:9px;color:#ff8383;letter-spacing:.08em}
+.photolysis-status small{margin-top:2px;color:#e9b2b2;font-size:7px}
+.photolysis-context{
+  border-color:rgba(255,43,43,.38);
+  box-shadow:inset 0 0 0 1px rgba(255,43,43,.08);
+}
+.photolysis-info{
+  border-color:#ff2b2b;
+  background:radial-gradient(circle at 50% 45%,rgba(255,43,43,.18),rgba(4,20,27,.75));
+}
+.photolysis-info>strong{
+  color:#ff4a4a;
+  text-shadow:0 0 15px rgba(255,43,43,.7);
+}
+
+
+.Toastify__toast.photolysis-toast{
+  border-color:#ff2b2b;
+  box-shadow:0 0 28px rgba(255,30,30,.24),0 20px 55px rgba(0,0,0,.34);
+}
+.Toastify__toast.photolysis-toast .environment-toast-icon{
+  border:1px solid #ff2b2b;
+  color:#ff6262;
+  box-shadow:0 0 18px rgba(255,43,43,.36);
+}
+
+
+/* Condições ambientais das receitas */
+.recipe-conditions{
+  width:100%;
+  margin-top:3px;
+  padding-top:6px;
+  border-top:1px solid rgba(255,255,255,.055);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+}
+.recipe-conditions>span{
+  color:#779497;
+  font-size:7px;
+  letter-spacing:.09em;
+  font-weight:900;
+}
+.recipe-conditions>strong{
+  color:#91aaac;
+  font-size:8px;
+  font-weight:700;
+}
+.recipe-conditions>div{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:4px;
+}
+.condition-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:4px 7px;
+  border-radius:999px;
+  border:1px solid rgba(133,210,211,.18);
+  background:rgba(4,24,31,.62);
+  color:#c8e0df;
+  font-size:7px;
+  font-weight:850;
+}
