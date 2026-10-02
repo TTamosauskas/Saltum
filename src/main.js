@@ -566,8 +566,8 @@
     node.dataset.value=resource;
     node.dataset.endX=String(end.x);
     node.dataset.endY=String(end.y);
-    node.style.setProperty('--start-x',(clientX-34)+'px');
-    node.style.setProperty('--start-y',(clientY-34)+'px');
+    node.style.setProperty('--start-x',(clientX-Math.max(56,visual.width)/2)+'px');
+    node.style.setProperty('--start-y',(clientY-Math.max(56,visual.height)/2)+'px');
     node.style.setProperty('--end-x',end.x+'px');
     node.style.setProperty('--end-y',end.y+'px');
     node.style.setProperty('--fall-duration',duration+'s');
