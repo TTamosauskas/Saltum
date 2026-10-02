@@ -62,63 +62,63 @@
   const PHASES = [
     {
       id:'h2', title:'Hidrogênio molecular', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Forme H₂', formula:'H + H → H₂',
+      objective:'Forme H₂ duas vezes', formula:'H + H → H₂',
       hint:'Capture dois átomos H que atravessam a tela e combine-os.',
-      target:'H₂', spawnEvents:[]
+      target:'H₂', targetCount:4, targetCount:4, targetCount:4, targetCount:3, targetCount:3, targetCount:3, targetCount:2, targetCount:2, targetCount:2, spawnEvents:[]
     },
     {
       id:'water', title:'Água', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Forme água', formula:'H + H → H₂ · H₂ + O → H₂O',
+      objective:'Forme água duas vezes', formula:'H + H → H₂ · H₂ + O → H₂O',
       hint:'Capture H e O. Construa primeiro H₂ e depois combine com O.',
       target:'H₂O', spawnEvents:[]
     },
     {
       id:'co', title:'Carbono reativo', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Forme CO', formula:'C + O → CO',
+      objective:'Forme CO duas vezes', formula:'C + O → CO',
       hint:'Capture C e O e combine-os dentro da sopa.',
       target:'CO', spawnEvents:[]
     },
     {
       id:'amino', title:'Primeiros aminoácidos', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Produza aminoácidos', formula:'N + H₂O → Aminoácidos',
+      objective:'Produza aminoácidos três vezes', formula:'N + H₂O → Aminoácidos',
       hint:'Construa H₂O com H e O. Capture ☀ ou ⚡ quando aparecer para abrir a janela da reação.',
       target:'Aminoácidos', spawnEvents:['☀','⚡']
     },
     {
       id:'fatty', title:'Lipídios prebióticos', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Produza ácidos graxos', formula:'CO + H₂ → Ácidos graxos',
+      objective:'Produza ácidos graxos três vezes', formula:'CO + H₂ → Ácidos graxos',
       hint:'Construa CO e H₂. Capture ♨ para ativar a química hidrotermal.',
       target:'Ácidos graxos', spawnEvents:['♨']
     },
     {
       id:'nt', title:'Nucleotídeos', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Produza nucleotídeos', formula:'P + H₂O → Nucleotídeos',
+      objective:'Produza nucleotídeos três vezes', formula:'P + H₂O → Nucleotídeos',
       hint:'Construa H₂O, capture P e ative ☀ ou ◐.',
       target:'Nucleotídeos', spawnEvents:['☀','◐']
     },
     {
       id:'peptide', title:'Catálise peptídica', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Forme um peptídeo', formula:'2 Aminoácidos → Peptídeo',
+      objective:'Forme quatro peptídeos', formula:'2 Aminoácidos → Peptídeo',
       hint:'Produza dois aminoácidos a partir de H, O e N; depois capture ◐ e combine-os.',
       target:'Peptídeo', spawnEvents:['☀','⚡','◐']
     },
     {
       id:'vesicle', title:'Primeira vesícula', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Forme uma vesícula', formula:'2 Ácidos graxos → Vesícula',
+      objective:'Forme quatro vesículas', formula:'2 Ácidos graxos → Vesícula',
       hint:'Produza dois ácidos graxos a partir de H, C e O. ♨ ativa cada síntese lipídica.',
       target:'Vesícula', spawnEvents:['♨']
     },
     {
       id:'qt45', title:'RNA catalítico', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Monte QT45', formula:'2 Nucleotídeos → QT45',
+      objective:'Monte quatro QT45', formula:'2 Nucleotídeos → QT45',
       hint:'Produza dois nucleotídeos com H, O e P. ◐ habilita a montagem estratégica de QT45.',
       target:'QT45', spawnEvents:['☀','◐']
     },
     {
       id:'integration', title:'Integração prebiótica', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Alcance vida emergente', formula:'Peptídeo + Vesícula → Protobionte · + QT45',
+      objective:'Integre quatro sistemas de vida emergente', formula:'Peptídeo + Vesícula → Protobionte · + QT45',
       hint:'Todos os átomos fundamentais podem cair. Reconstrua os três sistemas e integre-os.',
-      target:'Vida emergente', spawnEvents:['☀','⚡','♨','◐']
+      target:'Vida emergente', targetCount:4, spawnEvents:['☀','⚡','♨','◐']
     }
   ];
 
@@ -151,16 +151,37 @@
     };
   }
 
-  function setPhase(state,index,announce){
+  function cloneSoup(soup){
+    return soup.map(b=>({...b,isNew:false}));
+  }
+
+  function molecularCarry(soup){
+    return soup.filter(b=>!ATOMS.includes(b.resource)).map(b=>({...b,isNew:true}));
+  }
+
+  function setPhase(state,index,announce,mode){
     const p=PHASES[index];
     state.phaseIndex=index;
     state.phaseTurn=1;
-    state.soup=[];
     state.selectedBubbleId=null;
     state.stageComplete=false;
     state.activeEvent=null;
     state.lastBornId=null;
-    if(announce!==false) state.log.unshift('Fase '+(index+1)+': '+p.title+'. A sopa começa vazia.');
+
+    if(mode==='restore' && state.phaseSnapshots[index]){
+      state.soup=cloneSoup(state.phaseSnapshots[index]);
+    }else if(mode==='advance'){
+      state.soup=molecularCarry(state.soup);
+      state.phaseSnapshots[index]=cloneSoup(state.soup);
+    }else{
+      state.soup=[];
+      state.phaseSnapshots[index]=[];
+    }
+
+    if(announce!==false){
+      const carried=state.soup.length;
+      state.log.unshift('Fase '+(index+1)+': '+p.title+'. '+carried+' união(ões) molecular(es) seguem acumuladas na sopa.');
+    }
     checkPhaseComplete(state);
   }
 
@@ -171,15 +192,16 @@
       phaseTurn:1,
       totalTurn:1,
       soup:[],
+      phaseSnapshots:{},
       selectedBubbleId:null,
       stageComplete:false,
       winner:false,
       activeEvent:null,
       lastBornId:null,
       lastEvent:null,
-      log:['A sopa primordial desperta vazia. Aguarde a queda dos primeiros átomos.']
+      log:['A sopa primordial desperta vazia. Capture matéria do fluxo ao redor.']
     };
-    setPhase(state,0,false);
+    setPhase(state,0,false,'fresh');
     return state;
   }
 
@@ -329,8 +351,8 @@
 
   function phaseProgress(state){
     const p=phase(state);
-    const complete=countResource(state,p.target)>0;
-    return {value:complete?1:0,max:1,label:complete?'1/1':'0/1'};
+    const value=Math.min(p.targetCount,countResource(state,p.target));
+    return {value,max:p.targetCount,label:value+'/'+p.targetCount};
   }
 
   function objective(state){
@@ -346,12 +368,12 @@
 
   function checkPhaseComplete(state){
     const p=phase(state);
-    if(countResource(state,p.target)>0){
+    if(countResource(state,p.target)>=p.targetCount){
       state.stageComplete=true;
       state.unlockedPhase=Math.max(state.unlockedPhase,Math.min(PHASES.length-1,state.phaseIndex+1));
       state.activeEvent=null;
       state.selectedBubbleId=null;
-      state.log.unshift('Objetivo concluído: '+p.objective+'.');
+      state.log.unshift('Objetivo concluído: '+p.objective+'. '+p.targetCount+' unidade(s) permanecem como legado molecular.');
       if(state.phaseIndex===PHASES.length-1) state.winner=true;
       return true;
     }
@@ -360,18 +382,18 @@
 
   function nextPhase(state){
     if(!state.stageComplete||state.phaseIndex>=PHASES.length-1) return false;
-    setPhase(state,state.phaseIndex+1,true);
+    setPhase(state,state.phaseIndex+1,true,'advance');
     return true;
   }
 
   function restartPhase(state){
-    setPhase(state,state.phaseIndex,true);
+    setPhase(state,state.phaseIndex,true,'restore');
     return true;
   }
 
   function jumpToPhase(state,index){
     if(index<0||index>state.unlockedPhase||index>=PHASES.length) return false;
-    setPhase(state,index,true);
+    setPhase(state,index,true,state.phaseSnapshots[index]?'restore':'fresh');
     return true;
   }
 
