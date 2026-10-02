@@ -38,6 +38,25 @@
     return '--x:'+b.x+'%;--y:'+b.y+'%;--visual-w:'+Math.max(56,visual.width)+'px;--visual-h:'+Math.max(56,visual.height)+'px;--drift:'+b.drift+'ms;--delay:'+b.delay+'ms;--ring:'+ringFor(b.resource)+';--visual-accent:'+visual.accent+';';
   }
 
+  const BASE_PAIR={
+    Adenina:{partner:'Uracila',bonds:2,label:'A–U'},
+    Uracila:{partner:'Adenina',bonds:2,label:'A–U'},
+    Guanina:{partner:'Citosina',bonds:3,label:'G–C'},
+    Citosina:{partner:'Guanina',bonds:3,label:'G–C'}
+  };
+
+  function pairingInfo(b){
+    if(!state.selectedBubbleId||state.selectedBubbleId===b.id) return null;
+    const selected=state.soup.find(item=>item.id===state.selectedBubbleId);
+    if(!selected||!BASE_PAIR[selected.resource]) return null;
+    const rule=BASE_PAIR[selected.resource];
+    if(b.resource!==rule.partner) return null;
+    const dx=selected.x-b.x;
+    const dy=selected.y-b.y;
+    if(Math.sqrt(dx*dx+dy*dy)>30) return null;
+    return rule;
+  }
+
   function isCandidate(b){
     if(!state.selectedBubbleId||state.selectedBubbleId===b.id) return false;
     return G.availableCombos(state,state.selectedBubbleId,b.id).length>0;
@@ -47,14 +66,17 @@
     const selected=state.selectedBubbleId===b.id;
     const candidate=isCandidate(b);
     const photolysisEligible=G.photolysisActive(state)&&G.canDecompose(b.resource);
+    const pairing=pairingInfo(b);
     const visual=V.spec(b.resource);
     return '<button class="organic-bubble molecule-object kind-'+visual.kind+
       (b.isNew?' born':'')+
       (selected?' selected':'')+
       (candidate?' candidate':'')+
+      (pairing?' canonical-pair':'')+
       (photolysisEligible?' photolysis-eligible':'')+
       '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+' · '+esc(visual.family)+'">'+
       '<span class="molecule-object-art">'+V.render(b.resource,'field')+'</span>'+
+      (pairing?'<span class="hydrogen-bond-hint" aria-hidden="true">'+(pairing.bonds===2?'··':'···')+'<small>'+pairing.label+'</small></span>':'')+
       '<strong class="resource-label">'+esc(b.resource)+'</strong>'+
       '</button>';
   }
@@ -138,6 +160,10 @@
       : '';
 
     const visual=V.spec(b.resource);
+    const pairRule=BASE_PAIR[b.resource];
+    const pairNote=pairRule
+      ? '<p class="pairing-note"><strong>Pareamento canônico:</strong> '+esc(pairRule.label)+' · '+pairRule.bonds+' ligações de hidrogênio no modelo didático.</p>'
+      : '';
     return '<section class="info-panel panel molecular-info-panel">'+
       '<div class="info-tile selected-info molecular-detail" style="--tile:'+visual.accent+';--detail-accent:'+visual.accent+'">'+
         '<span>'+V.scienceBadge(b.resource)+'</span>'+
@@ -145,7 +171,7 @@
         '<strong>'+esc(b.resource)+'</strong>'+
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
-      '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+
+      '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
