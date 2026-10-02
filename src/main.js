@@ -86,7 +86,7 @@
       : '<div class="context-empty">Nenhuma reação disponível agora.</div>';
 
     const blocked=context.blocked.length
-      ? '<div class="blocked-title">Aguardando evento</div>'+
+      ? '<div class="blocked-title">Outras possibilidades</div>'+
         context.blocked.slice(0,4).map(r=>'<div class="reaction-line blocked"><span>'+esc(partnerName(r,b.resource))+'</span><strong>'+esc(r.label)+'</strong></div>').join('')
       : '';
 
@@ -176,7 +176,7 @@
   function renderRecipeCatalog(){
     return G.COMBOS.map(recipe=>{
       const condition=recipe.events&&recipe.events.length
-        ? 'Evento: '+recipe.events.join(' ou ')
+        ? 'Favorecida por: '+recipe.events.join(' ou ')
         : 'Sempre disponível';
       return '<div class="recipe-catalog-row" style="--recipe-color:'+recipe.color+'">'+
         '<strong>'+esc(recipe.label)+'</strong><small>'+esc(condition)+'</small></div>';
