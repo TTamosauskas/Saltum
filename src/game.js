@@ -13,29 +13,36 @@
       icon:'☀',
       name:'UV',
       className:'event-uv',
-      duration:14000,
-      description:'Janela fotoquímica: favorece síntese de aminoácidos e nucleotídeos.'
+      duration:0,
+      description:'Radiação ultravioleta fornece energia para algumas rotas fotoquímicas prebióticas.'
     },
     '⚡': {
       icon:'⚡',
       name:'Descarga elétrica',
       className:'event-lightning',
-      duration:11000,
-      description:'Pulso energético: favorece a síntese de aminoácidos.'
+      duration:0,
+      description:'Uma descarga fornece energia para transformações de pequenas moléculas e precursores orgânicos.'
     },
     '♨': {
       icon:'♨',
       name:'Hidrotermal',
       className:'event-thermal',
-      duration:14000,
-      description:'Fluxo hidrotermal: favorece aminoácidos, ácidos graxos e condensação peptídica.'
+      duration:0,
+      description:'Calor, minerais e gradientes hidrotermais favorecem algumas sínteses e condensações.'
     },
     '◐': {
       icon:'◐',
       name:'Úmido-seco',
       className:'event-wetdry',
-      duration:14000,
-      description:'Concentração cíclica: favorece peptídeos e polimerização de RNA.'
+      duration:0,
+      description:'Ciclos de concentração e reidratação favorecem condensação e polimerização.'
+    },
+    '❄': {
+      icon:'❄',
+      name:'Gelo eutético',
+      className:'event-eutectic',
+      duration:0,
+      description:'O gelo eutético concentra RNA e substratos em uma fase líquida microscópica.'
     }
   };
 
@@ -47,7 +54,22 @@
     },
     mineral: {
       id:'mineral',
-      name:'Atmosfera + minerais',
+      name:'Sopa mineral',
+      atoms:['C','H','H','O','N','P']
+    },
+    organic: {
+      id:'organic',
+      name:'Sopa orgânica',
+      atoms:['C','H','H','O','N','P']
+    },
+    protocell: {
+      id:'protocell',
+      name:'Compartimentalização',
+      atoms:['C','H','H','O','N','P']
+    },
+    rna: {
+      id:'rna',
+      name:'Mundo de RNA',
       atoms:['C','H','H','O','N','P']
     }
   };
@@ -56,83 +78,123 @@
     { id:'h2', a:'H', b:'H', out:'H₂', color:'#62d6ff', label:'H + H → H₂' },
     { id:'water', a:'H₂', b:'O', out:'H₂O', color:'#69e0df', label:'H₂ + O → H₂O' },
     { id:'co', a:'C', b:'O', out:'CO', color:'#ff9c70', label:'C + O → CO' },
-    { id:'amino', a:'N', b:'H₂O', out:'Aminoácidos', events:['⚡','☀','♨'], color:'#ffad79', label:'N + H₂O → Aminoácidos' },
+    { id:'methane', a:'C', b:'H₂', out:'CH₄', color:'#74c9a8', label:'C + H₂ → CH₄' },
+    { id:'ammonia', a:'N', b:'H₂', out:'NH₃', color:'#8ac8ff', label:'N + H₂ → NH₃' },
+    { id:'phosphate', a:'P', b:'H₂O', out:'Fosfato', color:'#d9b6ff', label:'P + H₂O → Fosfato' },
+
+    { id:'formaldehyde', a:'CH₄', b:'O', out:'Formaldeído', events:['☀','⚡'], color:'#f6a76d', label:'CH₄ + O → Formaldeído' },
+    { id:'cyanide', a:'C', b:'N', out:'Cianeto', events:['☀','⚡'], color:'#79c7d7', label:'C + N → Cianeto' },
+    { id:'sugars', a:'Formaldeído', b:'Formaldeído', out:'Açúcares', events:['◐'], color:'#f0bc78', label:'Formaldeído + Formaldeído → Açúcares' },
+    { id:'ribose', a:'Açúcares', b:'H₂O', out:'Ribose', events:['◐'], color:'#e7a76f', label:'Açúcares + H₂O → Ribose' },
+    { id:'glycine', a:'Formaldeído', b:'Cianeto', out:'Glicina', events:['⚡','☀','♨'], color:'#ffad79', label:'Formaldeído + Cianeto → Glicina' },
+    { id:'aspartate', a:'Glicina', b:'CO', out:'Aspartato', events:['♨','◐'], color:'#ff9274', label:'Glicina + CO → Aspartato' },
+    { id:'glutamine', a:'Aspartato', b:'NH₃', out:'Glutamina', events:['♨'], color:'#ff7f76', label:'Aspartato + NH₃ → Glutamina' },
     { id:'fatty', a:'CO', b:'H₂', out:'Ácidos graxos', events:['♨'], color:'#f1d069', label:'CO + H₂ → Ácidos graxos' },
-    { id:'nt', a:'P', b:'H₂O', out:'Nucleotídeos', events:['☀'], color:'#b895ff', label:'P + H₂O → Nucleotídeos' },
-    { id:'peptide', a:'Aminoácidos', b:'Aminoácidos', out:'Peptídeo', events:['◐','♨'], color:'#ff8f72', label:'Aminoácidos + Aminoácidos → Peptídeo' },
-    { id:'vesicle', a:'Ácidos graxos', b:'Ácidos graxos', out:'Vesícula', color:'#e7d875', label:'Ácidos graxos + Ácidos graxos → Vesícula' },
-    { id:'qt45', a:'Nucleotídeos', b:'Nucleotídeos', out:'QT45', events:['◐'], color:'#b895ff', label:'Nucleotídeos + Nucleotídeos → QT45' },
-    { id:'protobiont', a:'Peptídeo', b:'Vesícula', out:'Protobionte', color:'#75d8b9', label:'Peptídeo + Vesícula → Protobionte' },
-    { id:'life', a:'Protobionte', b:'QT45', out:'Vida emergente', color:'#ffffff', label:'Protobionte + QT45 → Vida emergente' }
+
+    { id:'adenine', a:'Cianeto', b:'Cianeto', out:'Adenina', events:['☀'], color:'#78e29f', label:'Cianeto + Cianeto → Adenina' },
+    { id:'guanine', a:'Cianeto', b:'NH₃', out:'Guanina', events:['☀','♨'], color:'#65d7d8', label:'Cianeto + NH₃ → Guanina' },
+    { id:'uracil', a:'Aspartato', b:'CO', out:'Uracila', events:['☀','◐'], color:'#c29bff', label:'Aspartato + CO → Uracila' },
+    { id:'cytosine', a:'Uracila', b:'NH₃', out:'Citosina', events:['☀','♨'], color:'#ee91cf', label:'Uracila + NH₃ → Citosina' },
+
+    { id:'simple-lipid', a:'Ácidos graxos', b:'Ácidos graxos', out:'Lipídio simples', color:'#e7d875', label:'Ácidos graxos + Ácidos graxos → Lipídio simples' },
+    { id:'vesicle', a:'Lipídio simples', b:'Lipídio simples', out:'Vesícula', color:'#e9df84', label:'Lipídio simples + Lipídio simples → Vesícula' },
+    { id:'short-peptide', a:'Glicina', b:'Aspartato', out:'Peptídeo curto', events:['◐','♨'], color:'#ff8f72', label:'Glicina + Aspartato → Peptídeo curto' },
+    { id:'catalytic-peptide', a:'Peptídeo curto', b:'Glutamina', out:'Peptídeo catalítico', events:['◐','♨'], color:'#ff776d', label:'Peptídeo curto + Glutamina → Peptídeo catalítico' },
+    { id:'protobiont', a:'Vesícula', b:'Peptídeo catalítico', out:'Protobionte', color:'#75d8b9', label:'Vesícula + Peptídeo catalítico → Protobionte' },
+
+    { id:'adenosine', a:'Adenina', b:'Ribose', out:'Adenosina', events:['☀','◐'], color:'#81e2a2', label:'Adenina + Ribose → Adenosina' },
+    { id:'guanosine', a:'Guanina', b:'Ribose', out:'Guanosina', events:['☀','◐'], color:'#78dbdc', label:'Guanina + Ribose → Guanosina' },
+    { id:'uridine', a:'Uracila', b:'Ribose', out:'Uridina', events:['☀','◐'], color:'#c4a4ff', label:'Uracila + Ribose → Uridina' },
+    { id:'cytidine', a:'Citosina', b:'Ribose', out:'Citidina', events:['☀','◐'], color:'#ed9ad3', label:'Citosina + Ribose → Citidina' },
+
+    { id:'amp', a:'Adenosina', b:'Fosfato', out:'AMP', events:['◐'], color:'#74e09a', label:'Adenosina + Fosfato → AMP' },
+    { id:'gmp', a:'Guanosina', b:'Fosfato', out:'GMP', events:['◐'], color:'#66d5d7', label:'Guanosina + Fosfato → GMP' },
+    { id:'ump', a:'Uridina', b:'Fosfato', out:'UMP', events:['◐'], color:'#b995ff', label:'Uridina + Fosfato → UMP' },
+    { id:'cmp', a:'Citidina', b:'Fosfato', out:'CMP', events:['◐'], color:'#e48dca', label:'Citidina + Fosfato → CMP' },
+    { id:'au-pair', a:'AMP', b:'UMP', out:'Pool A/U', color:'#93ccdf', label:'AMP + UMP → Pool A/U' },
+    { id:'cg-pair', a:'CMP', b:'GMP', out:'Pool C/G', color:'#b4a8db', label:'CMP + GMP → Pool C/G' },
+    { id:'rna-pool', a:'Pool A/U', b:'Pool C/G', out:'Pool de RNA', color:'#9da8ff', label:'Pool A/U + Pool C/G → Pool de RNA' },
+    { id:'activated-nt', a:'Pool de RNA', b:'Fosfato', out:'Nucleotídeos ativados', events:['◐'], color:'#9e91ff', label:'Pool de RNA + Fosfato → Nucleotídeos ativados' },
+    { id:'activated-triplets', a:'Nucleotídeos ativados', b:'Nucleotídeos ativados', out:'Trinucleotídeos ativados', events:['◐','❄'], color:'#a58dff', label:'Nucleotídeos ativados + Nucleotídeos ativados → Trinucleotídeos ativados' },
+
+    { id:'rna-oligomer', a:'Trinucleotídeos ativados', b:'Trinucleotídeos ativados', out:'Oligômero de RNA', events:['◐','❄'], color:'#aa8cff', label:'Trinucleotídeos ativados + Trinucleotídeos ativados → Oligômero de RNA' },
+    { id:'rna-template', a:'Oligômero de RNA', b:'Oligômero de RNA', out:'RNA molde', events:['◐','❄'], color:'#ae8eff', label:'Oligômero de RNA + Oligômero de RNA → RNA molde' },
+    { id:'catalytic-rna', a:'RNA molde', b:'Trinucleotídeos ativados', out:'RNA catalítico', events:['❄'], color:'#b08cff', label:'RNA molde + Trinucleotídeos ativados → RNA catalítico' },
+    { id:'qt45', a:'RNA catalítico', b:'Trinucleotídeos ativados', out:'QT45', events:['❄'], color:'#b895ff', label:'RNA catalítico + Trinucleotídeos ativados → QT45' },
+    { id:'complement', a:'QT45', b:'Trinucleotídeos ativados', out:'Fita complementar', events:['❄'], preserve:['QT45'], color:'#c09cff', label:'QT45 + Trinucleotídeos ativados → Fita complementar' },
+    { id:'qt45-copy', a:'Fita complementar', b:'Trinucleotídeos ativados', out:'Cópia de QT45', events:['❄'], color:'#c8a4ff', label:'Fita complementar + Trinucleotídeos ativados → Cópia de QT45' },
+    { id:'self-replicating-rna', a:'QT45', b:'Cópia de QT45', out:'RNA autorreplicante', events:['❄'], color:'#d0afff', label:'QT45 + Cópia de QT45 → RNA autorreplicante' },
+    { id:'replicating-system', a:'Protobionte', b:'RNA autorreplicante', out:'Sistema autorreplicante', color:'#ffffff', label:'Protobionte + RNA autorreplicante → Sistema autorreplicante' }
   ];
 
   const PHASES = [
-    {
-      id:'h2', title:'Hidrogênio molecular', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Forme H₂ duas vezes', formula:'H + H → H₂',
-      hint:'Capture H do fluxo e repita a união até completar 2 H₂.',
-      target:'H₂', targetCount:2, spawnEvents:['☀F']
-    },
-    {
-      id:'water', title:'Água', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Forme água duas vezes', formula:'H + H → H₂ · H₂ + O → H₂O',
-      hint:'H₂ acumulado da fase anterior pode ser aproveitado. Complete 2 H₂O.',
-      target:'H₂O', targetCount:2, spawnEvents:['☀F']
-    },
-    {
-      id:'co', title:'Carbono reativo', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Forme CO duas vezes', formula:'C + O → CO',
-      hint:'Capture C e O do mesmo fluxo atmosférico e complete 2 CO.',
-      target:'CO', targetCount:2, spawnEvents:['☀F']
-    },
-    {
-      id:'amino', title:'Primeiros aminoácidos', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Produza aminoácidos três vezes', formula:'N + H₂O → Aminoácidos',
-      hint:'Água acumulada pode ser reutilizada como precursor. Ative ⚡, ☀ ou ♨ e complete 3 aminoácidos.',
-      target:'Aminoácidos', targetCount:3, spawnEvents:['☀F','⚡','☀','♨']
-    },
-    {
-      id:'fatty', title:'Lipídios prebióticos', chapter:'Atmosfera primitiva', period:'atmosphere',
-      objective:'Produza ácidos graxos três vezes', formula:'CO + H₂ → Ácidos graxos',
-      hint:'Aproveite CO e H₂ já construídos, capture ♨ e complete 3 ácidos graxos.',
-      target:'Ácidos graxos', targetCount:3, spawnEvents:['☀F','♨']
-    },
-    {
-      id:'nt', title:'Nucleotídeos', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Produza nucleotídeos três vezes', formula:'P + H₂O → Nucleotídeos',
-      hint:'P entra no fluxo deste período. Ative ☀ e combine com H₂O até completar 3 nucleotídeos.',
-      target:'Nucleotídeos', targetCount:3, spawnEvents:['☀F','☀','◐']
-    },
-    {
-      id:'peptide', title:'Catálise peptídica', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Forme quatro peptídeos', formula:'2 Aminoácidos → Peptídeo',
-      hint:'Use aminoácidos acumulados e complete 4 peptídeos sob ◐ ou ♨.',
-      target:'Peptídeo', targetCount:4, spawnEvents:['☀F','☀','⚡','◐','♨']
-    },
-    {
-      id:'vesicle', title:'Primeira vesícula', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Forme quatro vesículas', formula:'2 Ácidos graxos → Vesícula',
-      hint:'Use ácidos graxos acumulados e complete 4 vesículas.',
-      target:'Vesícula', targetCount:4, spawnEvents:['☀F','♨']
-    },
-    {
-      id:'qt45', title:'RNA catalítico', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Monte quatro QT45', formula:'2 Nucleotídeos → QT45',
-      hint:'Use nucleotídeos acumulados e complete 4 QT45 sob ◐.',
-      target:'QT45', targetCount:4, spawnEvents:['☀F','☀','◐']
-    },
-    {
-      id:'integration', title:'Integração prebiótica', chapter:'Atmosfera + minerais', period:'mineral',
-      objective:'Integre quatro sistemas de vida emergente', formula:'Peptídeo + Vesícula → Protobionte · + QT45',
-      hint:'As quatro unidades acumuladas de Peptídeo, Vesícula e QT45 alimentam a integração final.',
-      target:'Vida emergente', targetCount:4, spawnEvents:['☀F','☀','⚡','♨','◐']
-    }
-  ];
+    {id:'h2',title:'Hidrogênio molecular',chapter:'Atmosfera primitiva',period:'atmosphere',objective:'Forme 3 H₂',formula:'H + H → H₂',hint:'Estabilize hidrogênio molecular para alimentar várias rotas seguintes.',target:'H₂',targetCount:3},
+    {id:'water',title:'Água',chapter:'Atmosfera primitiva',period:'atmosphere',objective:'Forme 3 H₂O',formula:'H₂ + O → H₂O',hint:'Use H₂ acumulado e incorpore oxigênio.',target:'H₂O',targetCount:3},
+    {id:'co',title:'Monóxido de carbono',chapter:'Atmosfera primitiva',period:'atmosphere',objective:'Forme 3 CO',formula:'C + O → CO',hint:'Construa um reservatório de carbono reativo.',target:'CO',targetCount:3},
+    {id:'methane',title:'Metano',chapter:'Atmosfera primitiva',period:'atmosphere',objective:'Forme 2 CH₄',formula:'C + H₂ → CH₄',hint:'Receita simplificada do jogo para um gás reduzido rico em carbono.',target:'CH₄',targetCount:2},
+    {id:'ammonia',title:'Amônia',chapter:'Atmosfera primitiva',period:'atmosphere',objective:'Forme 2 NH₃',formula:'N + H₂ → NH₃',hint:'Receita simplificada do jogo para nitrogênio reduzido.',target:'NH₃',targetCount:2},
+    {id:'phosphate',title:'Fosfato disponível',chapter:'Atmosfera + minerais',period:'mineral',objective:'Disponibilize 4 fosfatos',formula:'P + H₂O → Fosfato',hint:'O fósforo entra no fluxo mineral e será reutilizado na química de nucleotídeos.',target:'Fosfato',targetCount:4},
+
+    {id:'formaldehyde',title:'Formaldeído',chapter:'Precursores orgânicos',period:'organic',objective:'Produza 3 formaldeídos',formula:'CH₄ + O → Formaldeído',hint:'Ative UV ou descarga elétrica para esta abstração fotoquímica/energética.',target:'Formaldeído',targetCount:3},
+    {id:'cyanide',title:'Cianeto',chapter:'Precursores orgânicos',period:'organic',objective:'Produza 3 cianetos',formula:'C + N → Cianeto',hint:'Ative UV ou descarga elétrica para formar o precursor nitrogenado do jogo.',target:'Cianeto',targetCount:3},
+    {id:'sugars',title:'Mistura de açúcares',chapter:'Precursores orgânicos',period:'organic',objective:'Forme 2 pools de açúcares',formula:'2 Formaldeídos → Açúcares',hint:'Um ciclo úmido-seco concentra a química de carbonilas.',target:'Açúcares',targetCount:2},
+    {id:'ribose',title:'Ribose',chapter:'Precursores orgânicos',period:'organic',objective:'Separe 4 riboses',formula:'Açúcares + H₂O → Ribose',hint:'O jogo resume formação e seleção de ribose em uma etapa de concentração.',target:'Ribose',targetCount:4},
+    {id:'glycine',title:'Glicina',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 glicinas',formula:'Formaldeído + Cianeto → Glicina',hint:'⚡, ☀ ou ♨ podem fornecer a condição ambiental desta síntese abstrata.',target:'Glicina',targetCount:2},
+    {id:'aspartate',title:'Aspartato',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 aspartatos',formula:'Glicina + CO → Aspartato',hint:'A etapa representa uma rota de diversificação de aminoácidos do jogo.',target:'Aspartato',targetCount:2},
+    {id:'glutamine',title:'Glutamina',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 glutaminas',formula:'Aspartato + NH₃ → Glutamina',hint:'A rota é uma abstração estratégica e utiliza ambiente hidrotermal.',target:'Glutamina',targetCount:2},
+    {id:'fatty',title:'Ácidos graxos',chapter:'Precursores orgânicos',period:'organic',objective:'Produza 4 ácidos graxos',formula:'CO + H₂ → Ácidos graxos',hint:'Capture ♨ e acumule anfifílicos suficientes para a futura membrana.',target:'Ácidos graxos',targetCount:4},
+
+    {id:'adenine',title:'Adenina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Adenina',formula:'2 Cianetos → Adenina',hint:'O jogo comprime uma rede de química de cianeto em uma descoberta de purina.',target:'Adenina',targetCount:1},
+    {id:'guanine',title:'Guanina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Guanina',formula:'Cianeto + NH₃ → Guanina',hint:'Uma segunda rota nitrogenada abre a outra purina.',target:'Guanina',targetCount:1},
+    {id:'uracil',title:'Uracila',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Uracila',formula:'Aspartato + CO → Uracila',hint:'A receita representa um ramo de pirimidinas do jogo.',target:'Uracila',targetCount:1},
+    {id:'cytosine',title:'Citosina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Citosina',formula:'Uracila + NH₃ → Citosina',hint:'Complete o segundo ramo de pirimidinas.',target:'Citosina',targetCount:1},
+
+    {id:'simple-lipid',title:'Lipídios simples',chapter:'Compartimentalização',period:'protocell',objective:'Forme 2 lipídios simples',formula:'2 Ácidos graxos → Lipídio simples',hint:'Concentre anfifílicos antes da auto-organização da membrana.',target:'Lipídio simples',targetCount:2},
+    {id:'vesicle',title:'Primeira vesícula',chapter:'Compartimentalização',period:'protocell',objective:'Feche a primeira vesícula',formula:'2 Lipídios simples → Vesícula',hint:'Ao concluir esta fase surge pela primeira vez o contorno do compartimento.',target:'Vesícula',targetCount:1},
+    {id:'short-peptide',title:'Peptídeo curto',chapter:'Compartimentalização',period:'protocell',objective:'Forme 2 peptídeos curtos',formula:'Glicina + Aspartato → Peptídeo curto',hint:'Ciclos úmido-seco ou ambiente hidrotermal favorecem a condensação do jogo.',target:'Peptídeo curto',targetCount:2},
+    {id:'catalytic-peptide',title:'Peptídeo catalítico',chapter:'Compartimentalização',period:'protocell',objective:'Forme um peptídeo catalítico',formula:'Peptídeo curto + Glutamina → Peptídeo catalítico',hint:'A cadeia peptídica passa a estabilizar e enriquecer o compartimento.',target:'Peptídeo catalítico',targetCount:1},
+    {id:'protobiont',title:'Protobionte',chapter:'Compartimentalização',period:'protocell',objective:'Integre um protobionte',formula:'Vesícula + Peptídeo catalítico → Protobionte',hint:'Integre membrana e química peptídica em um único sistema.',target:'Protobionte',targetCount:1},
+
+    {id:'adenosine',title:'Adenosina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Adenosina',formula:'Adenina + Ribose → Adenosina',hint:'Una a purina A à ribose.',target:'Adenosina',targetCount:1},
+    {id:'guanosine',title:'Guanosina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Guanosina',formula:'Guanina + Ribose → Guanosina',hint:'Una a purina G à ribose.',target:'Guanosina',targetCount:1},
+    {id:'uridine',title:'Uridina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Uridina',formula:'Uracila + Ribose → Uridina',hint:'Una a pirimidina U à ribose.',target:'Uridina',targetCount:1},
+    {id:'cytidine',title:'Citidina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Citidina',formula:'Citosina + Ribose → Citidina',hint:'Una a pirimidina C à ribose.',target:'Citidina',targetCount:1},
+
+    {id:'amp',title:'AMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 AMP',formula:'Adenosina + Fosfato → AMP',hint:'Fosforile o nucleosídeo de adenina.',target:'AMP',targetCount:2},
+    {id:'gmp',title:'GMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 GMP',formula:'Guanosina + Fosfato → GMP',hint:'Fosforile o nucleosídeo de guanina.',target:'GMP',targetCount:2},
+    {id:'ump',title:'UMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 UMP',formula:'Uridina + Fosfato → UMP',hint:'Fosforile o nucleosídeo de uracila.',target:'UMP',targetCount:2},
+    {id:'cmp',title:'CMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 CMP',formula:'Citidina + Fosfato → CMP',hint:'Fosforile o nucleosídeo de citosina.',target:'CMP',targetCount:2},
+    {id:'au-pair',title:'Pool A/U',chapter:'Nucleotídeos',period:'rna',objective:'Monte o pool A/U',formula:'AMP + UMP → Pool A/U',hint:'Reserve um conjunto complementar A/U.',target:'Pool A/U',targetCount:1},
+    {id:'cg-pair',title:'Pool C/G',chapter:'Nucleotídeos',period:'rna',objective:'Monte o pool C/G',formula:'CMP + GMP → Pool C/G',hint:'Reserve um conjunto complementar C/G.',target:'Pool C/G',targetCount:1},
+    {id:'rna-pool',title:'Pool completo de RNA',chapter:'Nucleotídeos',period:'rna',objective:'Reúna os quatro tipos de nucleotídeo',formula:'Pool A/U + Pool C/G → Pool de RNA',hint:'Os quatro alfabetos do RNA convergem nesta fase.',target:'Pool de RNA',targetCount:1},
+    {id:'activated-nt',title:'Nucleotídeos ativados',chapter:'Nucleotídeos',period:'rna',objective:'Ative o pool de nucleotídeos',formula:'Pool de RNA + Fosfato → Nucleotídeos ativados',hint:'A ativação é uma abstração energética do jogo.',target:'Nucleotídeos ativados',targetCount:2},
+    {id:'activated-triplets',title:'Trinucleotídeos ativados',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 pools de trinucleotídeos',formula:'2 Nucleotídeos ativados → Trinucleotídeos ativados',hint:'Os substratos de três bases preparam a química usada por QT45.',target:'Trinucleotídeos ativados',targetCount:2},
+
+    {id:'rna-oligomer',title:'Oligômero de RNA',chapter:'Mundo de RNA',period:'rna',objective:'Forme 2 oligômeros de RNA',formula:'2 Trinucleotídeos ativados → Oligômero de RNA',hint:'Concentre e ligue unidades menores em cadeias curtas.',target:'Oligômero de RNA',targetCount:2},
+    {id:'rna-template',title:'RNA molde',chapter:'Mundo de RNA',period:'rna',objective:'Monte um RNA molde',formula:'2 Oligômeros de RNA → RNA molde',hint:'A sequência é abstrata; o jogo representa apenas sua montagem funcional.',target:'RNA molde',targetCount:1},
+    {id:'catalytic-rna',title:'RNA catalítico',chapter:'Mundo de RNA',period:'rna',objective:'Obtenha RNA catalítico',formula:'RNA molde + Trinucleotídeos ativados → RNA catalítico',hint:'O gelo eutético concentra RNA e substratos para a etapa catalítica.',target:'RNA catalítico',targetCount:1},
+    {id:'qt45',title:'QT45',chapter:'Mundo de RNA',period:'rna',objective:'Monte QT45',formula:'RNA catalítico + Trinucleotídeos ativados → QT45',hint:'QT45 representa a ribozima polimerase de 45 nucleotídeos no modelo do jogo.',target:'QT45',targetCount:1},
+    {id:'complement',title:'Fita complementar',chapter:'Replicação de RNA',period:'rna',objective:'Sintetize a fita complementar',formula:'QT45 + Trinucleotídeos ativados → Fita complementar',hint:'QT45 permanece ativo enquanto catalisa a síntese dirigida por molde.',target:'Fita complementar',targetCount:1},
+    {id:'qt45-copy',title:'Cópia de QT45',chapter:'Replicação de RNA',period:'rna',objective:'Sintetize uma cópia de QT45',formula:'Fita complementar + Trinucleotídeos ativados → Cópia de QT45',hint:'Complete o segundo braço necessário para o ciclo de replicação.',target:'Cópia de QT45',targetCount:1},
+    {id:'self-replicating-rna',title:'RNA autorreplicante',chapter:'Replicação de RNA',period:'rna',objective:'Feche o ciclo de autorreplicação',formula:'QT45 + Cópia de QT45 → RNA autorreplicante',hint:'O jogo registra um sistema de RNA capaz de produzir as duas direções do ciclo.',target:'RNA autorreplicante',targetCount:1},
+    {id:'replicating-system',title:'Sistema autorreplicante',chapter:'Replicação de RNA',period:'rna',objective:'Integre replicação e compartimento',formula:'Protobionte + RNA autorreplicante → Sistema autorreplicante',hint:'Integre o sistema de RNA ao compartimento prebiótico para concluir a campanha.',target:'Sistema autorreplicante',targetCount:1}
+  ].map(p=>{
+    const recipe=COMBOS.find(r=>r.id===p.id);
+    return {...p,spawnEvents:['☀F',...((recipe&&recipe.events)||[])]};
+  });
 
   const SIZE = {
-    H:54,C:62,O:60,N:58,P:64,'H₂':68,CO:72,'H₂O':72,
-    'Aminoácidos':88,'Ácidos graxos':92,'Nucleotídeos':88,
-    'Peptídeo':94,'Vesícula':100,'QT45':96,'Protobionte':104,'Vida emergente':112
+    H:54,C:62,O:60,N:58,P:64,
+    'H₂':68,'H₂O':72,CO:72,'CH₄':72,'NH₃':72,'Fosfato':78,
+    'Formaldeído':84,'Cianeto':78,'Açúcares':86,'Ribose':82,
+    'Glicina':82,'Aspartato':86,'Glutamina':88,'Ácidos graxos':92,
+    'Adenina':82,'Guanina':82,'Uracila':82,'Citosina':82,
+    'Lipídio simples':94,'Vesícula':102,'Peptídeo curto':96,'Peptídeo catalítico':104,'Protobionte':108,
+    'Adenosina':88,'Guanosina':88,'Uridina':88,'Citidina':88,
+    AMP:74,GMP:74,UMP:74,CMP:74,'Pool A/U':86,'Pool C/G':86,'Pool de RNA':94,
+    'Nucleotídeos ativados':98,'Trinucleotídeos ativados':104,
+    'Oligômero de RNA':104,'RNA molde':106,'RNA catalítico':108,'QT45':104,
+    'Fita complementar':110,'Cópia de QT45':110,'RNA autorreplicante':114,'Sistema autorreplicante':118
   };
 
   let nextId=1;
