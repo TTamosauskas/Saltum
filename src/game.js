@@ -202,6 +202,10 @@
       log:['A sopa primordial desperta vazia. Capture matéria do fluxo ao redor.']
     };
     setPhase(state,0,false,'fresh');
+    const audit=recipeAudit();
+    if(audit.allPhaseTargetsCovered&&audit.missingRecipes.length===0&&audit.aminoCorrect){
+      state.log.unshift('Auditoria de receitas: todas as receitas da campanha estão presentes.');
+    }
     return state;
   }
 
@@ -254,12 +258,35 @@
     return {bubble,available,blocked};
   }
 
-  function captureAtom(state,resource,x,y){
-    if(state.stageComplete||!ATOMS.includes(resource)) return null;
+  function captureMatter(state,resource,x,y){
+    if(state.stageComplete||!SIZE[resource]) return null;
     const bubble=makeBubble(resource,true,x,y);
     state.soup.push(bubble);
     state.lastBornId=bubble.id;
     state.log.unshift(resource+' foi capturado para dentro da sopa.');
+    return bubble;
+  }
+
+  function captureAtom(state,resource,x,y){
+    if(!ATOMS.includes(resource)) return null;
+    return captureMatter(state,resource,x,y);
+  }
+
+  function moveBubble(state,bubbleId,x,y){
+    const bubble=state.soup.find(b=>b.id===bubbleId);
+    if(!bubble||state.stageComplete) return false;
+    bubble.x=Math.max(8,Math.min(92,x));
+    bubble.y=Math.max(8,Math.min(92,y));
+    state.selectedBubbleId=bubbleId;
+    return true;
+  }
+
+  function releaseBubble(state,bubbleId){
+    const index=state.soup.findIndex(b=>b.id===bubbleId);
+    if(index<0||state.stageComplete) return null;
+    const bubble=state.soup.splice(index,1)[0];
+    if(state.selectedBubbleId===bubbleId) state.selectedBubbleId=null;
+    state.log.unshift(bubble.resource+' foi liberado de volta ao fluxo exterior.');
     return bubble;
   }
 
@@ -345,6 +372,30 @@
     return {ok:true,recipe,born};
   }
 
+  function recipeAudit(){
+    const outputs=new Set(COMBOS.map(r=>r.out));
+    const phaseTargets=PHASES.map(p=>({
+      phase:p.id,
+      target:p.target,
+      covered:outputs.has(p.target)
+    }));
+
+    const requiredIds=['h2','water','co','amino','fatty','nt','peptide','vesicle','qt45','protobiont','life'];
+    const ids=new Set(COMBOS.map(r=>r.id));
+    const missingRecipes=requiredIds.filter(id=>!ids.has(id));
+
+    const amino=COMBOS.find(r=>r.id==='amino');
+    const aminoCorrect=!!amino&&amino.a==='N'&&amino.b==='H₂O'&&amino.out==='Aminoácidos'&&
+      Array.isArray(amino.events)&&amino.events.includes('☀')&&amino.events.includes('⚡');
+
+    return {
+      phaseTargets,
+      missingRecipes,
+      allPhaseTargetsCovered:phaseTargets.every(item=>item.covered),
+      aminoCorrect
+    };
+  }
+
   function countResource(state,resource){
     return state.soup.filter(b=>b.resource===resource).length;
   }
@@ -400,8 +451,8 @@
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
     createGame,phase,period,objective,phaseProgress,
-    captureAtom,activateEvent,nextFaller,expireEvent,activeEventIcon,
+    captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
-    nextPhase,restartPhase,jumpToPhase,countResource
+    nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
   };
 })();
