@@ -63,7 +63,7 @@
     {
       id:'h2', title:'Hidrogênio molecular', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme H₂', formula:'H + H → H₂',
-      hint:'Capture dois átomos H que caem do topo e combine-os.',
+      hint:'Capture dois átomos H que atravessam a tela e combine-os.',
       target:'H₂', spawnEvents:[]
     },
     {
@@ -232,9 +232,9 @@
     return {bubble,available,blocked};
   }
 
-  function captureAtom(state,resource){
+  function captureAtom(state,resource,x,y){
     if(state.stageComplete||!ATOMS.includes(resource)) return null;
-    const bubble=makeBubble(resource,true);
+    const bubble=makeBubble(resource,true,x,y);
     state.soup.push(bubble);
     state.lastBornId=bubble.id;
     state.log.unshift(resource+' foi capturado para dentro da sopa.');
