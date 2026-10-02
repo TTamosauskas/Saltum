@@ -1,5 +1,6 @@
 (function () {
   const G=window.SopaGame;
+  const V=window.SopaVisuals;
   const editorMode=window.location.hash==='#editor';
   let state=G.createGame(editorMode);
   let homeOpen=true;
@@ -33,7 +34,27 @@
   }
 
   function bubbleStyle(b){
-    return '--x:'+b.x+'%;--y:'+b.y+'%;--size:'+b.size+'px;--drift:'+b.drift+'ms;--delay:'+b.delay+'ms;--ring:'+ringFor(b.resource)+';';
+    const visual=V.spec(b.resource);
+    return '--x:'+b.x+'%;--y:'+b.y+'%;--visual-w:'+Math.max(56,visual.width)+'px;--visual-h:'+Math.max(56,visual.height)+'px;--drift:'+b.drift+'ms;--delay:'+b.delay+'ms;--ring:'+ringFor(b.resource)+';--visual-accent:'+visual.accent+';';
+  }
+
+  const BASE_PAIR={
+    Adenina:{partner:'Uracila',bonds:2,label:'A–U'},
+    Uracila:{partner:'Adenina',bonds:2,label:'A–U'},
+    Guanina:{partner:'Citosina',bonds:3,label:'G–C'},
+    Citosina:{partner:'Guanina',bonds:3,label:'G–C'}
+  };
+
+  function pairingInfo(b){
+    if(!state.selectedBubbleId||state.selectedBubbleId===b.id) return null;
+    const selected=state.soup.find(item=>item.id===state.selectedBubbleId);
+    if(!selected||!BASE_PAIR[selected.resource]) return null;
+    const rule=BASE_PAIR[selected.resource];
+    if(b.resource!==rule.partner) return null;
+    const dx=selected.x-b.x;
+    const dy=selected.y-b.y;
+    if(Math.sqrt(dx*dx+dy*dy)>30) return null;
+    return rule;
   }
 
   function isCandidate(b){
@@ -45,13 +66,18 @@
     const selected=state.selectedBubbleId===b.id;
     const candidate=isCandidate(b);
     const photolysisEligible=G.photolysisActive(state)&&G.canDecompose(b.resource);
-    return '<button class="organic-bubble'+
+    const pairing=pairingInfo(b);
+    const visual=V.spec(b.resource);
+    return '<button class="organic-bubble molecule-object kind-'+visual.kind+
       (b.isNew?' born':'')+
       (selected?' selected':'')+
       (candidate?' candidate':'')+
+      (pairing?' canonical-pair':'')+
       (photolysisEligible?' photolysis-eligible':'')+
-      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+'">'+
-      '<span class="bubble-shine"></span><strong>'+esc(b.resource)+'</strong>'+
+      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+' · '+esc(visual.family)+'">'+
+      '<span class="molecule-object-art">'+V.render(b.resource,'field')+'</span>'+
+      (pairing?'<span class="hydrogen-bond-hint" aria-hidden="true">'+(pairing.bonds===2?'··':'···')+'<small>'+pairing.label+'</small></span>':'')+
+      '<strong class="resource-label">'+esc(b.resource)+'</strong>'+
       '</button>';
   }
 
@@ -133,9 +159,19 @@
         context.blocked.slice(0,4).map(r=>'<div class="reaction-line blocked"><span>'+esc(partnerName(r,b.resource))+'</span><strong>'+esc(r.label)+'</strong></div>').join('')
       : '';
 
-    return '<section class="info-panel panel">'+
-      '<div class="info-tile selected-info" style="--tile:'+ringFor(b.resource)+'"><span>SELECIONADO</span><strong>'+esc(b.resource)+'</strong><small>matéria na sopa</small></div>'+
-      '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+
+    const visual=V.spec(b.resource);
+    const pairRule=BASE_PAIR[b.resource];
+    const pairNote=pairRule
+      ? '<p class="pairing-note"><strong>Pareamento canônico:</strong> '+esc(pairRule.label)+' · '+pairRule.bonds+' ligações de hidrogênio no modelo didático.</p>'
+      : '';
+    return '<section class="info-panel panel molecular-info-panel">'+
+      '<div class="info-tile selected-info molecular-detail" style="--tile:'+visual.accent+';--detail-accent:'+visual.accent+'">'+
+        '<span>'+V.scienceBadge(b.resource)+'</span>'+
+        '<div class="detail-structure">'+V.render(b.resource,'detail')+'</div>'+
+        '<strong>'+esc(b.resource)+'</strong>'+
+        '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
+      '</div>'+
+      '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
@@ -163,7 +199,7 @@
       return chapter+
         '<button type="button" class="trail-node '+status+'" data-home-phase="'+index+'" '+(clickable?'':'disabled')+'>'+
           '<span class="trail-dot" aria-hidden="true"></span>'+
-          '<span class="trail-node-copy"><small>FASE '+(index+1)+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><em>'+esc(p.formula)+'</em></span>'+
+          '<span class="trail-node-copy"><small>FASE '+(index+1)+' · '+esc(period.name)+'</small><span class="trail-product">'+V.render(p.target,'trail')+'<strong>'+esc(p.title)+'</strong></span><em>'+esc(p.formula)+'</em></span>'+
           '<span class="trail-state">'+esc(state.editorMode&&status==='locked'?'Editor':phaseStateLabel(status))+'</span>'+
         '</button>';
     }).join('');
@@ -235,8 +271,11 @@
       const condition=recipe.events&&recipe.events.length
         ? 'Condições / catalisadores: '+recipe.events.map(conditionLabel).join(' ou ')
         : 'Condições / catalisadores: sem evento obrigatório';
+      const visual=V.spec(recipe.out);
       return '<div class="recipe-catalog-row" style="--recipe-color:'+recipe.color+'">'+
-        '<strong>'+esc(recipe.label)+'</strong><small>'+esc(condition)+'</small></div>';
+        '<span class="recipe-visual">'+V.render(recipe.out,'catalog')+'</span>'+
+        '<span class="recipe-copy"><strong>'+esc(recipe.label)+'</strong><small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small><small>'+esc(condition)+'</small></span>'+
+      '</div>';
     }).join('');
   }
 
@@ -521,19 +560,23 @@
     const end=edgePoint(edges[Math.floor(Math.random()*edges.length)]);
     const duration=11+Math.random()*6;
 
-    node.className='falling-object falling-molecule';
+    const visual=V.spec(resource);
+    node.className='falling-object molecular-faller released-molecule kind-'+visual.kind;
     node.dataset.kind='released';
     node.dataset.value=resource;
     node.dataset.endX=String(end.x);
     node.dataset.endY=String(end.y);
-    node.style.setProperty('--start-x',(clientX-34)+'px');
-    node.style.setProperty('--start-y',(clientY-34)+'px');
+    node.style.setProperty('--start-x',(clientX-Math.max(56,visual.width)/2)+'px');
+    node.style.setProperty('--start-y',(clientY-Math.max(56,visual.height)/2)+'px');
     node.style.setProperty('--end-x',end.x+'px');
     node.style.setProperty('--end-y',end.y+'px');
     node.style.setProperty('--fall-duration',duration+'s');
     node.style.setProperty('--travel-rotate',(Math.random()>.5?1:-1)*(15+Math.random()*45)+'deg');
-    node.innerHTML='<strong>'+esc(resource)+'</strong>';
-    node.setAttribute('aria-label','Recapturar '+resource);
+    node.style.setProperty('--faller-w',Math.max(56,visual.width)+'px');
+    node.style.setProperty('--faller-h',Math.max(56,visual.height)+'px');
+    node.style.setProperty('--visual-accent',visual.accent);
+    node.innerHTML=V.render(resource,'field')+'<strong class="faller-label">'+esc(resource)+'</strong>';
+    node.setAttribute('aria-label','Recapturar '+resource+' · '+visual.family);
 
     node.onclick=()=>{
       if(node.dataset.suppressClick==='1') return;
@@ -571,11 +614,15 @@
       node.setAttribute('aria-label','Ativar evento '+event.name);
       node.onclick=()=>triggerEventObject(node,spec.value);
     }else{
-      node.className='falling-object falling-atom atom-'+spec.value.toLowerCase();
+      const visual=V.spec(spec.value);
+      node.className='falling-object molecular-faller atom-faller kind-'+visual.kind;
       node.dataset.kind='atom';
       node.dataset.value=spec.value;
-      node.innerHTML='<strong>'+esc(spec.value)+'</strong>';
-      node.setAttribute('aria-label','Capturar '+spec.value);
+      node.style.setProperty('--faller-w',Math.max(56,visual.width)+'px');
+      node.style.setProperty('--faller-h',Math.max(56,visual.height)+'px');
+      node.style.setProperty('--visual-accent',visual.accent);
+      node.innerHTML=V.render(spec.value,'field')+'<strong class="faller-label">'+esc(spec.value)+'</strong>';
+      node.setAttribute('aria-label','Capturar '+spec.value+' · '+visual.family);
       node.onclick=()=>{
         if(node.dataset.suppressClick==='1') return;
         absorbMatter(node,spec.value);

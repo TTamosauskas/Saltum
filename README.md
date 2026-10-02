@@ -111,11 +111,43 @@ Antes da vesícula, clicar em uma partícula interrompe seu movimento e a seleci
 
 Depois da vesícula, passa a existir uma fronteira visual entre exterior e interior. Matéria pode ser sugada ou arrastada para dentro; bolhas internas podem ser organizadas e também liberadas novamente.
 
+## Linguagem molecular visual
+
+O campo usa um registro central `RESOURCE_VISUALS` com representação própria para todas as 49 espécies presentes no motor.
+
+Cada entrada declara família, tipo de desenho, largura, altura, cor de identidade, fórmula e se o detalhe representa uma estrutura química ou uma abstração do jogo.
+
+Os átomos usam a convenção visual CPK/Jmol dentro das estruturas: H branco, C cinza, N azul, O vermelho e P laranja.
+
+As famílias evoluem visualmente junto com a campanha:
+
+- átomos usam esferas;
+- H₂, H₂O, CO, CH₄ e NH₃ usam geometrias moleculares simplificadas;
+- ribose e pequenas moléculas orgânicas usam estruturas em bastão;
+- glicina, aspartato e glutamina usam esqueletos próprios;
+- ácidos graxos usam cabeça polar e cauda hidrofóbica;
+- Adenina e Guanina usam duas estruturas de anel; Uracila e Citosina usam uma;
+- bases exibem A/G/C/U de forma redundante com a cor;
+- A–U recebe duas marcas de ligação de hidrogênio e G–C recebe três quando as bases complementares estão próximas;
+- nucleosídeos mostram base + ribose;
+- nucleotídeos mostram fosfato + ribose + base;
+- pools usam representações agregadas identificáveis;
+- peptídeos passam de cadeia curta para dobra catalítica;
+- vesícula e protobionte são representados como compartimentos;
+- produtos de RNA passam de fitas curtas para estruturas dobradas e sistemas replicantes.
+
+A área clicável mantém dimensão mínima de 56 × 56 px independentemente da forma visível.
+
+Ao selecionar uma espécie, o painel científico amplia o SVG e mostra nome, família e fórmula. Moléculas definidas recebem o selo **ESTRUTURA QUÍMICA**; pools, peptídeos abstratos, vesículas e sistemas de RNA recebem **REPRESENTAÇÃO DO JOGO**.
+
+Produtos recém-formados animam a montagem de ligações e componentes. A mesma linguagem aparece em miniatura na trilha e no catálogo de receitas.
+
 ## Arquivos principais
 
 - `index.html`
 - `src/styles.css`
 - `src/game.js`
+- `src/visuals.js`
 - `src/main.js`
 - `src/toasts.mjs`
 
