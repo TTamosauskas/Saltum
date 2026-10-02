@@ -366,7 +366,8 @@
         title:spec.icon+' '+spec.name,
         subtitle:'Evento especial · decomposição',
         benefited:[],
-        harmed:eligible.length?eligible:['Nenhuma molécula composta na sopa'],
+        harmed:[],
+        targets:eligible,
         effects:[spec.description],
         quiet:false
       };
