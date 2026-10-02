@@ -32,6 +32,19 @@
     }
   };
 
+  const PERIODS = {
+    atmosphere: {
+      id:'atmosphere',
+      name:'Atmosfera primitiva',
+      atoms:['C','H','H','O','N']
+    },
+    mineral: {
+      id:'mineral',
+      name:'Atmosfera + minerais',
+      atoms:['C','H','H','O','N','P']
+    }
+  };
+
   const COMBOS = [
     { id:'h2', a:'H', b:'H', out:'H₂', color:'#62d6ff', label:'H + H → H₂' },
     { id:'water', a:'H₂', b:'O', out:'H₂O', color:'#69e0df', label:'H₂ + O → H₂O' },
@@ -48,64 +61,64 @@
 
   const PHASES = [
     {
-      id:'h2', title:'Hidrogênio molecular', chapter:'Química básica',
+      id:'h2', title:'Hidrogênio molecular', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme H₂', formula:'H + H → H₂',
       hint:'Capture dois átomos H que caem do topo e combine-os.',
-      target:'H₂', spawnAtoms:['H'], spawnEvents:[]
+      target:'H₂', spawnEvents:[]
     },
     {
-      id:'water', title:'Água', chapter:'Química básica',
+      id:'water', title:'Água', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme água', formula:'H + H → H₂ · H₂ + O → H₂O',
       hint:'Capture H e O. Construa primeiro H₂ e depois combine com O.',
-      target:'H₂O', spawnAtoms:['H','H','O'], spawnEvents:[]
+      target:'H₂O', spawnEvents:[]
     },
     {
-      id:'co', title:'Carbono reativo', chapter:'Química básica',
+      id:'co', title:'Carbono reativo', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme CO', formula:'C + O → CO',
       hint:'Capture C e O e combine-os dentro da sopa.',
-      target:'CO', spawnAtoms:['C','O'], spawnEvents:[]
+      target:'CO', spawnEvents:[]
     },
     {
-      id:'amino', title:'Primeiros aminoácidos', chapter:'Orgânicos',
+      id:'amino', title:'Primeiros aminoácidos', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Produza aminoácidos', formula:'N + H₂O → Aminoácidos',
       hint:'Construa H₂O com H e O. Capture ☀ ou ⚡ quando aparecer para abrir a janela da reação.',
-      target:'Aminoácidos', spawnAtoms:['H','H','O','N'], spawnEvents:['☀','⚡']
+      target:'Aminoácidos', spawnEvents:['☀','⚡']
     },
     {
-      id:'fatty', title:'Lipídios prebióticos', chapter:'Compartimentalização',
+      id:'fatty', title:'Lipídios prebióticos', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Produza ácidos graxos', formula:'CO + H₂ → Ácidos graxos',
       hint:'Construa CO e H₂. Capture ♨ para ativar a química hidrotermal.',
-      target:'Ácidos graxos', spawnAtoms:['H','H','C','O'], spawnEvents:['♨']
+      target:'Ácidos graxos', spawnEvents:['♨']
     },
     {
-      id:'nt', title:'Nucleotídeos', chapter:'Informação',
+      id:'nt', title:'Nucleotídeos', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Produza nucleotídeos', formula:'P + H₂O → Nucleotídeos',
       hint:'Construa H₂O, capture P e ative ☀ ou ◐.',
-      target:'Nucleotídeos', spawnAtoms:['H','H','O','P'], spawnEvents:['☀','◐']
+      target:'Nucleotídeos', spawnEvents:['☀','◐']
     },
     {
-      id:'peptide', title:'Catálise peptídica', chapter:'Polímeros',
+      id:'peptide', title:'Catálise peptídica', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Forme um peptídeo', formula:'2 Aminoácidos → Peptídeo',
       hint:'Produza dois aminoácidos a partir de H, O e N; depois capture ◐ e combine-os.',
-      target:'Peptídeo', spawnAtoms:['H','H','O','N'], spawnEvents:['☀','⚡','◐']
+      target:'Peptídeo', spawnEvents:['☀','⚡','◐']
     },
     {
-      id:'vesicle', title:'Primeira vesícula', chapter:'Compartimentalização',
+      id:'vesicle', title:'Primeira vesícula', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Forme uma vesícula', formula:'2 Ácidos graxos → Vesícula',
       hint:'Produza dois ácidos graxos a partir de H, C e O. ♨ ativa cada síntese lipídica.',
-      target:'Vesícula', spawnAtoms:['H','H','C','O'], spawnEvents:['♨']
+      target:'Vesícula', spawnEvents:['♨']
     },
     {
-      id:'qt45', title:'RNA catalítico', chapter:'Informação',
+      id:'qt45', title:'RNA catalítico', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Monte QT45', formula:'2 Nucleotídeos → QT45',
       hint:'Produza dois nucleotídeos com H, O e P. ◐ habilita a montagem estratégica de QT45.',
-      target:'QT45', spawnAtoms:['H','H','O','P'], spawnEvents:['☀','◐']
+      target:'QT45', spawnEvents:['☀','◐']
     },
     {
-      id:'integration', title:'Integração prebiótica', chapter:'Vida emergente',
+      id:'integration', title:'Integração prebiótica', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Alcance vida emergente', formula:'Peptídeo + Vesícula → Protobionte · + QT45',
       hint:'Todos os átomos fundamentais podem cair. Reconstrua os três sistemas e integre-os.',
-      target:'Vida emergente', spawnAtoms:['H','H','C','O','N','P'], spawnEvents:['☀','⚡','♨','◐']
+      target:'Vida emergente', spawnEvents:['☀','⚡','♨','◐']
     }
   ];
 
@@ -122,6 +135,7 @@
   function sample(list){ return list[Math.floor(Math.random()*list.length)]; }
   function rand(min,max){ return Math.round(min+Math.random()*(max-min)); }
   function phase(state){ return PHASES[state.phaseIndex]; }
+  function period(state){ return PERIODS[phase(state).period]; }
   function recipeById(recipeId){ return COMBOS.find(r=>r.id===recipeId)||null; }
 
   function makeBubble(resource,isNew,x,y){
@@ -262,7 +276,7 @@
     if(Math.random()<eventProbability){
       return {kind:'event',value:sample(p.spawnEvents)};
     }
-    return {kind:'atom',value:sample(p.spawnAtoms)};
+    return {kind:'atom',value:sample(period(state).atoms)};
   }
 
   function selectBubble(state,bubbleId){
@@ -362,8 +376,8 @@
   }
 
   window.SopaGame={
-    ATOMS,EVENTS,COMBOS,PHASES,
-    createGame,phase,objective,phaseProgress,
+    ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
+    createGame,phase,period,objective,phaseProgress,
     captureAtom,activateEvent,nextFaller,expireEvent,activeEventIcon,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
     nextPhase,restartPhase,jumpToPhase,countResource
