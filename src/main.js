@@ -74,7 +74,7 @@
     if(!context){
       return '<section class="info-panel panel">'+
         '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
-        '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Clique para sugá-lo automaticamente ou arraste o átomo diretamente para dentro da sopa. Depois combine ingredientes por dois cliques em sequência ou por arraste.</p></div>'+
+        '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Clique para sugá-lo automaticamente ou arraste o átomo diretamente para dentro da sopa. Depois combine ingredientes por dois cliques em sequência ou por arraste. Dentro da sopa, arraste livremente para organizar; arraste para fora para liberar uma bolha ao fluxo.</p></div>'+
       '</section>';
     }
 
@@ -112,7 +112,7 @@
     const p=G.phase(state);
     return '<div class="modal-backdrop"><div class="menu-card">'+
       '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">Os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Moléculas construídas permanecem acumuladas ao avançar de fase. Eventos aparecem como losangos luminosos.</p>'+
+      '<p class="menu-intro">Os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Moléculas construídas permanecem acumuladas ao avançar de fase. Bolhas liberadas para fora vagam junto ao fluxo até a troca de fase. Eventos aparecem como losangos luminosos.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
@@ -179,7 +179,7 @@
     return {start:edgePoint(startEdge),end:edgePoint(endEdge)};
   }
 
-  function absorbAtom(node,resource){
+  function absorbMatter(node,resource){
     if(node.dataset.captured==='1') return;
     node.dataset.captured='1';
     const pond=document.getElementById('soupPond');
@@ -212,7 +212,7 @@
     });
 
     setTimeout(()=>{
-      G.captureAtom(state,resource,pondX,pondY);
+      G.captureMatter(state,resource,pondX,pondY);
       node.remove();
       render();
     },690);
@@ -247,7 +247,7 @@
     node.style.animation='traverseMatter 7s linear forwards';
   }
 
-  function captureDraggedAtom(node,resource,clientX,clientY){
+  function captureDraggedMatter(node,resource,clientX,clientY){
     const pond=document.getElementById('soupPond');
     if(!pond) return;
     const rect=pond.getBoundingClientRect();
@@ -261,7 +261,7 @@
     node.style.filter='brightness(1.9)';
 
     setTimeout(()=>{
-      G.captureAtom(state,resource,pondX,pondY);
+      G.captureMatter(state,resource,pondX,pondY);
       node.remove();
       render();
     },240);
@@ -322,7 +322,7 @@
       const inside=rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
 
       if(inside){
-        captureDraggedAtom(node,resource,event.clientX,event.clientY);
+        captureDraggedMatter(node,resource,event.clientX,event.clientY);
       }else{
         resumeIncomingAtom(node);
         setTimeout(()=>{node.dataset.suppressClick='';},0);
@@ -331,6 +331,38 @@
 
     node.addEventListener('pointerup',finish);
     node.addEventListener('pointercancel',finish);
+  }
+
+  function createReleasedMatter(resource,clientX,clientY){
+    const layer=document.getElementById('falling-layer');
+    if(!layer) return;
+
+    const node=document.createElement('button');
+    const edges=[0,1,2,3];
+    const end=edgePoint(edges[Math.floor(Math.random()*edges.length)]);
+    const duration=11+Math.random()*6;
+
+    node.className='falling-object falling-molecule';
+    node.dataset.kind='released';
+    node.dataset.value=resource;
+    node.dataset.endX=String(end.x);
+    node.dataset.endY=String(end.y);
+    node.style.setProperty('--start-x',(clientX-34)+'px');
+    node.style.setProperty('--start-y',(clientY-34)+'px');
+    node.style.setProperty('--end-x',end.x+'px');
+    node.style.setProperty('--end-y',end.y+'px');
+    node.style.setProperty('--fall-duration',duration+'s');
+    node.style.setProperty('--travel-rotate',(Math.random()>.5?1:-1)*(15+Math.random()*45)+'deg');
+    node.innerHTML='<strong>'+esc(resource)+'</strong>';
+    node.setAttribute('aria-label','Recapturar '+resource);
+
+    node.onclick=()=>{
+      if(node.dataset.suppressClick==='1') return;
+      absorbMatter(node,resource);
+    };
+    enableIncomingAtomDrag(node,resource);
+    node.addEventListener('animationend',()=>node.remove(),{once:true});
+    layer.appendChild(node);
   }
 
   function createFaller(){
@@ -367,7 +399,7 @@
       node.setAttribute('aria-label','Capturar '+spec.value);
       node.onclick=()=>{
         if(node.dataset.suppressClick==='1') return;
-        absorbAtom(node,spec.value);
+        absorbMatter(node,spec.value);
       };
       enableIncomingAtomDrag(node,spec.value);
     }
@@ -467,9 +499,27 @@
       const recipes=G.availableCombos(state,sourceId,bubbleTarget.dataset.bubbleId);
       if(recipes.length===1){
         G.combine(state,sourceId,bubbleTarget.dataset.bubbleId,recipes[0].id);
-      }else if(recipes.length>1){
-        pendingChoice={sourceId,targetId:bubbleTarget.dataset.bubbleId,recipes};
+        render();
+        return;
       }
+      if(recipes.length>1){
+        pendingChoice={sourceId,targetId:bubbleTarget.dataset.bubbleId,recipes};
+        render();
+        return;
+      }
+    }
+
+    const pond=document.getElementById('soupPond');
+    const pondRect=pond&&pond.getBoundingClientRect();
+    const inside=pondRect&&event.clientX>=pondRect.left&&event.clientX<=pondRect.right&&event.clientY>=pondRect.top&&event.clientY<=pondRect.bottom;
+
+    if(inside){
+      const x=((event.clientX-pondRect.left)/pondRect.width)*100;
+      const y=((event.clientY-pondRect.top)/pondRect.height)*100;
+      G.moveBubble(state,sourceId,x,y);
+    }else{
+      const released=G.releaseBubble(state,sourceId);
+      if(released) createReleasedMatter(released.resource,event.clientX,event.clientY);
     }
     render();
   }
