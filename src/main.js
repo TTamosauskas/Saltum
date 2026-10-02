@@ -161,6 +161,70 @@
     state.soup.forEach(b=>{b.isNew=false;});
   }
 
+  function edgePoint(edge){
+    const w=window.innerWidth;
+    const h=window.innerHeight;
+    const pad=88;
+    if(edge===0) return {x:Math.random()*w,y:-pad};
+    if(edge===1) return {x:w+pad,y:Math.random()*h};
+    if(edge===2) return {x:Math.random()*w,y:h+pad};
+    return {x:-pad,y:Math.random()*h};
+  }
+
+  function createTrajectory(){
+    const startEdge=Math.floor(Math.random()*4);
+    const options=[0,1,2,3].filter(edge=>edge!==startEdge);
+    const endEdge=options[Math.floor(Math.random()*options.length)];
+    return {start:edgePoint(startEdge),end:edgePoint(endEdge)};
+  }
+
+  function absorbAtom(node,resource){
+    if(node.dataset.captured==='1') return;
+    node.dataset.captured='1';
+    const pond=document.getElementById('soupPond');
+    if(!pond) return;
+
+    const from=node.getBoundingClientRect();
+    const to=pond.getBoundingClientRect();
+    const targetX=to.left+to.width/2;
+    const targetY=to.top+to.height/2;
+
+    node.style.animation='none';
+    node.style.position='fixed';
+    node.style.left=from.left+'px';
+    node.style.top=from.top+'px';
+    node.style.width=from.width+'px';
+    node.style.height=from.height+'px';
+    node.style.transform='none';
+    node.style.transition='left .68s cubic-bezier(.2,.82,.2,1), top .68s cubic-bezier(.2,.82,.2,1), transform .68s cubic-bezier(.2,.82,.2,1), opacity .62s ease, filter .62s ease';
+    node.style.pointerEvents='none';
+
+    requestAnimationFrame(()=>{
+      node.classList.add('being-absorbed');
+      node.style.left=(targetX-from.width/2)+'px';
+      node.style.top=(targetY-from.height/2)+'px';
+      node.style.transform='scale(.08) rotate(210deg)';
+      node.style.opacity='.15';
+      node.style.filter='brightness(1.9)';
+    });
+
+    setTimeout(()=>{
+      G.captureAtom(state,resource);
+      node.remove();
+      render();
+    },690);
+  }
+
+  function triggerEventObject(node,icon){
+    if(node.dataset.captured==='1') return;
+    node.dataset.captured='1';
+    G.activateEvent(state,icon);
+    node.style.pointerEvents='none';
+    node.classList.add('event-triggered');
+    setTimeout(()=>node.remove(),420);
+    render();
+  }
+
   function createFaller(){
     if(state.stageComplete||menuOpen) return;
     const layer=document.getElementById('falling-layer');
@@ -168,10 +232,14 @@
 
     const spec=G.nextFaller(state);
     const node=document.createElement('button');
-    const x=6+Math.random()*88;
-    const duration=9+Math.random()*5;
-    node.style.setProperty('--fall-x',x+'vw');
+    const path=createTrajectory();
+    const duration=10+Math.random()*7;
+    node.style.setProperty('--start-x',path.start.x+'px');
+    node.style.setProperty('--start-y',path.start.y+'px');
+    node.style.setProperty('--end-x',path.end.x+'px');
+    node.style.setProperty('--end-y',path.end.y+'px');
     node.style.setProperty('--fall-duration',duration+'s');
+    node.style.setProperty('--travel-rotate',(Math.random()>.5?1:-1)*(20+Math.random()*55)+'deg');
 
     if(spec.kind==='event'){
       const event=G.EVENTS[spec.value];
@@ -179,25 +247,16 @@
       node.dataset.kind='event';
       node.dataset.value=spec.value;
       node.innerHTML='<span>'+event.icon+'</span><small>'+esc(event.name)+'</small>';
-      node.setAttribute('aria-label','Evento '+event.name);
+      node.setAttribute('aria-label','Ativar evento '+event.name);
+      node.onclick=()=>triggerEventObject(node,spec.value);
     }else{
       node.className='falling-object falling-atom atom-'+spec.value.toLowerCase();
       node.dataset.kind='atom';
       node.dataset.value=spec.value;
       node.innerHTML='<strong>'+esc(spec.value)+'</strong>';
       node.setAttribute('aria-label','Capturar '+spec.value);
+      node.onclick=()=>absorbAtom(node,spec.value);
     }
-
-    node.onclick=function(){
-      if(node.dataset.kind==='atom'){
-        G.captureAtom(state,node.dataset.value);
-      }else{
-        G.activateEvent(state,node.dataset.value);
-      }
-      node.classList.add('captured');
-      setTimeout(()=>node.remove(),180);
-      render();
-    };
 
     node.addEventListener('animationend',()=>node.remove(),{once:true});
     layer.appendChild(node);
