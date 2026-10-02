@@ -2,6 +2,13 @@
   const ATOMS = ['H','C','O','N','P'];
 
   const EVENTS = {
+    '☀F': {
+      icon:'☀',
+      name:'Fotólise',
+      className:'event-photolysis',
+      duration:0,
+      description:'Fotólise ativa: escolha uma molécula composta para desmontá-la em seus precursores.'
+    },
     '☀': {
       icon:'☀',
       name:'UV',
@@ -64,61 +71,61 @@
       id:'h2', title:'Hidrogênio molecular', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme H₂ duas vezes', formula:'H + H → H₂',
       hint:'Capture H do fluxo e repita a união até completar 2 H₂.',
-      target:'H₂', targetCount:2, spawnEvents:[]
+      target:'H₂', targetCount:2, spawnEvents:['☀F']
     },
     {
       id:'water', title:'Água', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme água duas vezes', formula:'H + H → H₂ · H₂ + O → H₂O',
       hint:'H₂ acumulado da fase anterior pode ser aproveitado. Complete 2 H₂O.',
-      target:'H₂O', targetCount:2, spawnEvents:[]
+      target:'H₂O', targetCount:2, spawnEvents:['☀F']
     },
     {
       id:'co', title:'Carbono reativo', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme CO duas vezes', formula:'C + O → CO',
       hint:'Capture C e O do mesmo fluxo atmosférico e complete 2 CO.',
-      target:'CO', targetCount:2, spawnEvents:[]
+      target:'CO', targetCount:2, spawnEvents:['☀F']
     },
     {
       id:'amino', title:'Primeiros aminoácidos', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Produza aminoácidos três vezes', formula:'N + H₂O → Aminoácidos',
       hint:'Água acumulada pode ser reutilizada como precursor. Capture ☀ ou ⚡ e complete 3 aminoácidos.',
-      target:'Aminoácidos', targetCount:3, spawnEvents:['☀','⚡']
+      target:'Aminoácidos', targetCount:3, spawnEvents:['☀F','☀','⚡']
     },
     {
       id:'fatty', title:'Lipídios prebióticos', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Produza ácidos graxos três vezes', formula:'CO + H₂ → Ácidos graxos',
       hint:'Aproveite CO e H₂ já construídos, capture ♨ e complete 3 ácidos graxos.',
-      target:'Ácidos graxos', targetCount:3, spawnEvents:['♨']
+      target:'Ácidos graxos', targetCount:3, spawnEvents:['☀F','♨']
     },
     {
       id:'nt', title:'Nucleotídeos', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Produza nucleotídeos três vezes', formula:'P + H₂O → Nucleotídeos',
       hint:'P entra no fluxo deste período. Combine com H₂O sob ☀ ou ◐ até completar 3 nucleotídeos.',
-      target:'Nucleotídeos', targetCount:3, spawnEvents:['☀','◐']
+      target:'Nucleotídeos', targetCount:3, spawnEvents:['☀F','☀','◐']
     },
     {
       id:'peptide', title:'Catálise peptídica', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Forme quatro peptídeos', formula:'2 Aminoácidos → Peptídeo',
       hint:'Use aminoácidos acumulados e complete 4 peptídeos sob ◐.',
-      target:'Peptídeo', targetCount:4, spawnEvents:['☀','⚡','◐']
+      target:'Peptídeo', targetCount:4, spawnEvents:['☀F','☀','⚡','◐']
     },
     {
       id:'vesicle', title:'Primeira vesícula', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Forme quatro vesículas', formula:'2 Ácidos graxos → Vesícula',
       hint:'Use ácidos graxos acumulados e complete 4 vesículas.',
-      target:'Vesícula', targetCount:4, spawnEvents:['♨']
+      target:'Vesícula', targetCount:4, spawnEvents:['☀F','♨']
     },
     {
       id:'qt45', title:'RNA catalítico', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Monte quatro QT45', formula:'2 Nucleotídeos → QT45',
       hint:'Use nucleotídeos acumulados e complete 4 QT45 sob ◐.',
-      target:'QT45', targetCount:4, spawnEvents:['☀','◐']
+      target:'QT45', targetCount:4, spawnEvents:['☀F','☀','◐']
     },
     {
       id:'integration', title:'Integração prebiótica', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Integre quatro sistemas de vida emergente', formula:'Peptídeo + Vesícula → Protobionte · + QT45',
       hint:'As quatro unidades acumuladas de Peptídeo, Vesícula e QT45 alimentam a integração final.',
-      target:'Vida emergente', targetCount:4, spawnEvents:['☀','⚡','♨','◐']
+      target:'Vida emergente', targetCount:4, spawnEvents:['☀F','☀','⚡','♨','◐']
     }
   ];
 
@@ -166,6 +173,7 @@
     state.selectedBubbleId=null;
     state.stageComplete=false;
     state.activeEvent=null;
+    state.photolysisActive=false;
     state.lastBornId=null;
 
     if(mode==='restore' && state.phaseSnapshots[index]){
@@ -199,6 +207,7 @@
       stageComplete:false,
       winner:false,
       activeEvent:null,
+      photolysisActive:false,
       lastBornId:null,
       lastEvent:null,
       log:['A sopa primordial desperta vazia. Capture matéria do fluxo ao redor.']
@@ -310,9 +319,61 @@
     return null;
   }
 
+  function decompositionRecipe(resource){
+    return COMBOS.find(recipe=>recipe.out===resource)||null;
+  }
+
+  function canDecompose(resource){
+    return !!decompositionRecipe(resource);
+  }
+
+  function photolysisActive(state){
+    return !!state.photolysisActive;
+  }
+
+  function decomposeBubble(state,bubbleId){
+    if(!state.photolysisActive||state.stageComplete) return {ok:false};
+    const index=state.soup.findIndex(b=>b.id===bubbleId);
+    if(index<0) return {ok:false};
+    const bubble=state.soup[index];
+    const recipe=decompositionRecipe(bubble.resource);
+    if(!recipe) return {ok:false};
+
+    state.soup.splice(index,1);
+    const spread=5;
+    const first=makeBubble(recipe.a,true,Math.max(8,bubble.x-spread),Math.max(8,bubble.y-2));
+    const second=makeBubble(recipe.b,true,Math.min(92,bubble.x+spread),Math.min(92,bubble.y+2));
+    state.soup.push(first,second);
+    state.photolysisActive=false;
+    state.selectedBubbleId=null;
+    state.lastBornId=second.id;
+    state.log.unshift('Fotólise: '+bubble.resource+' → '+recipe.a+' + '+recipe.b+'.');
+    return {ok:true,recipe,parts:[first,second]};
+  }
+
   function activateEvent(state,icon){
     if(state.stageComplete||!EVENTS[icon]) return null;
     const spec=EVENTS[icon];
+
+    if(icon==='☀F'){
+      state.activeEvent=null;
+      state.photolysisActive=true;
+      state.selectedBubbleId=null;
+      const eligible=state.soup.filter(b=>canDecompose(b.resource)).map(b=>b.resource);
+      const event={
+        id:nextEventId++,
+        icon:spec.icon,
+        title:spec.icon+' '+spec.name,
+        subtitle:'Evento especial · decomposição',
+        benefited:[],
+        harmed:eligible.length?eligible:['Nenhuma molécula composta na sopa'],
+        effects:[spec.description],
+        quiet:false
+      };
+      state.lastEvent=event;
+      state.log.unshift('☀ Fotólise ativada. '+eligible.length+' bolha(s) elegível(is) para decomposição.');
+      return event;
+    }
     const now=Date.now();
     state.activeEvent={
       icon,
@@ -481,6 +542,7 @@
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
     createGame,phase,period,objective,phaseProgress,phaseStatus,
     captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
+    photolysisActive,canDecompose,decomposeBubble,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
     nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
   };
