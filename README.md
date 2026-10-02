@@ -2,63 +2,83 @@
 
 Protótipo web estático e singleplayer de **Sopa Primordial**.
 
-## Executar
-
-Abra `index.html` diretamente no navegador ou publique a raiz do repositório em qualquer hospedagem estática.
-
 ## Fluxo de matéria
 
-Cada fase começa com a Sopa Primordial vazia.
+A matéria do período atravessa continuamente a tela por várias direções.
 
-A matéria do período atravessa continuamente a tela por várias direções. O fluxo pertence ao período, e não à receita específica da fase.
-
-Durante **Atmosfera primitiva**, o conjunto é sempre:
+Durante **Atmosfera primitiva**, o fluxo é sempre:
 
 `C, H, H, O, N`
 
-O hidrogênio aparece com peso duplo. Cabe ao jogador identificar e capturar apenas os átomos úteis para o objetivo atual.
-
-A partir de **Atmosfera + minerais**, fósforo entra no fluxo:
+Durante **Atmosfera + minerais**, fósforo entra no conjunto:
 
 `C, H, H, O, N, P`
 
+O fluxo pertence ao período, e cabe ao jogador selecionar a matéria útil para a receita atual.
+
 ## Captura
 
-Ao clicar em um átomo em movimento, ele interrompe sua trajetória e é sugado para um ponto dentro da Sopa Primordial.
+Átomos podem ser capturados de duas formas.
 
-A bolha interna só é criada quando a animação de absorção chega à poça, exatamente no ponto final da trajetória.
+Um clique interrompe a trajetória e suga o átomo automaticamente para um ponto dentro da Sopa Primordial.
+
+Também é possível arrastar o átomo em movimento e soltá-lo diretamente dentro da poça. A sopa recebe destaque verde quando funciona como destino válido.
+
+A bolha só passa a existir dentro da sopa ao final da captura.
 
 ## Reações
 
-Ingredientes compatíveis podem reagir de duas formas:
+Ingredientes compatíveis podem reagir por dois cliques em sequência ou por drag-and-drop dentro da sopa.
 
-- clique em duas bolhas compatíveis em sequência;
-- arraste uma bolha sobre outra.
+O produto emerge no ponto da reação e permanece disponível como matéria acumulada.
 
-Quando a combinação é válida, os reagentes desaparecem e o produto emerge dentro da sopa.
+## Progressão persistente
+
+A sopa funciona como um sistema cumulativo ao longo da campanha.
+
+Ao concluir uma fase e avançar, átomos livres deixam o tabuleiro, enquanto moléculas e estruturas construídas permanecem dentro da sopa. Esses produtos podem ser usados como precursores em fases posteriores.
+
+Reiniciar uma fase restaura o checkpoint molecular do início daquela etapa.
+
+## Repetição por complexidade
+
+Cada fase pede várias ocorrências da receita principal:
+
+- fases básicas: 2 repetições;
+- fases intermediárias: 3 repetições;
+- fases complexas: 4 repetições.
+
+A sequência atual é:
+
+1. H₂ ×2
+2. H₂O ×2
+3. CO ×2
+4. Aminoácidos ×3
+5. Ácidos graxos ×3
+6. Nucleotídeos ×3
+7. Peptídeos ×4
+8. Vesículas ×4
+9. QT45 ×4
+10. Vida emergente ×4
+
+Isso permite que produtos de fases anteriores sejam consumidos ou combinados nas etapas seguintes.
 
 ## Eventos
 
-Eventos também atravessam a tela por várias direções, porém aparecem como losangos luminosos.
+Eventos atravessam a tela como losangos luminosos e nunca entram na sopa.
 
-Eles nunca entram na sopa. Ao clicar em um evento, o losango se desfaz e dispara seu efeito temporário:
+Ao clicar em um evento, ele dispara seu efeito temporário:
 
 - `☀ UV` abre uma janela fotoquímica para aminoácidos e nucleotídeos;
 - `⚡ Descarga elétrica` abre uma janela energética para aminoácidos;
 - `♨ Hidrotermal` abre a síntese de ácidos graxos;
 - `◐ Úmido-seco` abre nucleotídeos, peptídeos e a montagem estratégica de QT45.
 
-O efeito ativo aparece apenas como um pequeno indicador temporário e também é anunciado por React Toastify.
+O evento ativo aparece apenas como um pequeno indicador temporário e também é anunciado por React Toastify.
 
-## Campanha
+## Interface
 
-A campanha atual possui dez fases, da formação de H₂ até a integração prebiótica.
-
-As primeiras fases pertencem à Atmosfera primitiva e recebem sempre o mesmo conjunto elemental, mesmo quando parte dele é irrelevante à receita. Fases posteriores acrescentam minerais ao período e passam a incluir P.
-
-Moléculas e estruturas maiores precisam ser construídas dentro da sopa a partir da matéria capturada.
-
-As fases finais são abstrações estratégicas de jogo.
+A legenda e a contagem de bolhas dentro da poça foram removidas. A própria sopa funciona como superfície visual principal.
 
 ## Arquivos principais
 
