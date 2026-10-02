@@ -185,10 +185,12 @@
     checkPhaseComplete(state);
   }
 
-  function createGame(){
+  function createGame(editorMode){
     const state={
       phaseIndex:0,
-      unlockedPhase:0,
+      unlockedPhase:editorMode?PHASES.length-1:0,
+      completedPhases:[],
+      editorMode:!!editorMode,
       phaseTurn:1,
       totalTurn:1,
       soup:[],
@@ -421,6 +423,7 @@
     const p=phase(state);
     if(countResource(state,p.target)>=p.targetCount){
       state.stageComplete=true;
+      if(!state.completedPhases.includes(state.phaseIndex)) state.completedPhases.push(state.phaseIndex);
       state.unlockedPhase=Math.max(state.unlockedPhase,Math.min(PHASES.length-1,state.phaseIndex+1));
       state.activeEvent=null;
       state.selectedBubbleId=null;
@@ -443,14 +446,22 @@
   }
 
   function jumpToPhase(state,index){
-    if(index<0||index>state.unlockedPhase||index>=PHASES.length) return false;
+    if(index<0||index>=PHASES.length) return false;
+    if(!state.editorMode&&index>state.unlockedPhase) return false;
     setPhase(state,index,true,state.phaseSnapshots[index]?'restore':'fresh');
     return true;
   }
 
+  function phaseStatus(state,index){
+    if(index===state.phaseIndex) return 'current';
+    if(state.completedPhases.includes(index)) return 'completed';
+    if(state.editorMode||index<=state.unlockedPhase) return 'available';
+    return 'locked';
+  }
+
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
-    createGame,phase,period,objective,phaseProgress,
+    createGame,phase,period,objective,phaseProgress,phaseStatus,
     captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
     nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
