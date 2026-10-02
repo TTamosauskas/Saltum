@@ -115,3 +115,26 @@ Ao clicar em um evento, ele executa sua ação catalítica e é anunciado por Re
 - `src/toasts.mjs`
 
 O jogo permanece totalmente estático para distribuição via GitHub Pages.
+
+
+## Fotólise
+
+A campanha também inclui um evento especial de decomposição:
+
+`☀ Fotólise`
+
+Ele usa o mesmo símbolo solar do UV, porém aparece como um losango com borda e brilho vermelho intenso para ficar visualmente distinto do UV normal.
+
+Ao clicar no losango, a Fotólise fica armada. Todas as bolhas que foram formadas por alguma receita recebem um contorno vermelho intenso.
+
+O próximo clique em uma dessas bolhas desmonta a molécula em seus dois precursores imediatos e encerra a Fotólise.
+
+Exemplos:
+
+- `H₂ → H + H`
+- `H₂O → H₂ + O`
+- `CO → C + O`
+- `Aminoácidos → N + H₂O`
+- `Vesícula → Ácidos graxos + Ácidos graxos`
+
+A decomposição segue as receitas do próprio jogo e funciona como uma abstração estratégica de fotólise.
