@@ -187,8 +187,10 @@
 
     const from=node.getBoundingClientRect();
     const to=pond.getBoundingClientRect();
-    const targetX=to.left+to.width/2;
-    const targetY=to.top+to.height/2;
+    const pondX=28+Math.random()*44;
+    const pondY=28+Math.random()*44;
+    const targetX=to.left+to.width*(pondX/100);
+    const targetY=to.top+to.height*(pondY/100);
 
     node.style.animation='none';
     node.style.position='fixed';
@@ -210,7 +212,7 @@
     });
 
     setTimeout(()=>{
-      G.captureAtom(state,resource);
+      G.captureAtom(state,resource,pondX,pondY);
       node.remove();
       render();
     },690);
