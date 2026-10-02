@@ -117,12 +117,12 @@
     { id:'activated-nt', a:'Pool de RNA', b:'Fosfato', out:'Nucleotídeos ativados', events:['◐'], color:'#9e91ff', label:'Pool de RNA + Fosfato → Nucleotídeos ativados' },
     { id:'activated-triplets', a:'Nucleotídeos ativados', b:'Nucleotídeos ativados', out:'Trinucleotídeos ativados', events:['◐','❄'], color:'#a58dff', label:'Nucleotídeos ativados + Nucleotídeos ativados → Trinucleotídeos ativados' },
 
-    { id:'rna-oligomer', a:'Trinucleotídeos ativados', b:'Trinucleotídeos ativados', out:'Oligômero de RNA', events:['◐','❄'], color:'#aa8cff', label:'Trinucleotídeos ativados + Trinucleotídeos ativados → Oligômero de RNA' },
+    { id:'rna-oligomer', a:'Trinucleotídeos ativados', b:'H₂O', out:'Oligômero de RNA', events:['◐','❄'], preserve:['Trinucleotídeos ativados'], color:'#aa8cff', label:'Trinucleotídeos ativados + H₂O → Oligômero de RNA' },
     { id:'rna-template', a:'Oligômero de RNA', b:'Oligômero de RNA', out:'RNA molde', events:['◐','❄'], color:'#ae8eff', label:'Oligômero de RNA + Oligômero de RNA → RNA molde' },
-    { id:'catalytic-rna', a:'RNA molde', b:'Trinucleotídeos ativados', out:'RNA catalítico', events:['❄'], color:'#b08cff', label:'RNA molde + Trinucleotídeos ativados → RNA catalítico' },
-    { id:'qt45', a:'RNA catalítico', b:'Trinucleotídeos ativados', out:'QT45', events:['❄'], color:'#b895ff', label:'RNA catalítico + Trinucleotídeos ativados → QT45' },
-    { id:'complement', a:'QT45', b:'Trinucleotídeos ativados', out:'Fita complementar', events:['❄'], preserve:['QT45'], color:'#c09cff', label:'QT45 + Trinucleotídeos ativados → Fita complementar' },
-    { id:'qt45-copy', a:'Fita complementar', b:'Trinucleotídeos ativados', out:'Cópia de QT45', events:['❄'], color:'#c8a4ff', label:'Fita complementar + Trinucleotídeos ativados → Cópia de QT45' },
+    { id:'catalytic-rna', a:'RNA molde', b:'Trinucleotídeos ativados', out:'RNA catalítico', events:['❄'], preserve:['Trinucleotídeos ativados'], color:'#b08cff', label:'RNA molde + Trinucleotídeos ativados → RNA catalítico' },
+    { id:'qt45', a:'RNA catalítico', b:'Trinucleotídeos ativados', out:'QT45', events:['❄'], preserve:['Trinucleotídeos ativados'], color:'#b895ff', label:'RNA catalítico + Trinucleotídeos ativados → QT45' },
+    { id:'complement', a:'QT45', b:'Trinucleotídeos ativados', out:'Fita complementar', events:['❄'], preserve:['QT45','Trinucleotídeos ativados'], color:'#c09cff', label:'QT45 + Trinucleotídeos ativados → Fita complementar' },
+    { id:'qt45-copy', a:'Fita complementar', b:'Trinucleotídeos ativados', out:'Cópia de QT45', events:['❄'], preserve:['Trinucleotídeos ativados'], color:'#c8a4ff', label:'Fita complementar + Trinucleotídeos ativados → Cópia de QT45' },
     { id:'self-replicating-rna', a:'QT45', b:'Cópia de QT45', out:'RNA autorreplicante', events:['❄'], color:'#d0afff', label:'QT45 + Cópia de QT45 → RNA autorreplicante' },
     { id:'replicating-system', a:'Protobionte', b:'RNA autorreplicante', out:'Sistema autorreplicante', color:'#ffffff', label:'Protobionte + RNA autorreplicante → Sistema autorreplicante' }
   ];
@@ -141,17 +141,17 @@
     {id:'ribose',title:'Ribose',chapter:'Precursores orgânicos',period:'organic',objective:'Separe 4 riboses',formula:'Açúcares + H₂O → Ribose',hint:'O jogo resume formação e seleção de ribose em uma etapa de concentração.',target:'Ribose',targetCount:4},
     {id:'glycine',title:'Glicina',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 glicinas',formula:'Formaldeído + Cianeto → Glicina',hint:'⚡, ☀ ou ♨ podem fornecer a condição ambiental desta síntese abstrata.',target:'Glicina',targetCount:2},
     {id:'aspartate',title:'Aspartato',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 aspartatos',formula:'Glicina + CO → Aspartato',hint:'A etapa representa uma rota de diversificação de aminoácidos do jogo.',target:'Aspartato',targetCount:2},
-    {id:'glutamine',title:'Glutamina',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 glutaminas',formula:'Aspartato + NH₃ → Glutamina',hint:'A rota é uma abstração estratégica e utiliza ambiente hidrotermal.',target:'Glutamina',targetCount:2},
+    {id:'glutamine',title:'Glutamina',chapter:'Aminoácidos',period:'organic',objective:'Produza Glutamina',formula:'Aspartato + NH₃ → Glutamina',hint:'A rota é uma abstração estratégica e utiliza ambiente hidrotermal.',target:'Glutamina',targetCount:1},
     {id:'fatty',title:'Ácidos graxos',chapter:'Precursores orgânicos',period:'organic',objective:'Produza 4 ácidos graxos',formula:'CO + H₂ → Ácidos graxos',hint:'Capture ♨ e acumule anfifílicos suficientes para a futura membrana.',target:'Ácidos graxos',targetCount:4},
 
     {id:'adenine',title:'Adenina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Adenina',formula:'2 Cianetos → Adenina',hint:'O jogo comprime uma rede de química de cianeto em uma descoberta de purina.',target:'Adenina',targetCount:1},
     {id:'guanine',title:'Guanina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Guanina',formula:'Cianeto + NH₃ → Guanina',hint:'Uma segunda rota nitrogenada abre a outra purina.',target:'Guanina',targetCount:1},
-    {id:'uracil',title:'Uracila',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Uracila',formula:'Aspartato + CO → Uracila',hint:'A receita representa um ramo de pirimidinas do jogo.',target:'Uracila',targetCount:1},
+    {id:'uracil',title:'Uracila',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza 2 Uracilas',formula:'Aspartato + CO → Uracila',hint:'A receita representa um ramo de pirimidinas do jogo.',target:'Uracila',targetCount:2},
     {id:'cytosine',title:'Citosina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Citosina',formula:'Uracila + NH₃ → Citosina',hint:'Complete o segundo ramo de pirimidinas.',target:'Citosina',targetCount:1},
 
     {id:'simple-lipid',title:'Lipídios simples',chapter:'Compartimentalização',period:'protocell',objective:'Forme 2 lipídios simples',formula:'2 Ácidos graxos → Lipídio simples',hint:'Concentre anfifílicos antes da auto-organização da membrana.',target:'Lipídio simples',targetCount:2},
     {id:'vesicle',title:'Primeira vesícula',chapter:'Compartimentalização',period:'protocell',objective:'Feche a primeira vesícula',formula:'2 Lipídios simples → Vesícula',hint:'Ao concluir esta fase surge pela primeira vez o contorno do compartimento.',target:'Vesícula',targetCount:1},
-    {id:'short-peptide',title:'Peptídeo curto',chapter:'Compartimentalização',period:'protocell',objective:'Forme 2 peptídeos curtos',formula:'Glicina + Aspartato → Peptídeo curto',hint:'Ciclos úmido-seco ou ambiente hidrotermal favorecem a condensação do jogo.',target:'Peptídeo curto',targetCount:2},
+    {id:'short-peptide',title:'Peptídeo curto',chapter:'Compartimentalização',period:'protocell',objective:'Forme um peptídeo curto',formula:'Glicina + Aspartato → Peptídeo curto',hint:'Ciclos úmido-seco ou ambiente hidrotermal favorecem a condensação do jogo.',target:'Peptídeo curto',targetCount:1},
     {id:'catalytic-peptide',title:'Peptídeo catalítico',chapter:'Compartimentalização',period:'protocell',objective:'Forme um peptídeo catalítico',formula:'Peptídeo curto + Glutamina → Peptídeo catalítico',hint:'A cadeia peptídica passa a estabilizar e enriquecer o compartimento.',target:'Peptídeo catalítico',targetCount:1},
     {id:'protobiont',title:'Protobionte',chapter:'Compartimentalização',period:'protocell',objective:'Integre um protobionte',formula:'Vesícula + Peptídeo catalítico → Protobionte',hint:'Integre membrana e química peptídica em um único sistema.',target:'Protobionte',targetCount:1},
 
@@ -160,17 +160,17 @@
     {id:'uridine',title:'Uridina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Uridina',formula:'Uracila + Ribose → Uridina',hint:'Una a pirimidina U à ribose.',target:'Uridina',targetCount:1},
     {id:'cytidine',title:'Citidina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Citidina',formula:'Citosina + Ribose → Citidina',hint:'Una a pirimidina C à ribose.',target:'Citidina',targetCount:1},
 
-    {id:'amp',title:'AMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 AMP',formula:'Adenosina + Fosfato → AMP',hint:'Fosforile o nucleosídeo de adenina.',target:'AMP',targetCount:2},
-    {id:'gmp',title:'GMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 GMP',formula:'Guanosina + Fosfato → GMP',hint:'Fosforile o nucleosídeo de guanina.',target:'GMP',targetCount:2},
-    {id:'ump',title:'UMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 UMP',formula:'Uridina + Fosfato → UMP',hint:'Fosforile o nucleosídeo de uracila.',target:'UMP',targetCount:2},
-    {id:'cmp',title:'CMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 CMP',formula:'Citidina + Fosfato → CMP',hint:'Fosforile o nucleosídeo de citosina.',target:'CMP',targetCount:2},
+    {id:'amp',title:'AMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme AMP',formula:'Adenosina + Fosfato → AMP',hint:'Fosforile o nucleosídeo de adenina.',target:'AMP',targetCount:1},
+    {id:'gmp',title:'GMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme GMP',formula:'Guanosina + Fosfato → GMP',hint:'Fosforile o nucleosídeo de guanina.',target:'GMP',targetCount:1},
+    {id:'ump',title:'UMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme UMP',formula:'Uridina + Fosfato → UMP',hint:'Fosforile o nucleosídeo de uracila.',target:'UMP',targetCount:1},
+    {id:'cmp',title:'CMP',chapter:'Nucleotídeos',period:'rna',objective:'Forme CMP',formula:'Citidina + Fosfato → CMP',hint:'Fosforile o nucleosídeo de citosina.',target:'CMP',targetCount:1},
     {id:'au-pair',title:'Pool A/U',chapter:'Nucleotídeos',period:'rna',objective:'Monte o pool A/U',formula:'AMP + UMP → Pool A/U',hint:'Reserve um conjunto complementar A/U.',target:'Pool A/U',targetCount:1},
     {id:'cg-pair',title:'Pool C/G',chapter:'Nucleotídeos',period:'rna',objective:'Monte o pool C/G',formula:'CMP + GMP → Pool C/G',hint:'Reserve um conjunto complementar C/G.',target:'Pool C/G',targetCount:1},
     {id:'rna-pool',title:'Pool completo de RNA',chapter:'Nucleotídeos',period:'rna',objective:'Reúna os quatro tipos de nucleotídeo',formula:'Pool A/U + Pool C/G → Pool de RNA',hint:'Os quatro alfabetos do RNA convergem nesta fase.',target:'Pool de RNA',targetCount:1},
     {id:'activated-nt',title:'Nucleotídeos ativados',chapter:'Nucleotídeos',period:'rna',objective:'Ative o pool de nucleotídeos',formula:'Pool de RNA + Fosfato → Nucleotídeos ativados',hint:'A ativação é uma abstração energética do jogo.',target:'Nucleotídeos ativados',targetCount:2},
-    {id:'activated-triplets',title:'Trinucleotídeos ativados',chapter:'Nucleotídeos',period:'rna',objective:'Forme 2 pools de trinucleotídeos',formula:'2 Nucleotídeos ativados → Trinucleotídeos ativados',hint:'Os substratos de três bases preparam a química usada por QT45.',target:'Trinucleotídeos ativados',targetCount:2},
+    {id:'activated-triplets',title:'Trinucleotídeos ativados',chapter:'Nucleotídeos',period:'rna',objective:'Forme um pool de trinucleotídeos',formula:'2 Nucleotídeos ativados → Trinucleotídeos ativados',hint:'Os substratos de três bases preparam a química usada por QT45.',target:'Trinucleotídeos ativados',targetCount:1},
 
-    {id:'rna-oligomer',title:'Oligômero de RNA',chapter:'Mundo de RNA',period:'rna',objective:'Forme 2 oligômeros de RNA',formula:'2 Trinucleotídeos ativados → Oligômero de RNA',hint:'Concentre e ligue unidades menores em cadeias curtas.',target:'Oligômero de RNA',targetCount:2},
+    {id:'rna-oligomer',title:'Oligômero de RNA',chapter:'Mundo de RNA',period:'rna',objective:'Forme 2 oligômeros de RNA',formula:'Trinucleotídeos ativados + H₂O → Oligômero de RNA',hint:'Concentre e ligue unidades menores em cadeias curtas.',target:'Oligômero de RNA',targetCount:2},
     {id:'rna-template',title:'RNA molde',chapter:'Mundo de RNA',period:'rna',objective:'Monte um RNA molde',formula:'2 Oligômeros de RNA → RNA molde',hint:'A sequência é abstrata; o jogo representa apenas sua montagem funcional.',target:'RNA molde',targetCount:1},
     {id:'catalytic-rna',title:'RNA catalítico',chapter:'Mundo de RNA',period:'rna',objective:'Obtenha RNA catalítico',formula:'RNA molde + Trinucleotídeos ativados → RNA catalítico',hint:'O gelo eutético concentra RNA e substratos para a etapa catalítica.',target:'RNA catalítico',targetCount:1},
     {id:'qt45',title:'QT45',chapter:'Mundo de RNA',period:'rna',objective:'Monte QT45',formula:'RNA catalítico + Trinucleotídeos ativados → QT45',hint:'QT45 representa a ribozima polimerase de 45 nucleotídeos no modelo do jogo.',target:'QT45',targetCount:1},
@@ -494,7 +494,7 @@
   function nextFaller(state){
     const p=phase(state);
     const hasEvents=p.spawnEvents.length>0;
-    const eventProbability=hasEvents?0.22:0;
+    const eventProbability=hasEvents?0.30:0;
     if(Math.random()<eventProbability){
       return {kind:'event',value:sample(p.spawnEvents)};
     }
