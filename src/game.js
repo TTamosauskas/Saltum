@@ -276,8 +276,8 @@
     };
     setPhase(state,0,false,'fresh');
     const audit=recipeAudit();
-    if(audit.allPhaseTargetsCovered&&audit.missingRecipes.length===0&&audit.aminoCorrect){
-      state.log.unshift('Auditoria de receitas: todas as receitas da campanha estão presentes.');
+    if(audit.valid&&audit.allPhaseTargetsCovered){
+      state.log.unshift('Auditoria de receitas: 44 fases, 44 receitas e 44 metas únicas validadas.');
     }
     return state;
   }
@@ -297,7 +297,17 @@
     return false;
   }
 
+  function recipePhaseIndex(recipe){
+    return PHASES.findIndex(p=>p.id===recipe.id);
+  }
+
+  function recipeUnlocked(state,recipe){
+    const index=recipePhaseIndex(recipe);
+    return index>=0&&index<=state.phaseIndex;
+  }
+
   function isRecipeEnabled(state,recipe){
+    if(!recipeUnlocked(state,recipe)) return false;
     if(!recipe.events||!recipe.events.length) return true;
     const icon=activeEventIcon(state);
     return !!icon&&recipe.events.includes(icon);
@@ -305,7 +315,9 @@
 
   function possibleRecipes(state,resource){
     return COMBOS.filter(recipe=>
-      (recipe.a===resource||recipe.b===resource)&&isRecipeEnabled(state,recipe)
+      recipeUnlocked(state,recipe)&&
+      (recipe.a===resource||recipe.b===resource)&&
+      isRecipeEnabled(state,recipe)
     );
   }
 
@@ -314,16 +326,17 @@
   }
 
   function phaseRecipe(state){
-    const p=phase(state);
-    return COMBOS.find(recipe=>recipe.out===p.target)||null;
+    return recipeById(phase(state).id);
   }
 
   function phaseConditions(state){
     return recipeConditions(phaseRecipe(state));
   }
 
-  function allRecipesFor(resource){
-    return COMBOS.filter(recipe=>recipe.a===resource||recipe.b===resource);
+  function allRecipesFor(state,resource){
+    return COMBOS.filter(recipe=>
+      recipeUnlocked(state,recipe)&&(recipe.a===resource||recipe.b===resource)
+    );
   }
 
   function availableCombos(state,sourceId,targetId){
@@ -341,7 +354,7 @@
     const bubble=state.soup.find(b=>b.id===state.selectedBubbleId);
     if(!bubble) return null;
     const available=possibleRecipes(state,bubble.resource);
-    const blocked=allRecipesFor(bubble.resource).filter(r=>!available.some(a=>a.id===r.id));
+    const blocked=allRecipesFor(state,bubble.resource).filter(r=>!available.some(a=>a.id===r.id));
     return {bubble,available,blocked};
   }
 
@@ -521,7 +534,8 @@
 
     const x=(a.x+b.x)/2;
     const y=(a.y+b.y)/2;
-    const ids=[a.id,b.id];
+    const preserve=new Set(recipe.preserve||[]);
+    const ids=[a,b].filter(item=>!preserve.has(item.resource)).map(item=>item.id);
     state.soup=state.soup.filter(item=>!ids.includes(item.id));
     const born=makeBubble(recipe.out,true,x,y);
     state.soup.push(born);
@@ -538,24 +552,25 @@
 
   function recipeAudit(){
     const outputs=new Set(COMBOS.map(r=>r.out));
+    const ids=COMBOS.map(r=>r.id);
+    const idSet=new Set(ids);
     const phaseTargets=PHASES.map(p=>({
       phase:p.id,
       target:p.target,
-      covered:outputs.has(p.target)
+      covered:outputs.has(p.target),
+      recipe:idSet.has(p.id)
     }));
-
-    const requiredIds=['h2','water','co','amino','fatty','nt','peptide','vesicle','qt45','protobiont','life'];
-    const ids=new Set(COMBOS.map(r=>r.id));
-    const missingRecipes=requiredIds.filter(id=>!ids.has(id));
-
-    const amino=COMBOS.find(r=>r.id==='amino');
-    const aminoCorrect=!!amino&&amino.a==='N'&&amino.b==='H₂O'&&amino.out==='Aminoácidos';
-
+    const missingRecipes=PHASES.filter(p=>!idSet.has(p.id)).map(p=>p.id);
+    const duplicateRecipeIds=ids.filter((id,index)=>ids.indexOf(id)!==index);
+    const targetNames=PHASES.map(p=>p.target);
+    const duplicateTargets=targetNames.filter((target,index)=>targetNames.indexOf(target)!==index);
     return {
       phaseTargets,
       missingRecipes,
-      allPhaseTargetsCovered:phaseTargets.every(item=>item.covered),
-      aminoCorrect
+      duplicateRecipeIds:[...new Set(duplicateRecipeIds)],
+      duplicateTargets:[...new Set(duplicateTargets)],
+      allPhaseTargetsCovered:phaseTargets.every(item=>item.covered&&item.recipe),
+      valid:missingRecipes.length===0&&duplicateRecipeIds.length===0&&duplicateTargets.length===0
     };
   }
 
@@ -628,7 +643,7 @@
 
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
-    createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,
+    createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,recipeUnlocked,
     captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
     photolysisActive,canDecompose,decomposeBubble,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
