@@ -138,3 +138,19 @@ Exemplos:
 - `Vesícula → Ácidos graxos + Ácidos graxos`
 
 A decomposição segue as receitas do próprio jogo e funciona como uma abstração estratégica de fotólise.
+
+
+## Condições ambientais das receitas
+
+Receitas prebióticas passam a declarar explicitamente as condições ambientais que podem habilitá-las. A interface mostra essas opções logo abaixo da receita.
+
+No protótipo atual:
+
+- Aminoácidos: ⚡ Descarga elétrica, ☀ UV ou ♨ Hidrotermal.
+- Ácidos graxos: ♨ Hidrotermal.
+- Nucleotídeos: ☀ UV.
+- Peptídeos: ◐ Úmido-seco ou ♨ Hidrotermal.
+- QT45: ◐ Úmido-seco como abstração estratégica da etapa de polimerização.
+- H₂, H₂O, CO, Vesícula, Protobionte e Vida emergente: sem evento obrigatório.
+
+Os ícones representam condições ambientais/energéticas do jogo e funcionam como uma abstração de vias prebióticas plausíveis, em vez de catalisadores químicos universais.
