@@ -2,6 +2,19 @@
 
 Primeira versão jogável do protótipo web de **Sopa Primordial**.
 
+## Executar
+
+Abra `index.html` diretamente no navegador. Nenhuma instalação, build ou servidor é necessário.
+
+Arquivos usados pela versão estática:
+
+- `index.html`
+- `src/styles.css`
+- `src/game.js`
+- `src/main.js`
+
+A mesma estrutura também funciona em qualquer hospedagem estática.
+
 ## O que já existe
 
 - Partida local para duas pessoas.
@@ -13,19 +26,6 @@ Primeira versão jogável do protótipo web de **Sopa Primordial**.
 - QT45 abstraída em cinco módulos de 9 nt.
 - Vitória por integração de QT45 completa, protocélula e metabolismo.
 
-## Rodar localmente
+## Desenvolvimento
 
-```bash
-npm install
-npm run dev
-```
-
-Para gerar a versão de produção:
-
-```bash
-npm run build
-```
-
-## Estado do design
-
-Esta versão é um vertical slice para validar interação, leitura do relógio ambiental e caminhos estratégicos. Custos, oferta, proporções do saco ambiental e condição de vitória ainda são parâmetros de protótipo.
+Os arquivos TypeScript/Vite permanecem no repositório como base de desenvolvimento, enquanto a versão jogável distribuída roda diretamente em HTML, CSS e JavaScript estáticos.
