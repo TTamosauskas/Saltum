@@ -23,35 +23,26 @@
 
   const ENV_RULES = {
     '☀': {
-      benefited:['amino','nt'],
-      harmed:['fatty'],
-      auto:['amino','nt'],
+      benefited:['amino','nt'], harmed:['fatty'], auto:['amino','nt'],
       regress:[{resource:'Ácidos graxos',to:'CO',label:'Ácidos graxos expostos perderam estabilidade e recuaram para CO'}]
     },
     '⚡': {
-      benefited:['amino'],
-      harmed:['nt'],
-      auto:['amino'],
+      benefited:['amino'], harmed:['nt'], auto:['amino'],
       regress:[{resource:'Nucleotídeos',to:'P',label:'Nucleotídeos expostos foram desestabilizados e recuaram para P'}]
     },
     '♨': {
-      benefited:['fatty','metabolism'],
-      harmed:['nt'],
-      auto:['fatty'],
+      benefited:['fatty','metabolism'], harmed:['nt'], auto:['fatty'],
       regress:[{resource:'Nucleotídeos',to:'P',label:'O calor hidrotermal desestabilizou nucleotídeos expostos e deixou P disponível'}]
     },
-    '◐': {
-      benefited:['nt'],
-      harmed:[],
-      auto:['nt'],
-      regress:[]
-    },
-    '○': {
-      benefited:[],
-      harmed:[],
-      auto:[],
-      regress:[]
-    }
+    '◐': { benefited:['nt'], harmed:[], auto:['nt'], regress:[] },
+    '○': { benefited:[], harmed:[], auto:[], regress:[] }
+  };
+
+  const ROUTES = {
+    peptide:{id:'peptide',name:'Peptídeos',short:'Catálise peptídica',color:'#ffad79'},
+    membrane:{id:'membrane',name:'Protocélula',short:'Compartimentalização',color:'#f1d069'},
+    metabolism:{id:'metabolism',name:'Metabolismo',short:'Fluxo geoquímico',color:'#83dc94'},
+    rna:{id:'rna',name:'Mundo de RNA',short:'Informação / QT45',color:'#b895ff'}
   };
 
   const SIZE = {
@@ -67,19 +58,14 @@
   function drawKnown() { return sample(KNOWN_RESOURCES); }
   function drawEnvironment() { return sample(ENV_BAG); }
   function resolveUnknown() { return sample(UNKNOWN_POOL); }
+  function countResource(player,resource) { return player.hand.filter(b=>b.resource===resource).length; }
+  function hasResource(player,resource) { return countResource(player,resource)>0; }
 
   function makeBubble(resource, zone, isNew) {
     return {
-      id:id(),
-      resource:resource,
-      zone:zone,
-      size:SIZE[resource] || 72,
-      x:rand(8,82),
-      y:rand(10,78),
-      drift:rand(3400,6200),
-      delay:rand(-1600,0),
-      isNew:isNew !== false,
-      mystery:resource === '?'
+      id:id(), resource:resource, zone:zone, size:SIZE[resource] || 72,
+      x:rand(8,82), y:rand(10,78), drift:rand(3400,6200), delay:rand(-1600,0),
+      isNew:isNew !== false, mystery:resource === '?'
     };
   }
 
@@ -87,19 +73,11 @@
     return {
       name:name,
       hand:[
-        makeBubble('H','hand',false),
-        makeBubble('H','hand',false),
-        makeBubble('C','hand',false),
-        makeBubble('O','hand',false),
-        makeBubble('N','hand',false)
+        makeBubble('H','hand',false), makeBubble('H','hand',false),
+        makeBubble('C','hand',false), makeBubble('O','hand',false), makeBubble('N','hand',false)
       ],
-      peptide:0,
-      membrane:0,
-      metabolism:0,
-      rnaModules:0,
-      collected:false,
-      perturbed:false,
-      selectedBubbleId:null
+      peptide:0, membrane:0, metabolism:0, rnaModules:0,
+      collected:false, perturbed:false, selectedBubbleId:null, focus:'auto'
     };
   }
 
@@ -109,97 +87,7 @@
     return soup;
   }
 
-  function recipeById(recipeId) {
-    return COMBOS.find(r=>r.id===recipeId) || null;
-  }
-
-  function findSoupPair(soup,recipe) {
-    const first=soup.findIndex(b=>!b.mystery && b.resource===recipe.a);
-    if(first<0) return null;
-    const second=soup.findIndex((b,i)=>i!==first && !b.mystery && b.resource===recipe.b);
-    if(second<0) return null;
-    return [first,second];
-  }
-
-  function executeFavoredSoupReaction(state,recipeId) {
-    const recipe=recipeById(recipeId);
-    if(!recipe || !recipe.out) return null;
-    const pair=findSoupPair(state.soup,recipe);
-    if(!pair) return null;
-
-    const firstIndex=pair[0], secondIndex=pair[1];
-    state.soup[firstIndex]=makeBubble(recipe.out,'soup',true);
-    state.soup[secondIndex]=makeBubble(drawKnown(),'soup',true);
-    state.lastBornId=state.soup[firstIndex].id;
-    return recipe.label;
-  }
-
-  function executeRegression(state,rule) {
-    const index=state.soup.findIndex(b=>!b.mystery && b.resource===rule.resource);
-    if(index<0) return null;
-    state.soup[index]=makeBubble(rule.to,'soup',true);
-    state.lastBornId=state.soup[index].id;
-    return rule.label;
-  }
-
-  function triggerTurnEvent(state) {
-    const icon=state.environment[0];
-    const info=ENV_INFO[icon];
-    const rules=ENV_RULES[icon];
-    const effects=[];
-
-    rules.auto.forEach(recipeId=>{
-      const effect=executeFavoredSoupReaction(state,recipeId);
-      if(effect) effects.push('Favorecida: '+effect);
-    });
-
-    rules.regress.forEach(rule=>{
-      const effect=executeRegression(state,rule);
-      if(effect) effects.push('Prejudicada: '+effect);
-    });
-
-    const benefitedLabels=rules.benefited.map(id=>{
-      const recipe=recipeById(id);
-      return recipe ? recipe.label : id;
-    });
-    const harmedLabels=rules.harmed.map(id=>{
-      const recipe=recipeById(id);
-      return recipe ? recipe.label : id;
-    });
-
-    state.lastEvent={
-      id:nextEventId++,
-      icon:icon,
-      title:icon+' '+info.name,
-      player:state.players[state.activePlayer].name,
-      benefited:benefitedLabels,
-      harmed:harmedLabels,
-      effects:effects,
-      quiet:effects.length===0
-    };
-
-    state.log.unshift(
-      'Início do turno de '+state.players[state.activePlayer].name+': '+icon+' '+info.name+
-      (effects.length ? ' — '+effects.join(' | ') : ' — ambiente sem reação automática na sopa.')
-    );
-    return state.lastEvent;
-  }
-
-  function createGame() {
-    const state={
-      round:1,
-      activePlayer:0,
-      players:[makePlayer('Jogador 1'),makePlayer('Jogador 2')],
-      soup:initialSoup(),
-      environment:Array.from({length:6},drawEnvironment),
-      log:['A sopa primordial desperta. Uma bolha desconhecida flutua entre os recursos.'],
-      winner:null,
-      lastBornId:null,
-      lastEvent:null
-    };
-    triggerTurnEvent(state);
-    return state;
-  }
+  function recipeById(recipeId) { return COMBOS.find(r=>r.id===recipeId) || null; }
 
   function isRecipeEnabled(recipe,currentEnvironment) {
     const rules=ENV_RULES[currentEnvironment];
@@ -220,19 +108,189 @@
     });
   }
 
+  function allRecipesFor(resource) {
+    return COMBOS.filter(r=>r.a===resource || r.b===resource);
+  }
+
+  function routeDiscovery(player) {
+    return {
+      peptide: player.peptide>0 || hasResource(player,'Aminoácidos'),
+      membrane: player.membrane>0 || hasResource(player,'Ácidos graxos'),
+      metabolism: player.metabolism>0,
+      rna: player.rnaModules>0 || hasResource(player,'Nucleotídeos')
+    };
+  }
+
+  function routeProgress(player,routeId) {
+    if(routeId==='peptide') return {value:player.peptide,max:3,label:player.peptide+'/3'};
+    if(routeId==='membrane') return {value:player.membrane,max:2,label:player.membrane+'/2'};
+    if(routeId==='metabolism') return {value:player.metabolism,max:2,label:player.metabolism+'/2'};
+    if(routeId==='rna') return {value:player.rnaModules,max:5,label:(player.rnaModules*9)+'/45 nt'};
+    return {value:0,max:1,label:'0/1'};
+  }
+
+  function autoRoute(player) {
+    if(player.rnaModules>0 || hasResource(player,'Nucleotídeos')) return 'rna';
+    if(player.membrane>0 || hasResource(player,'Ácidos graxos')) return 'membrane';
+    if(player.metabolism>0) return 'metabolism';
+    if(player.peptide>0 || hasResource(player,'Aminoácidos')) return 'peptide';
+    return null;
+  }
+
+  function routeObjective(state,routeId) {
+    const player=state.players[state.activePlayer];
+    if(routeId==='rna') {
+      if(hasResource(player,'Nucleotídeos')) return {
+        route:'rna', kicker:'Mundo de RNA', title:'Incorpore nucleotídeos à QT45',
+        formula:'Nucleotídeos → QT45 +9 nt', hint:'A polimerização fica disponível durante ◐ úmido-seco.',
+        progress:routeProgress(player,'rna')
+      };
+      return {
+        route:'rna', kicker:'Mundo de RNA', title:'Produza nucleotídeos',
+        formula:'P + H₂O → Nucleotídeos', hint:'☀ UV ou ◐ úmido-seco favorecem esta reação.',
+        progress:routeProgress(player,'rna')
+      };
+    }
+    if(routeId==='membrane') {
+      if(hasResource(player,'Ácidos graxos')) return {
+        route:'membrane', kicker:'Compartimentalização', title:'Incorpore lipídios à protocélula',
+        formula:'Ácidos graxos → Membrana', hint:'Arraste a bolha para o destino mostrado no painel contextual.',
+        progress:routeProgress(player,'membrane')
+      };
+      return {
+        route:'membrane', kicker:'Compartimentalização', title:'Produza ácidos graxos',
+        formula:'CO + H₂ → Ácidos graxos', hint:'♨ hidrotermal favorece esta reação.',
+        progress:routeProgress(player,'membrane')
+      };
+    }
+    if(routeId==='metabolism') {
+      return {
+        route:'metabolism', kicker:'Metabolismo primeiro', title:'Estabeleça um gradiente metabólico',
+        formula:'CO + H₂ → Gradiente', hint:'♨ hidrotermal permite converter este par em metabolismo.',
+        progress:routeProgress(player,'metabolism')
+      };
+    }
+    if(routeId==='peptide') {
+      if(hasResource(player,'Aminoácidos')) return {
+        route:'peptide', kicker:'Catálise peptídica', title:'Incorpore aminoácidos ao catalisador',
+        formula:'Aminoácidos → Peptídeo', hint:'Use o destino mostrado ao selecionar a bolha.',
+        progress:routeProgress(player,'peptide')
+      };
+      return {
+        route:'peptide', kicker:'Catálise peptídica', title:'Produza aminoácidos',
+        formula:'N + H₂O → Aminoácidos', hint:'☀ UV ou ⚡ descarga elétrica favorecem esta reação.',
+        progress:routeProgress(player,'peptide')
+      };
+    }
+    return null;
+  }
+
+  function getObjective(state) {
+    const player=state.players[state.activePlayer];
+    const chosen=player.focus!=='auto' ? player.focus : autoRoute(player);
+    const routed=chosen ? routeObjective(state,chosen) : null;
+    if(routed) return routed;
+
+    if(hasResource(player,'H₂') && hasResource(player,'O')) {
+      return {route:null,kicker:'Química básica',title:'Forme água',formula:'H₂ + O → H₂O',hint:'Toque em H₂ para destacar parceiros possíveis.',progress:{value:hasResource(player,'H₂O')?1:0,max:1,label:hasResource(player,'H₂O')?'1/1':'0/1'}};
+    }
+    if(countResource(player,'H')>=2) {
+      return {route:null,kicker:'Química básica',title:'Forme hidrogênio molecular',formula:'H + H → H₂',hint:'Selecione uma bolha H e combine com outra H.',progress:{value:hasResource(player,'H₂')?1:0,max:1,label:hasResource(player,'H₂')?'1/1':'0/1'}};
+    }
+    if(hasResource(player,'C') && hasResource(player,'O')) {
+      return {route:null,kicker:'Química básica',title:'Forme monóxido de carbono',formula:'C + O → CO',hint:'CO abre possibilidades hidrotermais.',progress:{value:hasResource(player,'CO')?1:0,max:1,label:hasResource(player,'CO')?'1/1':'0/1'}};
+    }
+    return {route:null,kicker:'Exploração prebiótica',title:'Colete matéria da sopa',formula:'Escolha uma bolha da poça central',hint:'A bolha ? revela um recurso aleatório.',progress:{value:player.collected?1:0,max:1,label:player.collected?'1/1':'0/1'}};
+  }
+
+  function selectedContext(state) {
+    const player=state.players[state.activePlayer];
+    const bubble=player.hand.find(b=>b.id===player.selectedBubbleId);
+    if(!bubble) return null;
+    const available=possibleRecipes(bubble.resource,state.environment[0]);
+    const all=allRecipesFor(bubble.resource);
+    const blocked=all.filter(r=>!available.some(a=>a.id===r.id));
+    const deposits=[];
+    if(bubble.resource==='Aminoácidos') deposits.push({id:'peptide',label:'Incorporar em Peptídeos'});
+    if(bubble.resource==='Ácidos graxos') deposits.push({id:'membrane',label:'Incorporar na Protocélula'});
+    if(bubble.resource==='Nucleotídeos') deposits.push({id:'rna',label:'Adicionar +9 nt à QT45',enabled:state.environment[0]==='◐'});
+    return {bubble:bubble,available:available,blocked:blocked,deposits:deposits};
+  }
+
+  function setFocus(state,focus) {
+    const player=state.players[state.activePlayer];
+    player.focus=focus || 'auto';
+  }
+
+  function findSoupPair(soup,recipe) {
+    const first=soup.findIndex(b=>!b.mystery && b.resource===recipe.a);
+    if(first<0) return null;
+    const second=soup.findIndex((b,i)=>i!==first && !b.mystery && b.resource===recipe.b);
+    if(second<0) return null;
+    return [first,second];
+  }
+
+  function executeFavoredSoupReaction(state,recipeId) {
+    const recipe=recipeById(recipeId);
+    if(!recipe || !recipe.out) return null;
+    const pair=findSoupPair(state.soup,recipe);
+    if(!pair) return null;
+    state.soup[pair[0]]=makeBubble(recipe.out,'soup',true);
+    state.soup[pair[1]]=makeBubble(drawKnown(),'soup',true);
+    state.lastBornId=state.soup[pair[0]].id;
+    return recipe.label;
+  }
+
+  function executeRegression(state,rule) {
+    const index=state.soup.findIndex(b=>!b.mystery && b.resource===rule.resource);
+    if(index<0) return null;
+    state.soup[index]=makeBubble(rule.to,'soup',true);
+    state.lastBornId=state.soup[index].id;
+    return rule.label;
+  }
+
+  function triggerTurnEvent(state) {
+    const icon=state.environment[0];
+    const info=ENV_INFO[icon];
+    const rules=ENV_RULES[icon];
+    const effects=[];
+    rules.auto.forEach(recipeId=>{ const effect=executeFavoredSoupReaction(state,recipeId); if(effect) effects.push('Favorecida: '+effect); });
+    rules.regress.forEach(rule=>{ const effect=executeRegression(state,rule); if(effect) effects.push('Prejudicada: '+effect); });
+
+    state.lastEvent={
+      id:nextEventId++, icon:icon, title:icon+' '+info.name,
+      player:state.players[state.activePlayer].name,
+      benefited:rules.benefited.map(id=>recipeById(id)?.label || id),
+      harmed:rules.harmed.map(id=>recipeById(id)?.label || id),
+      effects:effects, quiet:effects.length===0
+    };
+    state.log.unshift('Início do turno de '+state.players[state.activePlayer].name+': '+icon+' '+info.name+(effects.length?' — '+effects.join(' | '):' — ambiente sem reação automática na sopa.'));
+  }
+
+  function createGame() {
+    const state={
+      round:1, activePlayer:0,
+      players:[makePlayer('Jogador 1'),makePlayer('Jogador 2')],
+      soup:initialSoup(),
+      environment:Array.from({length:6},drawEnvironment),
+      log:['A sopa primordial desperta. Uma bolha desconhecida flutua entre os recursos.'],
+      winner:null, lastBornId:null, lastEvent:null
+    };
+    triggerTurnEvent(state);
+    return state;
+  }
+
   function collect(state,bubbleId) {
     const player=state.players[state.activePlayer];
-    if (player.collected || state.winner!==null) return false;
+    if(player.collected || state.winner!==null) return false;
     const index=state.soup.findIndex(b=>b.id===bubbleId);
     if(index<0) return false;
-
     const source=state.soup[index];
     const resolved=source.mystery ? resolveUnknown() : source.resource;
     const collected=makeBubble(resolved,'hand',true);
     player.hand.push(collected);
     player.collected=true;
     state.lastBornId=collected.id;
-
     if(source.mystery) {
       state.log.unshift(player.name+' arriscou a bolha ? e revelou '+resolved+'.');
       state.soup[index]=makeBubble('?','soup',true);
@@ -245,7 +303,7 @@
 
   function selectHandBubble(state,bubbleId) {
     const player=state.players[state.activePlayer];
-    player.selectedBubbleId = player.selectedBubbleId===bubbleId ? null : bubbleId;
+    player.selectedBubbleId=player.selectedBubbleId===bubbleId ? null : bubbleId;
   }
 
   function perturbSelected(state) {
@@ -279,13 +337,11 @@
     const a=player.hand.find(b=>b.id===sourceId);
     const b=player.hand.find(b=>b.id===targetId);
     if(!a || !b) return {ok:false};
-
     const pairMatches=availableCombos(state,sourceId,targetId);
     if(!pairMatches.length) return {ok:false};
     const chosen=(recipeId && pairMatches.find(r=>r.id===recipeId)) || pairMatches[0];
     player.hand=player.hand.filter(x=>x.id!==sourceId && x.id!==targetId);
     player.selectedBubbleId=null;
-
     if(chosen.special==='metabolism') {
       player.metabolism+=1;
       state.log.unshift(player.name+' converteu '+a.resource+' + '+b.resource+' em um gradiente metabólico.');
@@ -304,7 +360,6 @@
     const index=player.hand.findIndex(b=>b.id===bubbleId);
     if(index<0 || state.winner!==null) return false;
     const bubble=player.hand[index];
-
     if(type==='peptide' && bubble.resource==='Aminoácidos') {
       player.hand.splice(index,1); player.peptide+=1;
       state.log.unshift(player.name+' incorporou aminoácidos ao catalisador peptídico.');
@@ -314,9 +369,7 @@
     } else if(type==='rna' && bubble.resource==='Nucleotídeos' && state.environment[0]==='◐') {
       player.hand.splice(index,1); player.rnaModules=Math.min(5,player.rnaModules+1);
       state.log.unshift(player.name+' polimerizou um módulo de 9 nt da QT45.');
-    } else {
-      return false;
-    }
+    } else return false;
     player.selectedBubbleId=null;
     checkWinner(state);
     return true;
@@ -325,17 +378,11 @@
   function endTurn(state) {
     if(state.winner!==null) return;
     const current=state.players[state.activePlayer];
-    current.collected=false;
-    current.perturbed=false;
-    current.selectedBubbleId=null;
-
-    if(state.activePlayer===0) {
-      state.activePlayer=1;
-    } else {
-      state.activePlayer=0;
-      state.round+=1;
-      state.environment.shift();
-      state.environment.push(drawEnvironment());
+    current.collected=false; current.perturbed=false; current.selectedBubbleId=null;
+    if(state.activePlayer===0) state.activePlayer=1;
+    else {
+      state.activePlayer=0; state.round+=1;
+      state.environment.shift(); state.environment.push(drawEnvironment());
       state.players.forEach(p=>{p.collected=false;p.perturbed=false;p.selectedBubbleId=null;});
     }
     triggerTurnEvent(state);
@@ -347,14 +394,11 @@
   }
 
   function leadingRoute(player) {
-    const routes=[
-      ['RNA / QT45',player.rnaModules/5],
-      ['Protocélula',player.membrane/2],
-      ['Metabolismo',player.metabolism/2],
-      ['Peptídeos',player.peptide/3]
-    ];
-    routes.sort((a,b)=>b[1]-a[1]);
-    return routes[0][0];
+    const entries=[
+      ['rna',player.rnaModules/5],['membrane',player.membrane/2],
+      ['metabolism',player.metabolism/2],['peptide',player.peptide/3]
+    ].sort((a,b)=>b[1]-a[1]);
+    return entries[0][1]>0 ? ROUTES[entries[0][0]].name : 'Exploração prebiótica';
   }
 
   function currentEnvironmentRules(state) {
@@ -363,20 +407,9 @@
   }
 
   window.SopaGame={
-    ENV_INFO:ENV_INFO,
-    ENV_RULES:ENV_RULES,
-    COMBOS:COMBOS,
-    createGame:createGame,
-    collect:collect,
-    selectHandBubble:selectHandBubble,
-    perturbSelected:perturbSelected,
-    combine:combine,
-    deposit:deposit,
-    endTurn:endTurn,
-    leadingRoute:leadingRoute,
-    recipeFor:recipeFor,
-    possibleRecipes:possibleRecipes,
-    availableCombos:availableCombos,
-    currentEnvironmentRules:currentEnvironmentRules
+    ENV_INFO, ENV_RULES, COMBOS, ROUTES,
+    createGame, collect, selectHandBubble, perturbSelected, combine, deposit, endTurn,
+    leadingRoute, recipeFor, possibleRecipes, availableCombos, currentEnvironmentRules,
+    routeDiscovery, routeProgress, getObjective, selectedContext, setFocus
   };
 })();
