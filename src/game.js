@@ -14,28 +14,28 @@
       name:'UV',
       className:'event-uv',
       duration:14000,
-      description:'Janela fotoquímica: aminoácidos e nucleotídeos ficam disponíveis.'
+      description:'Janela fotoquímica: favorece síntese de aminoácidos e nucleotídeos.'
     },
     '⚡': {
       icon:'⚡',
       name:'Descarga elétrica',
       className:'event-lightning',
       duration:11000,
-      description:'Pulso energético: a síntese de aminoácidos fica disponível.'
+      description:'Pulso energético: favorece a síntese de aminoácidos.'
     },
     '♨': {
       icon:'♨',
       name:'Hidrotermal',
       className:'event-thermal',
       duration:14000,
-      description:'Fluxo hidrotermal: a síntese de ácidos graxos fica disponível.'
+      description:'Fluxo hidrotermal: favorece aminoácidos, ácidos graxos e condensação peptídica.'
     },
     '◐': {
       icon:'◐',
       name:'Úmido-seco',
       className:'event-wetdry',
       duration:14000,
-      description:'Concentração cíclica: nucleotídeos, peptídeos e QT45 ficam disponíveis.'
+      description:'Concentração cíclica: favorece peptídeos e polimerização de RNA.'
     }
   };
 
@@ -56,10 +56,10 @@
     { id:'h2', a:'H', b:'H', out:'H₂', color:'#62d6ff', label:'H + H → H₂' },
     { id:'water', a:'H₂', b:'O', out:'H₂O', color:'#69e0df', label:'H₂ + O → H₂O' },
     { id:'co', a:'C', b:'O', out:'CO', color:'#ff9c70', label:'C + O → CO' },
-    { id:'amino', a:'N', b:'H₂O', out:'Aminoácidos', events:['☀','⚡'], color:'#ffad79', label:'N + H₂O → Aminoácidos' },
+    { id:'amino', a:'N', b:'H₂O', out:'Aminoácidos', events:['⚡','☀','♨'], color:'#ffad79', label:'N + H₂O → Aminoácidos' },
     { id:'fatty', a:'CO', b:'H₂', out:'Ácidos graxos', events:['♨'], color:'#f1d069', label:'CO + H₂ → Ácidos graxos' },
-    { id:'nt', a:'P', b:'H₂O', out:'Nucleotídeos', events:['☀','◐'], color:'#b895ff', label:'P + H₂O → Nucleotídeos' },
-    { id:'peptide', a:'Aminoácidos', b:'Aminoácidos', out:'Peptídeo', events:['◐'], color:'#ff8f72', label:'Aminoácidos + Aminoácidos → Peptídeo' },
+    { id:'nt', a:'P', b:'H₂O', out:'Nucleotídeos', events:['☀'], color:'#b895ff', label:'P + H₂O → Nucleotídeos' },
+    { id:'peptide', a:'Aminoácidos', b:'Aminoácidos', out:'Peptídeo', events:['◐','♨'], color:'#ff8f72', label:'Aminoácidos + Aminoácidos → Peptídeo' },
     { id:'vesicle', a:'Ácidos graxos', b:'Ácidos graxos', out:'Vesícula', color:'#e7d875', label:'Ácidos graxos + Ácidos graxos → Vesícula' },
     { id:'qt45', a:'Nucleotídeos', b:'Nucleotídeos', out:'QT45', events:['◐'], color:'#b895ff', label:'Nucleotídeos + Nucleotídeos → QT45' },
     { id:'protobiont', a:'Peptídeo', b:'Vesícula', out:'Protobionte', color:'#75d8b9', label:'Peptídeo + Vesícula → Protobionte' },
@@ -235,13 +235,28 @@
   }
 
   function isRecipeEnabled(state,recipe){
-    return true;
+    if(!recipe.events||!recipe.events.length) return true;
+    const icon=activeEventIcon(state);
+    return !!icon&&recipe.events.includes(icon);
   }
 
   function possibleRecipes(state,resource){
     return COMBOS.filter(recipe=>
       (recipe.a===resource||recipe.b===resource)&&isRecipeEnabled(state,recipe)
     );
+  }
+
+  function recipeConditions(recipe){
+    return recipe&&Array.isArray(recipe.events)?recipe.events.slice():[];
+  }
+
+  function phaseRecipe(state){
+    const p=phase(state);
+    return COMBOS.find(recipe=>recipe.out===p.target)||null;
+  }
+
+  function phaseConditions(state){
+    return recipeConditions(phaseRecipe(state));
   }
 
   function allRecipesFor(resource){
@@ -263,7 +278,7 @@
     const bubble=state.soup.find(b=>b.id===state.selectedBubbleId);
     if(!bubble) return null;
     const available=possibleRecipes(state,bubble.resource);
-    const blocked=[];
+    const blocked=allRecipesFor(bubble.resource).filter(r=>!available.some(a=>a.id===r.id));
     return {bubble,available,blocked};
   }
 
@@ -495,7 +510,8 @@
       title:p.objective,
       formula:p.formula,
       hint:p.hint,
-      progress:phaseProgress(state)
+      progress:phaseProgress(state),
+      conditions:phaseConditions(state)
     };
   }
 
@@ -541,7 +557,7 @@
 
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
-    createGame,phase,period,objective,phaseProgress,phaseStatus,
+    createGame,phase,period,objective,phaseProgress,phaseStatus,phaseRecipe,phaseConditions,recipeConditions,
     captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
     photolysisActive,canDecompose,decomposeBubble,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
