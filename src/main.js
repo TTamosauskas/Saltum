@@ -179,6 +179,10 @@
     drag={id,el,startX:event.clientX,startY:event.clientY,moved:false,pointerId:event.pointerId};
     el.setPointerCapture&&el.setPointerCapture(event.pointerId);
     el.classList.add('dragging','selected');
+    document.querySelectorAll('.organic-bubble').forEach(other=>{
+      if(other.dataset.bubbleId===id||other.dataset.mystery==='1') return;
+      if(G.availableCombos(state,id,other.dataset.bubbleId).length) other.classList.add('candidate');
+    });
   }
 
   function moveDrag(event){
