@@ -1166,3 +1166,65 @@ h1,h2,p{margin-top:0}
   .molecular-detail>strong{grid-column:2;grid-row:2;align-self:end}
   .molecular-detail>small{grid-column:2;grid-row:3;align-self:start}
 }
+
+
+/* Pareamento canônico didático */
+.organic-bubble.molecule-object.canonical-pair{
+  border-color:#d8cbff;
+  box-shadow:0 0 18px rgba(201,181,255,.34),0 8px 18px rgba(0,0,0,.18);
+}
+.hydrogen-bond-hint{
+  position:absolute;
+  right:-18px;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  color:#e7ddff;
+  font-size:18px;
+  font-weight:950;
+  line-height:.65;
+  letter-spacing:1px;
+  text-shadow:0 0 8px rgba(210,193,255,.9);
+  pointer-events:none;
+  z-index:8;
+}
+.hydrogen-bond-hint small{
+  margin-top:5px;
+  padding:2px 4px;
+  border-radius:999px;
+  background:rgba(16,12,35,.88);
+  border:1px solid rgba(211,197,255,.24);
+  color:#cfc4ef;
+  font-size:6px;
+  letter-spacing:.05em;
+  line-height:1;
+}
+.pairing-note{
+  margin:8px 0 0;
+  padding:7px 8px;
+  border-radius:10px;
+  background:rgba(116,93,177,.08);
+  border:1px solid rgba(184,149,255,.14);
+  color:#9faab7;
+  font-size:8px;
+  line-height:1.35;
+}
+.pairing-note strong{color:#d5c9ff}
+
+/* Montagem visual de produtos recém-formados */
+.organic-bubble.molecule-object.born .molecular-svg .chem-ring,
+.organic-bubble.molecule-object.born .molecular-svg circle{
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:assemblePart .5s cubic-bezier(.2,.85,.25,1.15) both;
+}
+.organic-bubble.molecule-object.born .molecular-svg .chem-ring:nth-of-type(2),
+.organic-bubble.molecule-object.born .molecular-svg circle:nth-of-type(2){animation-delay:.08s}
+.organic-bubble.molecule-object.born .molecular-svg .chem-ring:nth-of-type(3),
+.organic-bubble.molecule-object.born .molecular-svg circle:nth-of-type(3){animation-delay:.14s}
+@keyframes assemblePart{
+  0%{opacity:0;transform:scale(.35)}
+  100%{opacity:1;transform:scale(1)}
+}
