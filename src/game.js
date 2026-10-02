@@ -63,61 +63,61 @@
     {
       id:'h2', title:'Hidrogênio molecular', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme H₂ duas vezes', formula:'H + H → H₂',
-      hint:'Capture dois átomos H que atravessam a tela e combine-os.',
-      target:'H₂', targetCount:4, targetCount:4, targetCount:4, targetCount:3, targetCount:3, targetCount:3, targetCount:2, targetCount:2, targetCount:2, spawnEvents:[]
+      hint:'Capture H do fluxo e repita a união até completar 2 H₂.',
+      target:'H₂', targetCount:2, spawnEvents:[]
     },
     {
       id:'water', title:'Água', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme água duas vezes', formula:'H + H → H₂ · H₂ + O → H₂O',
-      hint:'Capture H e O. Construa primeiro H₂ e depois combine com O.',
-      target:'H₂O', spawnEvents:[]
+      hint:'H₂ acumulado da fase anterior pode ser aproveitado. Complete 2 H₂O.',
+      target:'H₂O', targetCount:2, spawnEvents:[]
     },
     {
       id:'co', title:'Carbono reativo', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Forme CO duas vezes', formula:'C + O → CO',
-      hint:'Capture C e O e combine-os dentro da sopa.',
-      target:'CO', spawnEvents:[]
+      hint:'Capture C e O do mesmo fluxo atmosférico e complete 2 CO.',
+      target:'CO', targetCount:2, spawnEvents:[]
     },
     {
       id:'amino', title:'Primeiros aminoácidos', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Produza aminoácidos três vezes', formula:'N + H₂O → Aminoácidos',
-      hint:'Construa H₂O com H e O. Capture ☀ ou ⚡ quando aparecer para abrir a janela da reação.',
-      target:'Aminoácidos', spawnEvents:['☀','⚡']
+      hint:'Água acumulada pode ser reutilizada como precursor. Capture ☀ ou ⚡ e complete 3 aminoácidos.',
+      target:'Aminoácidos', targetCount:3, spawnEvents:['☀','⚡']
     },
     {
       id:'fatty', title:'Lipídios prebióticos', chapter:'Atmosfera primitiva', period:'atmosphere',
       objective:'Produza ácidos graxos três vezes', formula:'CO + H₂ → Ácidos graxos',
-      hint:'Construa CO e H₂. Capture ♨ para ativar a química hidrotermal.',
-      target:'Ácidos graxos', spawnEvents:['♨']
+      hint:'Aproveite CO e H₂ já construídos, capture ♨ e complete 3 ácidos graxos.',
+      target:'Ácidos graxos', targetCount:3, spawnEvents:['♨']
     },
     {
       id:'nt', title:'Nucleotídeos', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Produza nucleotídeos três vezes', formula:'P + H₂O → Nucleotídeos',
-      hint:'Construa H₂O, capture P e ative ☀ ou ◐.',
-      target:'Nucleotídeos', spawnEvents:['☀','◐']
+      hint:'P entra no fluxo deste período. Combine com H₂O sob ☀ ou ◐ até completar 3 nucleotídeos.',
+      target:'Nucleotídeos', targetCount:3, spawnEvents:['☀','◐']
     },
     {
       id:'peptide', title:'Catálise peptídica', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Forme quatro peptídeos', formula:'2 Aminoácidos → Peptídeo',
-      hint:'Produza dois aminoácidos a partir de H, O e N; depois capture ◐ e combine-os.',
-      target:'Peptídeo', spawnEvents:['☀','⚡','◐']
+      hint:'Use aminoácidos acumulados e complete 4 peptídeos sob ◐.',
+      target:'Peptídeo', targetCount:4, spawnEvents:['☀','⚡','◐']
     },
     {
       id:'vesicle', title:'Primeira vesícula', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Forme quatro vesículas', formula:'2 Ácidos graxos → Vesícula',
-      hint:'Produza dois ácidos graxos a partir de H, C e O. ♨ ativa cada síntese lipídica.',
-      target:'Vesícula', spawnEvents:['♨']
+      hint:'Use ácidos graxos acumulados e complete 4 vesículas.',
+      target:'Vesícula', targetCount:4, spawnEvents:['♨']
     },
     {
       id:'qt45', title:'RNA catalítico', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Monte quatro QT45', formula:'2 Nucleotídeos → QT45',
-      hint:'Produza dois nucleotídeos com H, O e P. ◐ habilita a montagem estratégica de QT45.',
-      target:'QT45', spawnEvents:['☀','◐']
+      hint:'Use nucleotídeos acumulados e complete 4 QT45 sob ◐.',
+      target:'QT45', targetCount:4, spawnEvents:['☀','◐']
     },
     {
       id:'integration', title:'Integração prebiótica', chapter:'Atmosfera + minerais', period:'mineral',
       objective:'Integre quatro sistemas de vida emergente', formula:'Peptídeo + Vesícula → Protobionte · + QT45',
-      hint:'Todos os átomos fundamentais podem cair. Reconstrua os três sistemas e integre-os.',
+      hint:'As quatro unidades acumuladas de Peptídeo, Vesícula e QT45 alimentam a integração final.',
       target:'Vida emergente', targetCount:4, spawnEvents:['☀','⚡','♨','◐']
     }
   ];
