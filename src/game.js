@@ -191,6 +191,17 @@
     const routed=chosen ? routeObjective(state,chosen) : null;
     if(routed) return routed;
 
+    const env=state.environment[0];
+    if(hasResource(player,'N') && hasResource(player,'H₂O') && ['☀','⚡'].includes(env)) {
+      return {route:'peptide',kicker:'Possibilidade emergente',title:'Produza aminoácidos',formula:'N + H₂O → Aminoácidos',hint:'Esta combinação abre a rota de catálise peptídica.',progress:{value:0,max:1,label:'0/1'}};
+    }
+    if(hasResource(player,'P') && hasResource(player,'H₂O') && ['☀','◐'].includes(env)) {
+      return {route:'rna',kicker:'Possibilidade emergente',title:'Produza nucleotídeos',formula:'P + H₂O → Nucleotídeos',hint:'Esta combinação abre a rota de Mundo de RNA.',progress:{value:0,max:1,label:'0/1'}};
+    }
+    if(hasResource(player,'CO') && hasResource(player,'H₂') && env==='♨') {
+      return {route:'membrane',kicker:'Possibilidade emergente',title:'Explore a química hidrotermal',formula:'CO + H₂ → Lipídios ou Gradiente',hint:'A mesma matéria pode abrir compartimentalização ou metabolismo.',progress:{value:0,max:1,label:'0/1'}};
+    }
+
     if(hasResource(player,'H₂') && hasResource(player,'O')) {
       return {route:null,kicker:'Química básica',title:'Forme água',formula:'H₂ + O → H₂O',hint:'Toque em H₂ para destacar parceiros possíveis.',progress:{value:hasResource(player,'H₂O')?1:0,max:1,label:hasResource(player,'H₂O')?'1/1':'0/1'}};
     }
