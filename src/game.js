@@ -185,10 +185,12 @@
     checkPhaseComplete(state);
   }
 
-  function createGame(){
+  function createGame(editorMode){
     const state={
       phaseIndex:0,
-      unlockedPhase:0,
+      unlockedPhase:editorMode?PHASES.length-1:0,
+      completedPhases:[],
+      editorMode:!!editorMode,
       phaseTurn:1,
       totalTurn:1,
       soup:[],
@@ -202,6 +204,10 @@
       log:['A sopa primordial desperta vazia. Capture matéria do fluxo ao redor.']
     };
     setPhase(state,0,false,'fresh');
+    const audit=recipeAudit();
+    if(audit.allPhaseTargetsCovered&&audit.missingRecipes.length===0&&audit.aminoCorrect){
+      state.log.unshift('Auditoria de receitas: todas as receitas da campanha estão presentes.');
+    }
     return state;
   }
 
@@ -220,9 +226,7 @@
   }
 
   function isRecipeEnabled(state,recipe){
-    if(!recipe.events||!recipe.events.length) return true;
-    const icon=activeEventIcon(state);
-    return !!icon&&recipe.events.includes(icon);
+    return true;
   }
 
   function possibleRecipes(state,resource){
@@ -250,17 +254,60 @@
     const bubble=state.soup.find(b=>b.id===state.selectedBubbleId);
     if(!bubble) return null;
     const available=possibleRecipes(state,bubble.resource);
-    const blocked=allRecipesFor(bubble.resource).filter(r=>!available.some(a=>a.id===r.id));
+    const blocked=[];
     return {bubble,available,blocked};
   }
 
-  function captureAtom(state,resource,x,y){
-    if(state.stageComplete||!ATOMS.includes(resource)) return null;
+  function captureMatter(state,resource,x,y){
+    if(state.stageComplete||!SIZE[resource]) return null;
     const bubble=makeBubble(resource,true,x,y);
     state.soup.push(bubble);
     state.lastBornId=bubble.id;
     state.log.unshift(resource+' foi capturado para dentro da sopa.');
     return bubble;
+  }
+
+  function captureAtom(state,resource,x,y){
+    if(!ATOMS.includes(resource)) return null;
+    return captureMatter(state,resource,x,y);
+  }
+
+  function moveBubble(state,bubbleId,x,y){
+    const bubble=state.soup.find(b=>b.id===bubbleId);
+    if(!bubble||state.stageComplete) return false;
+    bubble.x=Math.max(8,Math.min(92,x));
+    bubble.y=Math.max(8,Math.min(92,y));
+    state.selectedBubbleId=bubbleId;
+    return true;
+  }
+
+  function releaseBubble(state,bubbleId){
+    const index=state.soup.findIndex(b=>b.id===bubbleId);
+    if(index<0||state.stageComplete) return null;
+    const bubble=state.soup.splice(index,1)[0];
+    if(state.selectedBubbleId===bubbleId) state.selectedBubbleId=null;
+    state.log.unshift(bubble.resource+' foi liberado de volta ao fluxo exterior.');
+    return bubble;
+  }
+
+  function findPairForRecipe(state,recipe){
+    const first=state.soup.findIndex(b=>b.resource===recipe.a);
+    if(first<0) return null;
+    const second=state.soup.findIndex((b,index)=>index!==first&&b.resource===recipe.b);
+    if(second<0) return null;
+    return [state.soup[first].id,state.soup[second].id];
+  }
+
+  function executeEventCatalysis(state,icon){
+    const recipes=COMBOS.filter(r=>Array.isArray(r.events)&&r.events.includes(icon));
+    for(const recipe of recipes){
+      const pair=findPairForRecipe(state,recipe);
+      if(pair){
+        const result=combine(state,pair[0],pair[1],recipe.id);
+        if(result.ok) return recipe.label;
+      }
+    }
+    return null;
   }
 
   function activateEvent(state,icon){
@@ -276,6 +323,7 @@
       duration:spec.duration
     };
     const benefited=COMBOS.filter(r=>r.events&&r.events.includes(icon)).map(r=>r.label);
+    const catalyzed=executeEventCatalysis(state,icon);
     const event={
       id:nextEventId++,
       icon,
@@ -283,11 +331,11 @@
       subtitle:'Evento capturado · efeito temporário',
       benefited,
       harmed:[],
-      effects:[spec.description],
+      effects:[spec.description].concat(catalyzed?['Catalisada automaticamente: '+catalyzed]:[]),
       quiet:false
     };
     state.lastEvent=event;
-    state.log.unshift(icon+' '+spec.name+' foi ativado por '+Math.round(spec.duration/1000)+' s.');
+    state.log.unshift(icon+' '+spec.name+' foi ativado.'+(catalyzed?' '+catalyzed+' foi catalisada automaticamente.':''));
     return event;
   }
 
@@ -345,6 +393,29 @@
     return {ok:true,recipe,born};
   }
 
+  function recipeAudit(){
+    const outputs=new Set(COMBOS.map(r=>r.out));
+    const phaseTargets=PHASES.map(p=>({
+      phase:p.id,
+      target:p.target,
+      covered:outputs.has(p.target)
+    }));
+
+    const requiredIds=['h2','water','co','amino','fatty','nt','peptide','vesicle','qt45','protobiont','life'];
+    const ids=new Set(COMBOS.map(r=>r.id));
+    const missingRecipes=requiredIds.filter(id=>!ids.has(id));
+
+    const amino=COMBOS.find(r=>r.id==='amino');
+    const aminoCorrect=!!amino&&amino.a==='N'&&amino.b==='H₂O'&&amino.out==='Aminoácidos';
+
+    return {
+      phaseTargets,
+      missingRecipes,
+      allPhaseTargetsCovered:phaseTargets.every(item=>item.covered),
+      aminoCorrect
+    };
+  }
+
   function countResource(state,resource){
     return state.soup.filter(b=>b.resource===resource).length;
   }
@@ -370,6 +441,7 @@
     const p=phase(state);
     if(countResource(state,p.target)>=p.targetCount){
       state.stageComplete=true;
+      if(!state.completedPhases.includes(state.phaseIndex)) state.completedPhases.push(state.phaseIndex);
       state.unlockedPhase=Math.max(state.unlockedPhase,Math.min(PHASES.length-1,state.phaseIndex+1));
       state.activeEvent=null;
       state.selectedBubbleId=null;
@@ -392,16 +464,24 @@
   }
 
   function jumpToPhase(state,index){
-    if(index<0||index>state.unlockedPhase||index>=PHASES.length) return false;
+    if(index<0||index>=PHASES.length) return false;
+    if(!state.editorMode&&index>state.unlockedPhase) return false;
     setPhase(state,index,true,state.phaseSnapshots[index]?'restore':'fresh');
     return true;
   }
 
+  function phaseStatus(state,index){
+    if(index===state.phaseIndex) return 'current';
+    if(state.completedPhases.includes(index)) return 'completed';
+    if(state.editorMode||index<=state.unlockedPhase) return 'available';
+    return 'locked';
+  }
+
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
-    createGame,phase,period,objective,phaseProgress,
-    captureAtom,activateEvent,nextFaller,expireEvent,activeEventIcon,
+    createGame,phase,period,objective,phaseProgress,phaseStatus,
+    captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
-    nextPhase,restartPhase,jumpToPhase,countResource
+    nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
   };
 })();
