@@ -930,3 +930,239 @@ h1,h2,p{margin-top:0}
   letter-spacing:.1em;
 }
 .trail-chapter:first-of-type{margin-top:2px}
+
+
+/* Linguagem molecular visual */
+.resource-visual{
+  display:inline-grid;
+  place-items:center;
+  width:var(--rv-w);
+  height:var(--rv-h);
+  flex:0 0 auto;
+  pointer-events:none;
+  filter:drop-shadow(0 5px 9px rgba(0,0,0,.28));
+}
+.molecular-svg{
+  width:100%;
+  height:100%;
+  overflow:visible;
+}
+.molecular-svg .bond,
+.molecular-svg .tail,
+.molecular-svg .peptide-chain,
+.molecular-svg .rna-backbone,
+.molecular-svg .cycle-arrow,
+.molecular-svg .base-tick{
+  fill:none;
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.molecular-svg .bond{stroke:#d9eceb}
+.molecular-svg .chem-ring{stroke-width:3;stroke-linejoin:round}
+.molecular-svg .tail{stroke-width:5;fill:none}
+.molecular-svg .peptide-chain{stroke-width:5;fill:none}
+.molecular-svg .rna-backbone{stroke-width:5;fill:none}
+.molecular-svg .rna-backbone.folded{stroke-width:5.5}
+.molecular-svg .cycle-arrow{stroke-width:3;fill:none}
+.molecular-svg .base-tick{stroke-width:4}
+.molecular-svg text{font-family:Inter,system-ui,sans-serif}
+
+.organic-bubble.molecule-object{
+  width:calc(var(--visual-w) + 14px);
+  height:calc(var(--visual-h) + 24px);
+  min-width:56px;
+  min-height:56px;
+  border:1px solid color-mix(in srgb,var(--visual-accent) 42%,transparent);
+  border-radius:18px;
+  padding:4px 6px 16px;
+  background:
+    radial-gradient(circle at 50% 46%,color-mix(in srgb,var(--visual-accent) 9%,transparent),transparent 68%),
+    rgba(3,18,24,.18);
+  box-shadow:0 7px 17px rgba(0,0,0,.16);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:visible;
+  backdrop-filter:blur(1.5px);
+}
+.organic-bubble.molecule-object:hover{
+  filter:brightness(1.12);
+  border-color:color-mix(in srgb,var(--visual-accent) 72%,transparent);
+}
+.molecule-object-art{
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+.organic-bubble .resource-label{
+  position:absolute;
+  left:50%;
+  bottom:2px;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:calc(100% - 8px);
+  padding:2px 5px;
+  border-radius:999px;
+  background:rgba(2,14,19,.78);
+  border:1px solid rgba(255,255,255,.08);
+  color:#eaf8f7;
+  font-size:7px;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-shadow:0 1px 2px #000;
+  pointer-events:none;
+}
+.organic-bubble.molecule-object.selected{
+  outline:3px solid #43f28a!important;
+  outline-offset:2px!important;
+  border-color:#43f28a;
+  box-shadow:0 0 20px rgba(67,242,138,.4),0 8px 18px rgba(0,0,0,.2)!important;
+}
+.organic-bubble.molecule-object.candidate{
+  outline:2px solid #a9f7d0!important;
+  outline-offset:2px!important;
+  border-color:#a9f7d0;
+  box-shadow:0 0 15px rgba(67,242,138,.25),0 8px 18px rgba(0,0,0,.18)!important;
+}
+.organic-bubble.molecule-object.photolysis-eligible{
+  outline:4px solid #ff2727!important;
+  outline-offset:2px!important;
+  border-color:#ff2727!important;
+  box-shadow:0 0 18px rgba(255,39,39,.9),0 0 38px rgba(255,20,20,.48)!important;
+}
+.organic-bubble.molecule-object.born .molecular-svg .bond,
+.organic-bubble.molecule-object.born .molecular-svg .tail,
+.organic-bubble.molecule-object.born .molecular-svg .peptide-chain,
+.organic-bubble.molecule-object.born .molecular-svg .rna-backbone{
+  stroke-dasharray:180;
+  stroke-dashoffset:180;
+  animation:assembleBond .72s .12s ease-out forwards;
+}
+@keyframes assembleBond{to{stroke-dashoffset:0}}
+
+.molecular-faller{
+  width:var(--faller-w);
+  height:calc(var(--faller-h) + 18px);
+  min-width:56px;
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:2px 4px 14px;
+  border:1px solid color-mix(in srgb,var(--visual-accent) 35%,transparent);
+  border-radius:16px;
+  background:rgba(3,18,24,.18);
+  color:#efffff;
+  box-shadow:0 7px 18px rgba(0,0,0,.18);
+  rotate:var(--travel-rotate);
+}
+.molecular-faller .resource-visual{width:100%;height:100%}
+.molecular-faller .faller-label{
+  position:absolute;
+  left:50%;
+  bottom:1px;
+  transform:translateX(-50%);
+  max-width:calc(100% - 6px);
+  padding:1px 4px;
+  border-radius:999px;
+  background:rgba(2,14,19,.78);
+  color:#e8f7f6;
+  font-size:7px;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  pointer-events:none;
+}
+.molecular-faller.being-absorbed{
+  box-shadow:0 0 12px #fff,0 0 42px color-mix(in srgb,var(--visual-accent) 75%,transparent),0 0 85px color-mix(in srgb,var(--visual-accent) 32%,transparent);
+}
+
+.molecular-info-panel{
+  grid-template-columns:minmax(168px,210px) 1fr;
+  min-height:176px;
+}
+.info-tile.molecular-detail{
+  min-height:154px;
+  padding:8px;
+  justify-content:flex-start;
+  border-color:color-mix(in srgb,var(--detail-accent) 35%,rgba(255,255,255,.08));
+  background:
+    radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--detail-accent) 10%,transparent),transparent 62%),
+    rgba(4,20,27,.72);
+}
+.molecular-detail>span{
+  align-self:flex-start;
+  font-size:6.5px;
+}
+.detail-structure{
+  width:100%;
+  min-height:94px;
+  display:grid;
+  place-items:center;
+  margin:1px 0;
+}
+.detail-structure .resource-visual{
+  transform:scale(1.15);
+  transform-origin:center;
+}
+.molecular-detail>strong{
+  margin:0;
+  font-size:14px;
+  max-width:100%;
+}
+.molecular-detail>small{
+  margin-top:3px;
+  line-height:1.25;
+  max-width:100%;
+}
+
+.trail-product{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-top:2px;
+}
+.trail-product .resource-visual{
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.22));
+}
+.trail-product strong{
+  margin-top:0!important;
+}
+.recipe-catalog-row{
+  display:grid;
+  grid-template-columns:56px minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+  min-height:62px;
+}
+.recipe-visual{
+  width:56px;
+  min-height:48px;
+  display:grid;
+  place-items:center;
+}
+.recipe-copy{min-width:0}
+.recipe-copy strong{display:block}
+.recipe-copy small{display:block}
+
+@media(max-width:520px){
+  .molecular-info-panel{grid-template-columns:1fr;min-height:0}
+  .info-tile.molecular-detail{
+    min-height:136px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:auto 1fr auto;
+    gap:2px 8px;
+    text-align:left;
+  }
+  .molecular-detail>span{grid-column:1/3}
+  .detail-structure{grid-column:1;grid-row:2/4;min-height:104px}
+  .molecular-detail>strong{grid-column:2;grid-row:2;align-self:end}
+  .molecular-detail>small{grid-column:2;grid-row:3;align-self:start}
+}
