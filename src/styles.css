@@ -131,7 +131,7 @@ h1,h2,p{margin-top:0}
 .active-event-badge.event-thermal{color:#ff8b65}
 .active-event-badge.event-wetdry{color:#b895ff}
 
-/* Chuva de matéria */
+/* Fluxo de matéria: objetos cruzam a tela por várias direções */
 #falling-layer{
   position:fixed;
   inset:0;
@@ -141,27 +141,22 @@ h1,h2,p{margin-top:0}
 }
 .falling-object{
   position:absolute;
-  left:var(--fall-x);
-  top:-90px;
+  left:var(--start-x);
+  top:var(--start-y);
   border:0;
   pointer-events:auto;
   cursor:pointer;
   user-select:none;
   touch-action:manipulation;
-  animation:fallMatter var(--fall-duration) linear forwards;
-  will-change:top,transform,opacity;
+  animation:traverseMatter var(--fall-duration) linear forwards;
+  will-change:left,top,transform,opacity,filter;
 }
-.falling-object:hover{filter:brightness(1.2)}
-.falling-object.captured{
-  animation:none!important;
-  opacity:0;
-  transform:scale(1.7)!important;
-  transition:opacity .18s ease,transform .18s ease;
-}
+.falling-object:hover{filter:brightness(1.24)}
 .falling-atom{
   width:54px;height:54px;
   border-radius:50%;
   display:grid;place-items:center;
+  rotate:var(--travel-rotate);
   color:#f5ffff;
   background:
     radial-gradient(circle at 32% 25%,rgba(255,255,255,.8),rgba(255,255,255,.16) 16%,transparent 21%),
@@ -170,9 +165,12 @@ h1,h2,p{margin-top:0}
   box-shadow:0 0 16px rgba(105,221,220,.2),inset -7px -9px 15px rgba(0,0,0,.18);
 }
 .falling-atom strong{font-size:17px;text-shadow:0 1px 3px rgba(0,0,0,.42)}
+.falling-atom.being-absorbed{
+  box-shadow:0 0 12px #fff,0 0 42px rgba(105,221,220,.85),0 0 85px rgba(105,221,220,.36);
+}
 .falling-event{
   width:64px;height:64px;
-  transform:rotate(45deg);
+  rotate:45deg;
   border:2px solid currentColor;
   border-radius:12px;
   display:grid;
@@ -192,7 +190,7 @@ h1,h2,p{margin-top:0}
   opacity:.28;
   animation:eventHalo 1.3s ease-in-out infinite alternate;
 }
-.falling-event span,.falling-event small{transform:rotate(-45deg);position:absolute}
+.falling-event span,.falling-event small{rotate:-45deg;position:absolute}
 .falling-event span{font-size:22px}
 .falling-event small{
   width:92px;
@@ -202,17 +200,27 @@ h1,h2,p{margin-top:0}
   font-size:7px;
   text-shadow:0 2px 5px #000;
 }
+.falling-event.event-triggered{
+  animation:none!important;
+  pointer-events:none;
+  transform:scale(1.85);
+  rotate:135deg;
+  opacity:0;
+  filter:brightness(3);
+  transition:transform .42s ease,rotate .42s ease,opacity .42s ease,filter .42s ease;
+}
 .falling-event.event-uv{color:#f4d45f}
 .falling-event.event-lightning{color:#70dcff}
 .falling-event.event-thermal{color:#ff8b65}
 .falling-event.event-wetdry{color:#b895ff}
 @keyframes eventHalo{from{transform:scale(.92);opacity:.18}to{transform:scale(1.08);opacity:.5}}
-@keyframes fallMatter{
-  0%{top:-90px;opacity:0;translate:-50% 0}
-  6%{opacity:1}
-  45%{translate:calc(-50% + 9px) 0}
-  72%{translate:calc(-50% - 7px) 0}
-  100%{top:calc(100vh + 100px);opacity:.18;translate:-50% 0}
+@keyframes traverseMatter{
+  0%{left:var(--start-x);top:var(--start-y);opacity:0;transform:translate(0,0) scale(.88)}
+  7%{opacity:1}
+  33%{transform:translate(8px,-5px) scale(1)}
+  67%{transform:translate(-7px,6px) scale(.98)}
+  93%{opacity:1}
+  100%{left:var(--end-x);top:var(--end-y);opacity:.18;transform:translate(0,0) scale(.9)}
 }
 
 /* Única superfície de jogo */
