@@ -2,6 +2,23 @@
 
 Protótipo web estático e singleplayer de **Sopa Primordial**.
 
+## Tela inicial e trilha de fases
+
+A página inicial mostra uma trilha de campanha inspirada no mapa de fases do Ardua.
+
+Cada fase pode estar em um destes estados:
+
+- fase atual;
+- concluída;
+- disponível;
+- bloqueada.
+
+No modo normal, novas fases são liberadas progressivamente conforme os objetivos são concluídos.
+
+Ao abrir a URL com `#editor`, todas as fases ficam disponíveis para navegação direta desde o início.
+
+A trilha também pode ser aberta a qualquer momento pelo Menu sem perder o estado da fase atual.
+
 ## Fluxo de matéria
 
 A matéria do período atravessa continuamente a tela por várias direções.
@@ -18,37 +35,59 @@ O fluxo pertence ao período, e cabe ao jogador selecionar a matéria útil para
 
 ## Captura
 
-Átomos podem ser capturados de duas formas.
+Átomos podem ser capturados por clique ou por arraste direto para dentro da Sopa Primordial.
 
-Um clique interrompe a trajetória e suga o átomo automaticamente para um ponto dentro da Sopa Primordial.
+O clique inicia uma animação de sucção automática até um ponto da poça.
 
-Também é possível arrastar o átomo em movimento e soltá-lo diretamente dentro da poça. A sopa recebe destaque verde quando funciona como destino válido.
+Ao arrastar, a sopa recebe destaque verde quando funciona como destino válido.
 
-A bolha só passa a existir dentro da sopa ao final da captura.
+## Organização e descarte
+
+Bolhas já capturadas podem ser movidas livremente dentro da sopa para organização visual.
+
+Ao arrastar uma bolha para fora da poça, ela é liberada novamente para o fluxo exterior e continua vagando pela tela.
+
+Moléculas liberadas podem ser recapturadas durante a mesma fase.
+
+Ao trocar de fase, todo o fluxo exterior é descartado.
 
 ## Reações
 
 Ingredientes compatíveis podem reagir por dois cliques em sequência ou por drag-and-drop dentro da sopa.
 
-O produto emerge no ponto da reação e permanece disponível como matéria acumulada.
+A receita `N + H₂O → Aminoácidos` funciona diretamente na fase **Primeiros aminoácidos**.
+
+Eventos ambientais deixaram de funcionar como trava de receita. Eles atuam como catalisadores especiais: ao clicar em um evento, o jogo tenta executar automaticamente uma reação favorecida que já possua os reagentes necessários dentro da sopa.
+
+## Catálogo de receitas
+
+O Menu exibe todas as receitas presentes no motor atual:
+
+- `H + H → H₂`
+- `H₂ + O → H₂O`
+- `C + O → CO`
+- `N + H₂O → Aminoácidos`
+- `CO + H₂ → Ácidos graxos`
+- `P + H₂O → Nucleotídeos`
+- `Aminoácidos + Aminoácidos → Peptídeo`
+- `Ácidos graxos + Ácidos graxos → Vesícula`
+- `Nucleotídeos + Nucleotídeos → QT45`
+- `Peptídeo + Vesícula → Protobionte`
+- `Protobionte + QT45 → Vida emergente`
+
+O motor executa uma auditoria dessas receitas ao iniciar a campanha e verifica se todas as metas das fases possuem uma transformação correspondente.
 
 ## Progressão persistente
 
 A sopa funciona como um sistema cumulativo ao longo da campanha.
 
-Ao concluir uma fase e avançar, átomos livres deixam o tabuleiro, enquanto moléculas e estruturas construídas permanecem dentro da sopa. Esses produtos podem ser usados como precursores em fases posteriores.
+Ao concluir uma fase e avançar, átomos livres saem da sopa, enquanto moléculas e estruturas construídas permanecem disponíveis para fases posteriores.
 
-Reiniciar uma fase restaura o checkpoint molecular do início daquela etapa.
+Reiniciar uma fase restaura o checkpoint molecular existente no começo daquela etapa.
 
 ## Repetição por complexidade
 
-Cada fase pede várias ocorrências da receita principal:
-
-- fases básicas: 2 repetições;
-- fases intermediárias: 3 repetições;
-- fases complexas: 4 repetições.
-
-A sequência atual é:
+As fases básicas pedem 2 repetições, as intermediárias 3 e as complexas 4.
 
 1. H₂ ×2
 2. H₂O ×2
@@ -61,24 +100,11 @@ A sequência atual é:
 9. QT45 ×4
 10. Vida emergente ×4
 
-Isso permite que produtos de fases anteriores sejam consumidos ou combinados nas etapas seguintes.
-
 ## Eventos
 
 Eventos atravessam a tela como losangos luminosos e nunca entram na sopa.
 
-Ao clicar em um evento, ele dispara seu efeito temporário:
-
-- `☀ UV` abre uma janela fotoquímica para aminoácidos e nucleotídeos;
-- `⚡ Descarga elétrica` abre uma janela energética para aminoácidos;
-- `♨ Hidrotermal` abre a síntese de ácidos graxos;
-- `◐ Úmido-seco` abre nucleotídeos, peptídeos e a montagem estratégica de QT45.
-
-O evento ativo aparece apenas como um pequeno indicador temporário e também é anunciado por React Toastify.
-
-## Interface
-
-A legenda e a contagem de bolhas dentro da poça foram removidas. A própria sopa funciona como superfície visual principal.
+Ao clicar em um evento, ele executa sua ação catalítica e é anunciado por React Toastify.
 
 ## Arquivos principais
 
