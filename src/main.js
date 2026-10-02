@@ -5,13 +5,16 @@
   let pendingChoice=null;
   let menuOpen=false;
   let lastToastEventId=null;
+  let rainGeneration=0;
+  let rainTimer=null;
+  let eventTickTimer=null;
   window.SopaToastQueue=window.SopaToastQueue||[];
 
   function esc(value){
     return String(value).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   }
 
-  function emitTurnToast(){
+  function emitEventToast(){
     const event=state.lastEvent;
     if(!event||event.id===lastToastEventId) return;
     lastToastEventId=event.id;
@@ -20,7 +23,7 @@
   }
 
   function ringFor(resource){
-    const colors=[...new Set(G.possibleRecipes(resource,state.environment[0]).map(r=>r.color))];
+    const colors=[...new Set(G.possibleRecipes(state,resource).map(r=>r.color))];
     if(!colors.length) return 'rgba(184,214,216,.38)';
     if(colors.length===1) return colors[0];
     const slice=100/colors.length;
@@ -32,7 +35,7 @@
   }
 
   function isCandidate(b){
-    if(!state.selectedBubbleId||state.selectedBubbleId===b.id||b.mystery) return false;
+    if(!state.selectedBubbleId||state.selectedBubbleId===b.id) return false;
     return G.availableCombos(state,state.selectedBubbleId,b.id).length>0;
   }
 
@@ -40,22 +43,12 @@
     const selected=state.selectedBubbleId===b.id;
     const candidate=isCandidate(b);
     return '<button class="organic-bubble'+
-      (b.mystery?' mystery':'')+
       (b.isNew?' born':'')+
       (selected?' selected':'')+
       (candidate?' candidate':'')+
-      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" data-mystery="'+(b.mystery?'1':'0')+'" style="'+bubbleStyle(b)+'" aria-label="'+(b.mystery?'Elemento desconhecido':esc(b.resource))+'">'+
+      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+'">'+
       '<span class="bubble-shine"></span><strong>'+esc(b.resource)+'</strong>'+
-      (b.mystery?'<small>arriscar</small>':'')+
       '</button>';
-  }
-
-  function renderEnvironment(){
-    return state.environment.slice(0,4).map((icon,i)=>{
-      const info=G.ENV_INFO[icon];
-      return '<div class="mini-env '+info.className+(i===0?' current':'')+'" title="'+esc(info.name+': '+info.benefit)+'">'+
-        '<span>'+icon+'</span><small>'+(i===0?info.name:'+'+i)+'</small></div>';
-    }).join('');
   }
 
   function progressMarkup(objective){
@@ -68,32 +61,37 @@
     return recipe.a===resource?recipe.b:recipe.a;
   }
 
+  function renderEventStatus(){
+    const active=state.activeEvent;
+    if(!active) return '';
+    const remaining=Math.max(0,active.expiresAt-Date.now());
+    const seconds=Math.ceil(remaining/1000);
+    return '<div class="active-event-badge '+active.className+'"><span>'+active.icon+'</span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">'+seconds+' s restantes</small></div></div>';
+  }
+
   function renderContext(){
     const context=G.selectedContext(state);
     if(!context){
       return '<section class="info-panel panel">'+
-        '<div class="info-tile idle"><span>SOPA</span><strong>?</strong><small>selecione matéria</small></div>'+
-        '<div class="info-copy"><strong>Toque em uma bolha</strong><p>Uma bolha selecionada ganha contorno verde. Parceiros que podem reagir agora também ficam verdes. Arraste uma sobre a outra para combinar.</p></div>'+
+        '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
+        '<div class="info-copy"><strong>Capture os átomos que caem</strong><p>Clique em um átomo no alto da tela para trazê-lo à sopa. Depois clique em ingredientes compatíveis em sequência ou arraste um sobre o outro.</p></div>'+
       '</section>';
     }
 
     const b=context.bubble;
     const available=context.available.length
       ? context.available.map(r=>'<div class="reaction-line available"><span>'+esc(partnerName(r,b.resource))+'</span><strong>'+esc(r.label)+'</strong></div>').join('')
-      : '<div class="context-empty">Nenhuma reação disponível neste ambiente.</div>';
+      : '<div class="context-empty">Nenhuma reação disponível agora.</div>';
 
     const blocked=context.blocked.length
-      ? '<div class="blocked-title">Em outro ambiente</div>'+
+      ? '<div class="blocked-title">Aguardando evento</div>'+
         context.blocked.slice(0,4).map(r=>'<div class="reaction-line blocked"><span>'+esc(partnerName(r,b.resource))+'</span><strong>'+esc(r.label)+'</strong></div>').join('')
       : '';
 
     return '<section class="info-panel panel">'+
       '<div class="info-tile selected-info" style="--tile:'+ringFor(b.resource)+'"><span>SELECIONADO</span><strong>'+esc(b.resource)+'</strong><small>matéria na sopa</small></div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+
-        '<div class="context-actions">'+
-          '<button id="contextPerturb" class="context-action perturb" '+(state.perturbed?'disabled':'')+'>Perturbar ambiente</button>'+
-          '<button id="clearSelection" class="context-action secondary">Limpar seleção</button>'+
-        '</div>'+
+        '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
   }
@@ -114,7 +112,7 @@
     const p=G.phase(state);
     return '<div class="modal-backdrop"><div class="menu-card">'+
       '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">Cada fase monta uma sopa controlada com toda a matéria necessária para a receita principal, mais elementos extras para experimentação.</p>'+
+      '<p class="menu-intro">Cada fase começa com a sopa vazia. Somente átomos apropriados àquela etapa caem do topo; eventos aparecem como losangos luminosos.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
@@ -137,50 +135,125 @@
   }
 
   function render(){
+    G.expireEvent(state);
     const app=document.getElementById('app');
     const p=G.phase(state);
     const objective=G.objective(state);
-    const current=state.environment[0];
-    const info=G.ENV_INFO[current];
 
     app.innerHTML=
       '<div class="app single-app">'+
-        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · TURNO '+state.phaseTurn+'</small><strong>'+esc(p.title)+'</strong><span>'+esc(p.chapter)+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
+        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+'</small><strong>'+esc(p.title)+'</strong><span>'+esc(p.chapter)+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
         '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span><small>'+esc(objective.hint)+'</small></section>'+
         progressMarkup(objective)+
-        '<section class="environment-strip"><div class="event-now"><small>AMBIENTE</small><strong>'+current+' '+esc(info.name)+'</strong></div><div class="mini-env-track">'+renderEnvironment()+'</div></section>'+
+        renderEventStatus()+
         '<section class="arena-shell"><div class="primordial-pond single-pond" id="soupPond">'+
           '<div class="water-caustic caustic-a"></div><div class="water-caustic caustic-b"></div>'+
           state.soup.map(renderBubble).join('')+
-          '<div class="pond-caption"><strong>SOPA PRIMORDIAL</strong><span>'+state.soup.length+' bolhas presentes</span></div>'+
+          '<div class="pond-caption"><strong>SOPA PRIMORDIAL</strong><span>'+state.soup.length+' bolhas capturadas</span></div>'+
           renderPhaseCompletion()+
         '</div></section>'+
         renderContext()+
-        '<button class="end-turn-main" id="endTurn" '+(state.stageComplete?'disabled':'')+'>ENCERRAR TURNO</button>'+
       '</div>'+
       renderMenu()+renderChoice();
 
     bind();
-    emitTurnToast();
+    emitEventToast();
     state.soup.forEach(b=>{b.isNew=false;});
   }
 
-  function clearHighlights(){
-    document.querySelectorAll('.candidate').forEach(el=>{
-      if(el.dataset.bubbleId!==state.selectedBubbleId) el.classList.remove('candidate');
-    });
+  function createFaller(){
+    if(state.stageComplete||menuOpen) return;
+    const layer=document.getElementById('falling-layer');
+    if(!layer) return;
+
+    const spec=G.nextFaller(state);
+    const node=document.createElement('button');
+    const x=6+Math.random()*88;
+    const duration=9+Math.random()*5;
+    node.style.setProperty('--fall-x',x+'vw');
+    node.style.setProperty('--fall-duration',duration+'s');
+
+    if(spec.kind==='event'){
+      const event=G.EVENTS[spec.value];
+      node.className='falling-object falling-event '+event.className;
+      node.dataset.kind='event';
+      node.dataset.value=spec.value;
+      node.innerHTML='<span>'+event.icon+'</span><small>'+esc(event.name)+'</small>';
+      node.setAttribute('aria-label','Evento '+event.name);
+    }else{
+      node.className='falling-object falling-atom atom-'+spec.value.toLowerCase();
+      node.dataset.kind='atom';
+      node.dataset.value=spec.value;
+      node.innerHTML='<strong>'+esc(spec.value)+'</strong>';
+      node.setAttribute('aria-label','Capturar '+spec.value);
+    }
+
+    node.onclick=function(){
+      if(node.dataset.kind==='atom'){
+        G.captureAtom(state,node.dataset.value);
+      }else{
+        G.activateEvent(state,node.dataset.value);
+      }
+      node.classList.add('captured');
+      setTimeout(()=>node.remove(),180);
+      render();
+    };
+
+    node.addEventListener('animationend',()=>node.remove(),{once:true});
+    layer.appendChild(node);
+  }
+
+  function scheduleRain(token){
+    if(token!==rainGeneration) return;
+    const delay=850+Math.random()*900;
+    rainTimer=setTimeout(()=>{
+      if(token!==rainGeneration) return;
+      createFaller();
+      scheduleRain(token);
+    },delay);
+  }
+
+  function restartRain(){
+    rainGeneration+=1;
+    if(rainTimer) clearTimeout(rainTimer);
+    document.getElementById('falling-layer')?.replaceChildren();
+    const token=rainGeneration;
+    setTimeout(()=>{
+      if(token===rainGeneration) createFaller();
+    },300);
+    scheduleRain(token);
+  }
+
+  function tickEvent(){
+    if(G.expireEvent(state)){
+      render();
+      return;
+    }
+    const active=state.activeEvent;
+    const countdown=document.getElementById('activeEventCountdown');
+    if(active&&countdown){
+      countdown.textContent=Math.max(0,Math.ceil((active.expiresAt-Date.now())/1000))+' s restantes';
+    }
   }
 
   function startDrag(event,el){
     if(event.button!==undefined&&event.button!==0) return;
-    if(el.dataset.mystery==='1'||state.stageComplete) return;
+    if(state.stageComplete) return;
     const id=el.dataset.bubbleId;
-    if(state.selectedBubbleId!==id) G.selectBubble(state,id);
-    drag={id,el,startX:event.clientX,startY:event.clientY,moved:false,pointerId:event.pointerId};
+    drag={
+      id,
+      el,
+      previousSelected:state.selectedBubbleId,
+      startX:event.clientX,
+      startY:event.clientY,
+      moved:false,
+      pointerId:event.pointerId
+    };
     el.setPointerCapture&&el.setPointerCapture(event.pointerId);
     el.classList.add('dragging','selected');
+
     document.querySelectorAll('.organic-bubble').forEach(other=>{
-      if(other.dataset.bubbleId===id||other.dataset.mystery==='1') return;
+      if(other.dataset.bubbleId===id) return;
       if(G.availableCombos(state,id,other.dataset.bubbleId).length) other.classList.add('candidate');
     });
   }
@@ -197,21 +270,27 @@
     if(!drag||event.pointerId!==drag.pointerId) return;
     const sourceId=drag.id;
     const moved=drag.moved;
+    const previousSelected=drag.previousSelected;
     drag.el.classList.remove('dragging');
     drag.el.style.transform='';
     drag.el.style.pointerEvents='none';
     const target=document.elementFromPoint(event.clientX,event.clientY);
     drag.el.style.pointerEvents='';
     drag=null;
-    clearHighlights();
+    document.querySelectorAll('.candidate').forEach(el=>el.classList.remove('candidate'));
 
     if(!moved){
+      state.selectedBubbleId=previousSelected;
+      const result=G.selectBubble(state,sourceId);
+      if(result.choices){
+        pendingChoice={sourceId:result.sourceId,targetId:result.targetId,recipes:result.choices};
+      }
       render();
       return;
     }
 
     const bubbleTarget=target&&target.closest('.organic-bubble');
-    if(bubbleTarget&&bubbleTarget.dataset.bubbleId!==sourceId&&bubbleTarget.dataset.mystery!=='1'){
+    if(bubbleTarget&&bubbleTarget.dataset.bubbleId!==sourceId){
       const recipes=G.availableCombos(state,sourceId,bubbleTarget.dataset.bubbleId);
       if(recipes.length===1){
         G.combine(state,sourceId,bubbleTarget.dataset.bubbleId,recipes[0].id);
@@ -224,42 +303,50 @@
 
   function bind(){
     document.getElementById('openMenu').onclick=()=>{menuOpen=true;render();};
-    document.getElementById('endTurn').onclick=()=>{G.endTurn(state);pendingChoice=null;render();};
-
     const next=document.getElementById('nextPhase');
-    if(next) next.onclick=()=>{G.nextPhase(state);lastToastEventId=null;render();};
+    if(next) next.onclick=()=>{
+      if(G.nextPhase(state)){
+        pendingChoice=null;
+        menuOpen=false;
+        lastToastEventId=null;
+        restartRain();
+        render();
+      }
+    };
 
     const close=document.getElementById('closeMenu');
     if(close) close.onclick=()=>{menuOpen=false;render();};
 
     const restartPhase=document.getElementById('restartPhase');
-    if(restartPhase) restartPhase.onclick=()=>{G.restartPhase(state);menuOpen=false;pendingChoice=null;lastToastEventId=null;render();};
+    if(restartPhase) restartPhase.onclick=()=>{
+      G.restartPhase(state);
+      menuOpen=false;pendingChoice=null;lastToastEventId=null;
+      restartRain();render();
+    };
 
     const restartCampaign=document.getElementById('restartCampaign');
-    if(restartCampaign) restartCampaign.onclick=()=>{state=G.createGame();menuOpen=false;pendingChoice=null;lastToastEventId=null;render();};
+    if(restartCampaign) restartCampaign.onclick=()=>{
+      state=G.createGame();
+      menuOpen=false;pendingChoice=null;lastToastEventId=null;
+      restartRain();render();
+    };
 
     document.querySelectorAll('[data-phase]').forEach(el=>{
       el.onclick=()=>{
         if(G.jumpToPhase(state,Number(el.dataset.phase))){
-          menuOpen=false;pendingChoice=null;lastToastEventId=null;render();
+          menuOpen=false;pendingChoice=null;lastToastEventId=null;
+          restartRain();render();
         }
       };
     });
 
     document.querySelectorAll('.organic-bubble').forEach(el=>{
-      if(el.dataset.mystery==='1'){
-        el.onclick=()=>{G.revealMystery(state,el.dataset.bubbleId);render();};
-      }else{
-        el.addEventListener('pointerdown',e=>startDrag(e,el));
-      }
+      el.addEventListener('pointerdown',e=>startDrag(e,el));
     });
 
     window.onpointermove=moveDrag;
     window.onpointerup=finishDrag;
     window.onpointercancel=finishDrag;
-
-    const perturb=document.getElementById('contextPerturb');
-    if(perturb) perturb.onclick=()=>{G.perturbSelected(state);render();};
 
     const clear=document.getElementById('clearSelection');
     if(clear) clear.onclick=()=>{state.selectedBubbleId=null;render();};
@@ -275,5 +362,7 @@
     if(cancel) cancel.onclick=()=>{pendingChoice=null;render();};
   }
 
+  eventTickTimer=setInterval(tickEvent,250);
   render();
+  restartRain();
 })();
