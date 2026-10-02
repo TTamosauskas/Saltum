@@ -333,7 +333,13 @@
     node.dataset.captured='1';
 
     if(!compartmentActive()){
-      G.captureMatter(state,resource,fieldX,fieldY);
+      const captured=G.captureMatter(state,resource,fieldX,fieldY);
+      if(captured){
+        const selection=G.selectBubble(state,captured.id);
+        if(selection.choices){
+          pendingChoice={sourceId:selection.sourceId,targetId:selection.targetId,recipes:selection.choices};
+        }
+      }
       node.remove();
       render();
       return;
@@ -479,7 +485,13 @@
           const fieldRect=field.getBoundingClientRect();
           const x=Math.max(8,Math.min(92,((event.clientX-fieldRect.left)/fieldRect.width)*100));
           const y=Math.max(8,Math.min(92,((event.clientY-fieldRect.top)/fieldRect.height)*100));
-          G.captureMatter(state,resource,x,y);
+          const captured=G.captureMatter(state,resource,x,y);
+          if(captured){
+            const selection=G.selectBubble(state,captured.id);
+            if(selection.choices){
+              pendingChoice={sourceId:selection.sourceId,targetId:selection.targetId,recipes:selection.choices};
+            }
+          }
           node.remove();
           render();
         }
