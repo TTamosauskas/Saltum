@@ -107,6 +107,16 @@
     }).join('');
   }
 
+  function renderRecipeCatalog(){
+    return G.COMBOS.map(recipe=>{
+      const condition=recipe.events&&recipe.events.length
+        ? 'Evento: '+recipe.events.join(' ou ')
+        : 'Sempre disponível';
+      return '<div class="recipe-catalog-row" style="--recipe-color:'+recipe.color+'">'+
+        '<strong>'+esc(recipe.label)+'</strong><small>'+esc(condition)+'</small></div>';
+    }).join('');
+  }
+
   function renderMenu(){
     if(!menuOpen) return '';
     const p=G.phase(state);
@@ -115,7 +125,7 @@
       '<p class="menu-intro">Os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Moléculas construídas permanecem acumuladas ao avançar de fase. Bolhas liberadas para fora vagam junto ao fluxo até a troca de fase. Eventos aparecem como losangos luminosos.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
-      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
+      '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
     '</div></div>';
   }
 
