@@ -18,7 +18,7 @@ function EventToast({ event }) {
       React.createElement('span', { className: 'environment-toast-icon' }, event.icon),
       React.createElement('div', null,
         React.createElement('strong', null, event.title),
-        React.createElement('small', null, 'Início do turno de ' + event.player)
+        React.createElement('small', null, event.subtitle || 'Início do turno')
       )
     ),
     React.createElement(
