@@ -1,192 +1,152 @@
 (function () {
-  const KNOWN_RESOURCES = ['H','H','H','C','C','O','O','N','N','P','H₂','CO','H₂O','Aminoácidos','Ácidos graxos','Nucleotídeos'];
-  const UNKNOWN_POOL = ['H','C','O','N','P','H₂','CO','H₂O','Aminoácidos','Ácidos graxos','Nucleotídeos'];
+  const ATOMS = ['H','C','O','N','P'];
 
-  const ENV_INFO = {
-    '☀': { name:'UV', className:'env-uv', benefit:'Favorece aminoácidos e nucleotídeos' },
-    '⚡': { name:'Descarga elétrica', className:'env-lightning', benefit:'Favorece aminoácidos' },
-    '♨': { name:'Hidrotermal', className:'env-thermal', benefit:'Favorece ácidos graxos' },
-    '◐': { name:'Úmido-seco', className:'env-wetdry', benefit:'Favorece nucleotídeos, peptídeos e RNA' },
-    '○': { name:'Calmaria', className:'env-calm', benefit:'Estabilidade e preparação' }
+  const EVENTS = {
+    '☀': {
+      icon:'☀',
+      name:'UV',
+      className:'event-uv',
+      duration:14000,
+      description:'Janela fotoquímica: aminoácidos e nucleotídeos ficam disponíveis.'
+    },
+    '⚡': {
+      icon:'⚡',
+      name:'Descarga elétrica',
+      className:'event-lightning',
+      duration:11000,
+      description:'Pulso energético: a síntese de aminoácidos fica disponível.'
+    },
+    '♨': {
+      icon:'♨',
+      name:'Hidrotermal',
+      className:'event-thermal',
+      duration:14000,
+      description:'Fluxo hidrotermal: a síntese de ácidos graxos fica disponível.'
+    },
+    '◐': {
+      icon:'◐',
+      name:'Úmido-seco',
+      className:'event-wetdry',
+      duration:14000,
+      description:'Concentração cíclica: nucleotídeos, peptídeos e QT45 ficam disponíveis.'
+    }
   };
 
   const COMBOS = [
     { id:'h2', a:'H', b:'H', out:'H₂', color:'#62d6ff', label:'H + H → H₂' },
     { id:'water', a:'H₂', b:'O', out:'H₂O', color:'#69e0df', label:'H₂ + O → H₂O' },
     { id:'co', a:'C', b:'O', out:'CO', color:'#ff9c70', label:'C + O → CO' },
-    { id:'amino', a:'N', b:'H₂O', out:'Aminoácidos', environments:['☀','⚡'], color:'#ffad79', label:'N + H₂O → Aminoácidos' },
-    { id:'fatty', a:'CO', b:'H₂', out:'Ácidos graxos', environments:['♨'], color:'#f1d069', label:'CO + H₂ → Ácidos graxos' },
-    { id:'nt', a:'P', b:'H₂O', out:'Nucleotídeos', environments:['☀','◐'], color:'#b895ff', label:'P + H₂O → Nucleotídeos' },
-    { id:'peptide', a:'Aminoácidos', b:'Aminoácidos', out:'Peptídeo', environments:['◐'], color:'#ff8f72', label:'Aminoácidos + Aminoácidos → Peptídeo' },
+    { id:'amino', a:'N', b:'H₂O', out:'Aminoácidos', events:['☀','⚡'], color:'#ffad79', label:'N + H₂O → Aminoácidos' },
+    { id:'fatty', a:'CO', b:'H₂', out:'Ácidos graxos', events:['♨'], color:'#f1d069', label:'CO + H₂ → Ácidos graxos' },
+    { id:'nt', a:'P', b:'H₂O', out:'Nucleotídeos', events:['☀','◐'], color:'#b895ff', label:'P + H₂O → Nucleotídeos' },
+    { id:'peptide', a:'Aminoácidos', b:'Aminoácidos', out:'Peptídeo', events:['◐'], color:'#ff8f72', label:'Aminoácidos + Aminoácidos → Peptídeo' },
     { id:'vesicle', a:'Ácidos graxos', b:'Ácidos graxos', out:'Vesícula', color:'#e7d875', label:'Ácidos graxos + Ácidos graxos → Vesícula' },
-    { id:'qt45', a:'Nucleotídeos', b:'Nucleotídeos', out:'QT45', environments:['◐'], color:'#b895ff', label:'Nucleotídeos + Nucleotídeos → QT45' },
+    { id:'qt45', a:'Nucleotídeos', b:'Nucleotídeos', out:'QT45', events:['◐'], color:'#b895ff', label:'Nucleotídeos + Nucleotídeos → QT45' },
     { id:'protobiont', a:'Peptídeo', b:'Vesícula', out:'Protobionte', color:'#75d8b9', label:'Peptídeo + Vesícula → Protobionte' },
     { id:'life', a:'Protobionte', b:'QT45', out:'Vida emergente', color:'#ffffff', label:'Protobionte + QT45 → Vida emergente' }
   ];
 
-  const ENV_RULES = {
-    '☀': {
-      benefited:['amino','nt'],
-      harmed:['fatty','qt45'],
-      auto:['amino','nt'],
-      regress:[
-        {resource:'Ácidos graxos',to:'CO',label:'Ácidos graxos expostos perderam estabilidade e recuaram para CO'}
-      ]
-    },
-    '⚡': {
-      benefited:['amino'],
-      harmed:['nt','qt45'],
-      auto:['amino'],
-      regress:[
-        {resource:'Nucleotídeos',to:'P',label:'Nucleotídeos expostos foram desestabilizados e recuaram para P'}
-      ]
-    },
-    '♨': {
-      benefited:['fatty'],
-      harmed:['nt','qt45'],
-      auto:['fatty'],
-      regress:[
-        {resource:'Nucleotídeos',to:'P',label:'O calor hidrotermal desestabilizou nucleotídeos expostos e deixou P disponível'}
-      ]
-    },
-    '◐': {
-      benefited:['nt','peptide','qt45'],
-      harmed:[],
-      auto:['nt'],
-      regress:[]
-    },
-    '○': {
-      benefited:['vesicle','protobiont','life'],
-      harmed:[],
-      auto:[],
-      regress:[]
-    }
-  };
-
   const PHASES = [
     {
       id:'h2', title:'Hidrogênio molecular', chapter:'Química básica',
-      objective:'Forme H₂', formula:'H + H → H₂', hint:'Combine as duas bolhas H.',
-      target:'H₂', targetCount:1, recipes:['h2'],
-      soup:['H','H','O','C','N','?'],
-      environment:['○','☀','⚡','○','♨','◐']
+      objective:'Forme H₂', formula:'H + H → H₂',
+      hint:'Capture dois átomos H que caem do topo e combine-os.',
+      target:'H₂', spawnAtoms:['H'], spawnEvents:[]
     },
     {
       id:'water', title:'Água', chapter:'Química básica',
-      objective:'Forme água', formula:'H₂ + O → H₂O', hint:'H₂ e O já estão disponíveis na sopa.',
-      target:'H₂O', targetCount:1, recipes:['water'],
-      soup:['H₂','O','H','C','N','?'],
-      environment:['○','☀','◐','⚡','♨','○']
+      objective:'Forme água', formula:'H + H → H₂ · H₂ + O → H₂O',
+      hint:'Capture H e O. Construa primeiro H₂ e depois combine com O.',
+      target:'H₂O', spawnAtoms:['H','H','O'], spawnEvents:[]
     },
     {
       id:'co', title:'Carbono reativo', chapter:'Química básica',
-      objective:'Forme CO', formula:'C + O → CO', hint:'Combine carbono e oxigênio.',
-      target:'CO', targetCount:1, recipes:['co'],
-      soup:['C','O','H','N','P','?'],
-      environment:['○','☀','⚡','○','♨','◐']
+      objective:'Forme CO', formula:'C + O → CO',
+      hint:'Capture C e O e combine-os dentro da sopa.',
+      target:'CO', spawnAtoms:['C','O'], spawnEvents:[]
     },
     {
       id:'amino', title:'Primeiros aminoácidos', chapter:'Orgânicos',
-      objective:'Produza aminoácidos', formula:'N + H₂O → Aminoácidos', hint:'A reação precisa de ☀ UV ou ⚡ descarga elétrica.',
-      target:'Aminoácidos', targetCount:1, recipes:['amino'],
-      soup:['N','H₂O','C','P','H','?'],
-      environment:['○','⚡','☀','○','◐','♨']
+      objective:'Produza aminoácidos', formula:'N + H₂O → Aminoácidos',
+      hint:'Construa H₂O com H e O. Capture ☀ ou ⚡ quando aparecer para abrir a janela da reação.',
+      target:'Aminoácidos', spawnAtoms:['H','H','O','N'], spawnEvents:['☀','⚡']
     },
     {
       id:'fatty', title:'Lipídios prebióticos', chapter:'Compartimentalização',
-      objective:'Produza ácidos graxos', formula:'CO + H₂ → Ácidos graxos', hint:'A reação precisa de ♨ ambiente hidrotermal.',
-      target:'Ácidos graxos', targetCount:1, recipes:['fatty'],
-      soup:['CO','H₂','C','O','P','?'],
-      environment:['○','♨','☀','○','⚡','◐']
+      objective:'Produza ácidos graxos', formula:'CO + H₂ → Ácidos graxos',
+      hint:'Construa CO e H₂. Capture ♨ para ativar a química hidrotermal.',
+      target:'Ácidos graxos', spawnAtoms:['H','H','C','O'], spawnEvents:['♨']
     },
     {
       id:'nt', title:'Nucleotídeos', chapter:'Informação',
-      objective:'Produza nucleotídeos', formula:'P + H₂O → Nucleotídeos', hint:'A reação precisa de ☀ UV ou ◐ úmido-seco.',
-      target:'Nucleotídeos', targetCount:1, recipes:['nt'],
-      soup:['P','H₂O','N','C','H','?'],
-      environment:['○','◐','☀','○','⚡','♨']
+      objective:'Produza nucleotídeos', formula:'P + H₂O → Nucleotídeos',
+      hint:'Construa H₂O, capture P e ative ☀ ou ◐.',
+      target:'Nucleotídeos', spawnAtoms:['H','H','O','P'], spawnEvents:['☀','◐']
     },
     {
       id:'peptide', title:'Catálise peptídica', chapter:'Polímeros',
-      objective:'Forme um peptídeo', formula:'Aminoácidos + Aminoácidos → Peptídeo', hint:'◐ úmido-seco favorece a condensação no protótipo.',
-      target:'Peptídeo', targetCount:1, recipes:['peptide'],
-      soup:['Aminoácidos','Aminoácidos','N','H₂O','C','?'],
-      environment:['○','◐','⚡','○','☀','♨']
+      objective:'Forme um peptídeo', formula:'2 Aminoácidos → Peptídeo',
+      hint:'Produza dois aminoácidos a partir de H, O e N; depois capture ◐ e combine-os.',
+      target:'Peptídeo', spawnAtoms:['H','H','O','N'], spawnEvents:['☀','⚡','◐']
     },
     {
       id:'vesicle', title:'Primeira vesícula', chapter:'Compartimentalização',
-      objective:'Forme uma vesícula', formula:'Ácidos graxos + Ácidos graxos → Vesícula', hint:'Combine duas bolhas lipídicas.',
-      target:'Vesícula', targetCount:1, recipes:['vesicle'],
-      soup:['Ácidos graxos','Ácidos graxos','CO','H₂','N','?'],
-      environment:['○','♨','○','◐','☀','⚡']
+      objective:'Forme uma vesícula', formula:'2 Ácidos graxos → Vesícula',
+      hint:'Produza dois ácidos graxos a partir de H, C e O. ♨ ativa cada síntese lipídica.',
+      target:'Vesícula', spawnAtoms:['H','H','C','O'], spawnEvents:['♨']
     },
     {
       id:'qt45', title:'RNA catalítico', chapter:'Informação',
-      objective:'Monte QT45', formula:'Nucleotídeos + Nucleotídeos → QT45', hint:'Representação estratégica: ◐ úmido-seco permite a montagem desta fase.',
-      target:'QT45', targetCount:1, recipes:['qt45'],
-      soup:['Nucleotídeos','Nucleotídeos','P','H₂O','N','?'],
-      environment:['○','◐','☀','○','⚡','♨']
+      objective:'Monte QT45', formula:'2 Nucleotídeos → QT45',
+      hint:'Produza dois nucleotídeos com H, O e P. ◐ habilita a montagem estratégica de QT45.',
+      target:'QT45', spawnAtoms:['H','H','O','P'], spawnEvents:['☀','◐']
     },
     {
       id:'integration', title:'Integração prebiótica', chapter:'Vida emergente',
-      objective:'Integre os sistemas', formula:'Peptídeo + Vesícula → Protobionte → + QT45', hint:'Duas combinações concluem a integração.',
-      target:'Vida emergente', targetCount:1, recipes:['protobiont','life'],
-      soup:['Peptídeo','Vesícula','QT45','C','N','?'],
-      environment:['○','◐','○','☀','♨','⚡']
+      objective:'Alcance vida emergente', formula:'Peptídeo + Vesícula → Protobionte · + QT45',
+      hint:'Todos os átomos fundamentais podem cair. Reconstrua os três sistemas e integre-os.',
+      target:'Vida emergente', spawnAtoms:['H','H','C','O','N','P'], spawnEvents:['☀','⚡','♨','◐']
     }
   ];
 
   const SIZE = {
-    H:54, C:62, O:60, N:58, P:64, 'H₂':68, CO:72, 'H₂O':72,
-    'Aminoácidos':88, 'Ácidos graxos':92, 'Nucleotídeos':88,
-    'Peptídeo':94, 'Vesícula':100, 'QT45':96, 'Protobionte':104,
-    'Vida emergente':112, '?':78
+    H:54,C:62,O:60,N:58,P:64,'H₂':68,CO:72,'H₂O':72,
+    'Aminoácidos':88,'Ácidos graxos':92,'Nucleotídeos':88,
+    'Peptídeo':94,'Vesícula':100,'QT45':96,'Protobionte':104,'Vida emergente':112
   };
 
   let nextId=1;
   let nextEventId=1;
+
   function id(){ return 'b'+nextId++; }
-  function rand(min,max){ return Math.round(min+Math.random()*(max-min)); }
   function sample(list){ return list[Math.floor(Math.random()*list.length)]; }
-  function recipeById(recipeId){ return COMBOS.find(r=>r.id===recipeId)||null; }
+  function rand(min,max){ return Math.round(min+Math.random()*(max-min)); }
   function phase(state){ return PHASES[state.phaseIndex]; }
+  function recipeById(recipeId){ return COMBOS.find(r=>r.id===recipeId)||null; }
 
   function makeBubble(resource,isNew,x,y){
     return {
       id:id(),
       resource,
       size:SIZE[resource]||72,
-      x:x===undefined?rand(12,88):x,
-      y:y===undefined?rand(14,82):y,
+      x:x===undefined?rand(14,86):x,
+      y:y===undefined?rand(15,82):y,
       drift:rand(3400,6200),
       delay:rand(-1600,0),
-      isNew:isNew!==false,
-      mystery:resource==='?'
+      isNew:isNew!==false
     };
-  }
-
-  function buildSoup(resources,isNew){
-    return resources.map((resource,index)=>{
-      const angle=(Math.PI*2*index/resources.length)+(Math.random()*.32);
-      const radius=index===resources.length-1?28:24+Math.random()*9;
-      const x=50+Math.cos(angle)*radius;
-      const y=49+Math.sin(angle)*radius*.82;
-      return makeBubble(resource,!!isNew,x,y);
-    });
   }
 
   function setPhase(state,index,announce){
     const p=PHASES[index];
     state.phaseIndex=index;
     state.phaseTurn=1;
-    state.soup=buildSoup(p.soup,announce!==false);
-    state.environment=p.environment.slice();
+    state.soup=[];
     state.selectedBubbleId=null;
-    state.perturbed=false;
     state.stageComplete=false;
+    state.activeEvent=null;
     state.lastBornId=null;
-    if(announce!==false) state.log.unshift('Fase '+(index+1)+': '+p.title+'.');
-    triggerTurnEvent(state);
+    if(announce!==false) state.log.unshift('Fase '+(index+1)+': '+p.title+'. A sopa começa vazia.');
     checkPhaseComplete(state);
   }
 
@@ -197,40 +157,41 @@
       phaseTurn:1,
       totalTurn:1,
       soup:[],
-      environment:[],
       selectedBubbleId:null,
-      perturbed:false,
       stageComplete:false,
       winner:false,
+      activeEvent:null,
       lastBornId:null,
       lastEvent:null,
-      log:['A sopa primordial desperta.']
+      log:['A sopa primordial desperta vazia. Aguarde a queda dos primeiros átomos.']
     };
     setPhase(state,0,false);
     return state;
   }
 
-  function countResource(state,resource){
-    return state.soup.filter(b=>b.resource===resource).length;
+  function activeEventIcon(state){
+    expireEvent(state);
+    return state.activeEvent?state.activeEvent.icon:null;
   }
 
-  function findSoupPair(state,recipe){
-    const first=state.soup.findIndex(b=>!b.mystery&&b.resource===recipe.a);
-    if(first<0) return null;
-    const second=state.soup.findIndex((b,i)=>i!==first&&!b.mystery&&b.resource===recipe.b);
-    if(second<0) return null;
-    return [first,second];
+  function expireEvent(state){
+    if(state.activeEvent&&Date.now()>=state.activeEvent.expiresAt){
+      state.log.unshift(state.activeEvent.icon+' '+state.activeEvent.name+' terminou.');
+      state.activeEvent=null;
+      return true;
+    }
+    return false;
   }
 
-  function isRecipeEnabled(recipe,currentEnvironment){
-    if(!recipe.environments) return true;
-    return recipe.environments.includes(currentEnvironment);
+  function isRecipeEnabled(state,recipe){
+    if(!recipe.events||!recipe.events.length) return true;
+    const icon=activeEventIcon(state);
+    return !!icon&&recipe.events.includes(icon);
   }
 
-  function possibleRecipes(resource,currentEnvironment){
+  function possibleRecipes(state,resource){
     return COMBOS.filter(recipe=>
-      (recipe.a===resource||recipe.b===resource) &&
-      isRecipeEnabled(recipe,currentEnvironment)
+      (recipe.a===resource||recipe.b===resource)&&isRecipeEnabled(state,recipe)
     );
   }
 
@@ -241,38 +202,88 @@
   function availableCombos(state,sourceId,targetId){
     const a=state.soup.find(b=>b.id===sourceId);
     const b=state.soup.find(b=>b.id===targetId);
-    if(!a||!b||a.mystery||b.mystery) return [];
+    if(!a||!b) return [];
     return COMBOS.filter(recipe=>{
       const pair=(recipe.a===a.resource&&recipe.b===b.resource)||(recipe.a===b.resource&&recipe.b===a.resource);
-      return pair&&isRecipeEnabled(recipe,state.environment[0]);
+      return pair&&isRecipeEnabled(state,recipe);
     });
   }
 
   function selectedContext(state){
+    expireEvent(state);
     const bubble=state.soup.find(b=>b.id===state.selectedBubbleId);
-    if(!bubble||bubble.mystery) return null;
-    const available=possibleRecipes(bubble.resource,state.environment[0]);
+    if(!bubble) return null;
+    const available=possibleRecipes(state,bubble.resource);
     const blocked=allRecipesFor(bubble.resource).filter(r=>!available.some(a=>a.id===r.id));
     return {bubble,available,blocked};
   }
 
-  function selectBubble(state,bubbleId){
-    const bubble=state.soup.find(b=>b.id===bubbleId);
-    if(!bubble||bubble.mystery) return false;
-    state.selectedBubbleId=state.selectedBubbleId===bubbleId?null:bubbleId;
-    return true;
+  function captureAtom(state,resource){
+    if(state.stageComplete||!ATOMS.includes(resource)) return null;
+    const bubble=makeBubble(resource,true);
+    state.soup.push(bubble);
+    state.lastBornId=bubble.id;
+    state.log.unshift(resource+' foi capturado para dentro da sopa.');
+    return bubble;
   }
 
-  function revealMystery(state,bubbleId){
-    const index=state.soup.findIndex(b=>b.id===bubbleId&&b.mystery);
-    if(index<0||state.stageComplete) return false;
-    const previous=state.soup[index];
-    const resource=sample(UNKNOWN_POOL);
-    state.soup[index]=makeBubble(resource,true,previous.x,previous.y);
-    state.lastBornId=state.soup[index].id;
-    state.log.unshift('? revelou '+resource+'.');
-    checkPhaseComplete(state);
-    return true;
+  function activateEvent(state,icon){
+    if(state.stageComplete||!EVENTS[icon]) return null;
+    const spec=EVENTS[icon];
+    const now=Date.now();
+    state.activeEvent={
+      icon,
+      name:spec.name,
+      className:spec.className,
+      startedAt:now,
+      expiresAt:now+spec.duration,
+      duration:spec.duration
+    };
+    const benefited=COMBOS.filter(r=>r.events&&r.events.includes(icon)).map(r=>r.label);
+    const event={
+      id:nextEventId++,
+      icon,
+      title:icon+' '+spec.name,
+      subtitle:'Evento capturado · efeito temporário',
+      benefited,
+      harmed:[],
+      effects:[spec.description],
+      quiet:false
+    };
+    state.lastEvent=event;
+    state.log.unshift(icon+' '+spec.name+' foi ativado por '+Math.round(spec.duration/1000)+' s.');
+    return event;
+  }
+
+  function nextFaller(state){
+    const p=phase(state);
+    const hasEvents=p.spawnEvents.length>0;
+    const eventProbability=hasEvents?0.22:0;
+    if(Math.random()<eventProbability){
+      return {kind:'event',value:sample(p.spawnEvents)};
+    }
+    return {kind:'atom',value:sample(p.spawnAtoms)};
+  }
+
+  function selectBubble(state,bubbleId){
+    if(state.stageComplete) return {selected:false,combined:false};
+    const clicked=state.soup.find(b=>b.id===bubbleId);
+    if(!clicked) return {selected:false,combined:false};
+
+    const previous=state.selectedBubbleId;
+    if(previous&&previous!==bubbleId){
+      const recipes=availableCombos(state,previous,bubbleId);
+      if(recipes.length===1){
+        const result=combine(state,previous,bubbleId,recipes[0].id);
+        return {selected:false,combined:result.ok,recipe:result.recipe};
+      }
+      if(recipes.length>1){
+        return {selected:true,combined:false,choices:recipes,sourceId:previous,targetId:bubbleId};
+      }
+    }
+
+    state.selectedBubbleId=previous===bubbleId?null:bubbleId;
+    return {selected:!!state.selectedBubbleId,combined:false};
   }
 
   function combine(state,sourceId,targetId,recipeId){
@@ -287,110 +298,29 @@
 
     const x=(a.x+b.x)/2;
     const y=(a.y+b.y)/2;
-    state.soup=state.soup.filter(item=>item.id!==sourceId&&item.id!==targetId);
+    const ids=[a.id,b.id];
+    state.soup=state.soup.filter(item=>!ids.includes(item.id));
     const born=makeBubble(recipe.out,true,x,y);
     state.soup.push(born);
     state.selectedBubbleId=null;
     state.lastBornId=born.id;
     state.log.unshift(recipe.label+'.');
     checkPhaseComplete(state);
-    return {ok:true,recipe};
+    return {ok:true,recipe,born};
   }
 
-  function perturbSelected(state){
-    if(state.perturbed||!state.selectedBubbleId||state.environment.length<2||state.stageComplete) return false;
-    const index=state.soup.findIndex(b=>b.id===state.selectedBubbleId);
-    if(index<0) return false;
-    const discarded=state.soup.splice(index,1)[0];
-    const removed=state.environment.splice(1,1)[0];
-    const refill=phase(state).environment[(state.phaseTurn+state.environment.length)%phase(state).environment.length]||'○';
-    state.environment.push(refill);
-    state.selectedBubbleId=null;
-    state.perturbed=true;
-    state.log.unshift('Perturbação: '+discarded.resource+' foi sacrificado e '+removed+' saiu do futuro ambiental.');
-    return true;
-  }
-
-  function executeFavoredSoupReaction(state,recipeId){
-    const recipe=recipeById(recipeId);
-    const p=phase(state);
-    if(!recipe||!recipe.out||p.recipes.includes(recipeId)) return null;
-    const pair=findSoupPair(state,recipe);
-    if(!pair) return null;
-
-    const a=state.soup[pair[0]], b=state.soup[pair[1]];
-    const x=(a.x+b.x)/2, y=(a.y+b.y)/2;
-    const ids=[a.id,b.id];
-    state.soup=state.soup.filter(item=>!ids.includes(item.id));
-    const born=makeBubble(recipe.out,true,x,y);
-    state.soup.push(born);
-    state.lastBornId=born.id;
-    return recipe.label;
-  }
-
-  function executeRegression(state,rule){
-    const index=state.soup.findIndex(b=>!b.mystery&&b.resource===rule.resource);
-    if(index<0) return null;
-    const previous=state.soup[index];
-    state.soup[index]=makeBubble(rule.to,true,previous.x,previous.y);
-    state.lastBornId=state.soup[index].id;
-    return rule.label;
-  }
-
-  function triggerTurnEvent(state){
-    const icon=state.environment[0];
-    const info=ENV_INFO[icon];
-    const rules=ENV_RULES[icon];
-    const effects=[];
-
-    rules.auto.forEach(recipeId=>{
-      const effect=executeFavoredSoupReaction(state,recipeId);
-      if(effect) effects.push('Favorecida: '+effect);
-    });
-    rules.regress.forEach(rule=>{
-      const effect=executeRegression(state,rule);
-      if(effect) effects.push('Prejudicada: '+effect);
-    });
-
-    state.lastEvent={
-      id:nextEventId++,
-      icon,
-      title:icon+' '+info.name,
-      subtitle:'Turno '+state.phaseTurn+' · Fase '+(state.phaseIndex+1),
-      benefited:rules.benefited.map(id=>recipeById(id)?.label||id),
-      harmed:rules.harmed.map(id=>recipeById(id)?.label||id),
-      effects,
-      quiet:effects.length===0
-    };
-
-    state.log.unshift(
-      'Turno '+state.phaseTurn+' — '+icon+' '+info.name+
-      (effects.length?' — '+effects.join(' | '):' — sem reação ambiental automática.')
-    );
+  function countResource(state,resource){
+    return state.soup.filter(b=>b.resource===resource).length;
   }
 
   function phaseProgress(state){
     const p=phase(state);
-    if(p.id==='integration'){
-      const life=countResource(state,'Vida emergente')>0;
-      const proto=countResource(state,'Protobionte')>0;
-      return {value:life?2:(proto?1:0),max:2,label:(life?2:(proto?1:0))+'/2'};
-    }
-    const value=Math.min(p.targetCount,countResource(state,p.target));
-    return {value,max:p.targetCount,label:value+'/'+p.targetCount};
+    const complete=countResource(state,p.target)>0;
+    return {value:complete?1:0,max:1,label:complete?'1/1':'0/1'};
   }
 
   function objective(state){
     const p=phase(state);
-    if(p.id==='integration'&&countResource(state,'Protobionte')>0&&!state.stageComplete){
-      return {
-        chapter:p.chapter,
-        title:'Integre QT45 ao protobionte',
-        formula:'Protobionte + QT45 → Vida emergente',
-        hint:'A última combinação conclui a campanha.',
-        progress:phaseProgress(state)
-      };
-    }
     return {
       chapter:p.chapter,
       title:p.objective,
@@ -402,29 +332,16 @@
 
   function checkPhaseComplete(state){
     const p=phase(state);
-    if(countResource(state,p.target)>=p.targetCount){
+    if(countResource(state,p.target)>0){
       state.stageComplete=true;
       state.unlockedPhase=Math.max(state.unlockedPhase,Math.min(PHASES.length-1,state.phaseIndex+1));
+      state.activeEvent=null;
+      state.selectedBubbleId=null;
       state.log.unshift('Objetivo concluído: '+p.objective+'.');
       if(state.phaseIndex===PHASES.length-1) state.winner=true;
       return true;
     }
     return false;
-  }
-
-  function endTurn(state){
-    if(state.stageComplete) return false;
-    state.totalTurn+=1;
-    state.phaseTurn+=1;
-    state.perturbed=false;
-    state.selectedBubbleId=null;
-    state.environment.shift();
-    const p=phase(state);
-    const refill=p.environment[(state.phaseTurn+state.environment.length-1)%p.environment.length]||'○';
-    state.environment.push(refill);
-    triggerTurnEvent(state);
-    checkPhaseComplete(state);
-    return true;
   }
 
   function nextPhase(state){
@@ -445,10 +362,10 @@
   }
 
   window.SopaGame={
-    ENV_INFO,ENV_RULES,COMBOS,PHASES,
+    ATOMS,EVENTS,COMBOS,PHASES,
     createGame,phase,objective,phaseProgress,
-    selectBubble,revealMystery,selectedContext,possibleRecipes,availableCombos,
-    combine,perturbSelected,endTurn,nextPhase,restartPhase,jumpToPhase,
-    countResource
+    captureAtom,activateEvent,nextFaller,expireEvent,activeEventIcon,
+    selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
+    nextPhase,restartPhase,jumpToPhase,countResource
   };
 })();
