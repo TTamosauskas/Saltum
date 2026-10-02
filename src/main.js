@@ -74,7 +74,7 @@
     if(!context){
       return '<section class="info-panel panel">'+
         '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
-        '<div class="info-copy"><strong>Capture os átomos que atravessam a tela</strong><p>Clique em um átomo em movimento para sugá-lo para dentro da sopa. Depois clique em ingredientes compatíveis em sequência ou arraste um sobre o outro.</p></div>'+
+        '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Clique para sugá-lo automaticamente ou arraste o átomo diretamente para dentro da sopa. Depois combine ingredientes por dois cliques em sequência ou por arraste.</p></div>'+
       '</section>';
     }
 
@@ -112,7 +112,7 @@
     const p=G.phase(state);
     return '<div class="modal-backdrop"><div class="menu-card">'+
       '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">Cada fase começa com a sopa vazia. Todos os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Eventos aparecem como losangos luminosos.</p>'+
+      '<p class="menu-intro">Os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Moléculas construídas permanecem acumuladas ao avançar de fase. Eventos aparecem como losangos luminosos.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
@@ -150,7 +150,7 @@
         '<section class="arena-shell"><div class="primordial-pond single-pond" id="soupPond">'+
           '<div class="water-caustic caustic-a"></div><div class="water-caustic caustic-b"></div>'+
           state.soup.map(renderBubble).join('')+
-          '<div class="pond-caption"><strong>SOPA PRIMORDIAL</strong><span>'+state.soup.length+' bolhas capturadas</span></div>'+
+
           renderPhaseCompletion()+
         '</div></section>'+
         renderContext()+
@@ -228,6 +228,106 @@
     render();
   }
 
+  function resumeIncomingAtom(node){
+    const rect=node.getBoundingClientRect();
+    const endX=Number(node.dataset.endX);
+    const endY=Number(node.dataset.endY);
+    node.style.animation='none';
+    node.style.position='absolute';
+    node.style.left=rect.left+'px';
+    node.style.top=rect.top+'px';
+    node.style.transform='none';
+    node.style.opacity='1';
+    node.style.pointerEvents='auto';
+    node.style.setProperty('--start-x',rect.left+'px');
+    node.style.setProperty('--start-y',rect.top+'px');
+    node.style.setProperty('--end-x',endX+'px');
+    node.style.setProperty('--end-y',endY+'px');
+    void node.offsetWidth;
+    node.style.animation='traverseMatter 7s linear forwards';
+  }
+
+  function captureDraggedAtom(node,resource,clientX,clientY){
+    const pond=document.getElementById('soupPond');
+    if(!pond) return;
+    const rect=pond.getBoundingClientRect();
+    const pondX=Math.max(10,Math.min(90,((clientX-rect.left)/rect.width)*100));
+    const pondY=Math.max(10,Math.min(90,((clientY-rect.top)/rect.height)*100));
+
+    node.style.pointerEvents='none';
+    node.style.transition='transform .24s ease,opacity .24s ease,filter .24s ease';
+    node.style.transform='scale(.12)';
+    node.style.opacity='.15';
+    node.style.filter='brightness(1.9)';
+
+    setTimeout(()=>{
+      G.captureAtom(state,resource,pondX,pondY);
+      node.remove();
+      render();
+    },240);
+  }
+
+  function enableIncomingAtomDrag(node,resource){
+    let gesture=null;
+
+    node.addEventListener('pointerdown',event=>{
+      if(event.button!==undefined&&event.button!==0) return;
+      gesture={
+        pointerId:event.pointerId,
+        startX:event.clientX,
+        startY:event.clientY,
+        moved:false
+      };
+      node.setPointerCapture&&node.setPointerCapture(event.pointerId);
+    });
+
+    node.addEventListener('pointermove',event=>{
+      if(!gesture||event.pointerId!==gesture.pointerId) return;
+      const dx=event.clientX-gesture.startX;
+      const dy=event.clientY-gesture.startY;
+      if(Math.abs(dx)+Math.abs(dy)<8&&!gesture.moved) return;
+
+      if(!gesture.moved){
+        gesture.moved=true;
+        const rect=node.getBoundingClientRect();
+        node.style.animation='none';
+        node.style.position='fixed';
+        node.style.left=rect.left+'px';
+        node.style.top=rect.top+'px';
+        node.style.transform='none';
+        node.style.zIndex='90';
+        node.classList.add('incoming-dragging');
+      }
+
+      node.style.left=(event.clientX-node.offsetWidth/2)+'px';
+      node.style.top=(event.clientY-node.offsetHeight/2)+'px';
+    });
+
+    const finish=event=>{
+      if(!gesture||event.pointerId!==gesture.pointerId) return;
+      const moved=gesture.moved;
+      gesture=null;
+      node.classList.remove('incoming-dragging');
+
+      if(!moved) return;
+
+      node.dataset.suppressClick='1';
+      const pond=document.getElementById('soupPond');
+      const rect=pond&&pond.getBoundingClientRect();
+      const inside=rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
+
+      if(inside){
+        captureDraggedAtom(node,resource,event.clientX,event.clientY);
+      }else{
+        resumeIncomingAtom(node);
+        setTimeout(()=>{node.dataset.suppressClick='';},0);
+      }
+    };
+
+    node.addEventListener('pointerup',finish);
+    node.addEventListener('pointercancel',finish);
+  }
+
   function createFaller(){
     if(state.stageComplete||menuOpen) return;
     const layer=document.getElementById('falling-layer');
@@ -241,6 +341,8 @@
     node.style.setProperty('--start-y',path.start.y+'px');
     node.style.setProperty('--end-x',path.end.x+'px');
     node.style.setProperty('--end-y',path.end.y+'px');
+    node.dataset.endX=String(path.end.x);
+    node.dataset.endY=String(path.end.y);
     node.style.setProperty('--fall-duration',duration+'s');
     node.style.setProperty('--travel-rotate',(Math.random()>.5?1:-1)*(20+Math.random()*55)+'deg');
 
@@ -258,7 +360,11 @@
       node.dataset.value=spec.value;
       node.innerHTML='<strong>'+esc(spec.value)+'</strong>';
       node.setAttribute('aria-label','Capturar '+spec.value);
-      node.onclick=()=>absorbAtom(node,spec.value);
+      node.onclick=()=>{
+        if(node.dataset.suppressClick==='1') return;
+        absorbAtom(node,spec.value);
+      };
+      enableIncomingAtomDrag(node,spec.value);
     }
 
     node.addEventListener('animationend',()=>node.remove(),{once:true});
@@ -371,8 +477,8 @@
         pendingChoice=null;
         menuOpen=false;
         lastToastEventId=null;
-        restartRain();
         render();
+        restartRain();
       }
     };
 
@@ -383,7 +489,7 @@
     if(restartPhase) restartPhase.onclick=()=>{
       G.restartPhase(state);
       menuOpen=false;pendingChoice=null;lastToastEventId=null;
-      restartRain();render();
+      render();restartRain();
     };
 
     const restartCampaign=document.getElementById('restartCampaign');
