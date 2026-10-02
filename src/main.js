@@ -60,7 +60,8 @@
       '⚡':'Descarga elétrica',
       '☀':'UV',
       '♨':'Hidrotermal',
-      '◐':'Úmido-seco'
+      '◐':'Úmido-seco',
+      '❄':'Gelo eutético'
     }[icon]||icon;
   }
 
@@ -150,15 +151,21 @@
   }
 
   function renderCampaignTrail(){
+    let previousChapter='';
     return G.PHASES.map((p,index)=>{
       const status=G.phaseStatus(state,index);
       const clickable=status!=='locked'||state.editorMode;
       const period=G.PERIODS[p.period];
-      return '<button type="button" class="trail-node '+status+'" data-home-phase="'+index+'" '+(clickable?'':'disabled')+'>'+
-        '<span class="trail-dot" aria-hidden="true"></span>'+
-        '<span class="trail-node-copy"><small>FASE '+(index+1)+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><em>'+esc(p.formula)+'</em></span>'+
-        '<span class="trail-state">'+esc(state.editorMode&&status==='locked'?'Editor':phaseStateLabel(status))+'</span>'+
-      '</button>';
+      const chapter=p.chapter!==previousChapter
+        ? '<div class="trail-chapter"><span></span><strong>'+esc(p.chapter)+'</strong><em>'+String(index+1).padStart(2,'0')+'</em></div>'
+        : '';
+      previousChapter=p.chapter;
+      return chapter+
+        '<button type="button" class="trail-node '+status+'" data-home-phase="'+index+'" '+(clickable?'':'disabled')+'>'+
+          '<span class="trail-dot" aria-hidden="true"></span>'+
+          '<span class="trail-node-copy"><small>FASE '+(index+1)+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><em>'+esc(p.formula)+'</em></span>'+
+          '<span class="trail-state">'+esc(state.editorMode&&status==='locked'?'Editor':phaseStateLabel(status))+'</span>'+
+        '</button>';
     }).join('');
   }
 
@@ -238,7 +245,7 @@
     const p=G.phase(state);
     return '<div class="modal-backdrop"><div class="menu-card">'+
       '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">Os átomos do período atravessam a tela continuamente; cabe ao jogador capturar os úteis. Moléculas construídas permanecem acumuladas ao avançar de fase. Bolhas liberadas para fora vagam junto ao fluxo até a troca de fase. Eventos aparecem como losangos luminosos.</p>'+
+      '<p class="menu-intro">A campanha possui 44 descobertas. Cada fase libera uma receita própria; produtos anteriores continuam disponíveis como precursores. A química começa dispersa, ganha compartimento com a vesícula e termina em replicação de RNA.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="openTrail" class="menu-action">Trilha de fases</button><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
@@ -255,7 +262,7 @@
   function renderPhaseCompletion(){
     if(!state.stageComplete) return '';
     if(state.winner){
-      return '<div class="phase-complete-panel final"><small>CAMPANHA CONCLUÍDA</small><strong>VIDA<br>EMERGENTE</strong><span>A integração prebiótica foi alcançada.</span></div>';
+      return '<div class="phase-complete-panel final"><small>CAMPANHA CONCLUÍDA</small><strong>SISTEMA<br>AUTORREPLICANTE</strong><span>RNA replicante e compartimento foram integrados.</span></div>';
     }
     if(G.phase(state).id==='vesicle'){
       return '<button class="phase-next membrane-born" id="nextPhase"><small>COMPARTIMENTO FORMADO</small><strong>PRÓXIMA<br>FASE</strong></button>';
