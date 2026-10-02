@@ -105,7 +105,8 @@
       (state.winner!==null?'<div class="victory"><div class="victory-card"><p class="eyebrow">Vida emergente</p><h2>'+esc(state.players[state.winner].name)+' integrou um sistema viável.</h2><p>QT45 completa, protocélula formada e metabolismo sustentado.</p><button class="primary" id="restart">Jogar novamente</button></div></div>':'');
 
     bind();
-    requestAnimationFrame(()=>document.querySelectorAll('.organic-bubble.born').forEach(el=>el.classList.remove('born')));
+    state.soup.forEach(b=>{ b.isNew=false; });
+    state.players.forEach(p=>p.hand.forEach(b=>{ b.isNew=false; }));
   }
 
   function highlightPartners(sourceId) {
