@@ -66,7 +66,7 @@
     if(!active) return '';
     const remaining=Math.max(0,active.expiresAt-Date.now());
     const seconds=Math.ceil(remaining/1000);
-    return '<div class="active-event-badge '+active.className+'"><span>'+active.icon+'</span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">'+seconds+' s restantes</small></div></div>';
+    return '<div class="active-event-badge '+active.className+'"><span><i>'+active.icon+'</i></span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">'+seconds+' s restantes</small></div></div>';
   }
 
   function renderContext(){
