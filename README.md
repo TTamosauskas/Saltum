@@ -161,3 +161,16 @@ Os átomos H, C, N, O e P usam glifos centrais ampliados para leitura imediata n
 Todos os objetos moleculares mantêm seus desenhos internos próprios, porém o invólucro interativo externo passa a ser circular. O diâmetro cresce de acordo com a maior dimensão da estrutura, preservando espaço para moléculas alongadas sem voltar ao cartão retangular arredondado.
 
 A Fotólise continua como losango vermelho flutuante no ambiente. O controlador mantém no máximo uma ocorrência por vez. Ao clicar nela, a Fotólise fica armada e o losango sai do fluxo; depois da decomposição, um novo losango volta a atravessar a tela. Se o losango completar sua travessia sem ser usado, outro entra em seguida.
+
+
+## Agrupamento de recursos e combinação direta
+
+Recursos idênticos agora ocupam um único círculo. A partir da segunda unidade, o círculo exibe um contador como `×2`, `×3` e assim por diante.
+
+Receitas consomem apenas as unidades necessárias do agrupamento. Quando um grupo participa de uma reação, sua quantidade diminui e a seleção é limpa. Quando a quantidade chega a zero, o círculo desaparece.
+
+Receitas com dois reagentes idênticos, como `H + H → H₂`, continuam funcionando usando duas unidades do mesmo agrupamento.
+
+Além do fluxo por cliques sucessivos, uma receita pode ser concluída arrastando diretamente um reagente sobre outro compatível. O resultado respeita as mesmas regras de desbloqueio e catalisadores.
+
+A área de objetivo foi simplificada. Receitas sem catalisador exibem apenas objetivo e fórmula. Quando uma condição ambiental é exigida, a interface mostra somente a linha curta dos catalisadores, por exemplo `☀ UV ou ⚡ Descarga elétrica`.

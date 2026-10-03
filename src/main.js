@@ -69,14 +69,16 @@
     const photolysisEligible=G.photolysisActive(state)&&G.canDecompose(b.resource);
     const pairing=pairingInfo(b);
     const visual=V.spec(b.resource);
+    const quantity=G.bubbleCount(b);
     return '<button class="organic-bubble molecule-object kind-'+visual.kind+
       (b.isNew?' born':'')+
       (selected?' selected':'')+
       (candidate?' candidate':'')+
       (pairing?' canonical-pair':'')+
       (photolysisEligible?' photolysis-eligible':'')+
-      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+' · '+esc(visual.family)+'">'+
+      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" data-count="'+quantity+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+' · '+quantity+' unidade(s) · '+esc(visual.family)+'">'+
       '<span class="molecule-object-art">'+V.render(b.resource,'field')+'</span>'+
+      (quantity>1?'<span class="resource-count" aria-label="'+quantity+' unidades">×'+quantity+'</span>':'')+
       (pairing?'<span class="hydrogen-bond-hint" aria-hidden="true">'+(pairing.bonds===2?'··':'···')+'<small>'+pairing.label+'</small></span>':'')+
       '<strong class="resource-label">'+esc(b.resource)+'</strong>'+
       '</button>';
@@ -92,13 +94,16 @@
     }[icon]||icon;
   }
 
+  function orderedConditions(conditions){
+    const order=['☀','⚡','♨','◐','❄'];
+    return [...(conditions||[])].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  }
+
   function conditionMarkup(conditions){
-    if(!conditions||!conditions.length){
-      return '<div class="recipe-conditions"><span>CONDIÇÕES / CATALISADORES</span><strong>Sem evento obrigatório</strong></div>';
-    }
-    return '<div class="recipe-conditions"><span>CONDIÇÕES / CATALISADORES</span><div>'+
-      conditions.map(icon=>'<b class="condition-chip">'+icon+' '+esc(conditionLabel(icon))+'</b>').join('')+
-      '</div></div>';
+    if(!conditions||!conditions.length) return '';
+    return '<div class="recipe-condition-inline">'+
+      orderedConditions(conditions).map(icon=>'<span>'+icon+' '+esc(conditionLabel(icon))+'</span>').join('<em>ou</em>')+
+    '</div>';
   }
 
   function progressMarkup(objective){
@@ -163,7 +168,7 @@
       '<div class="info-tile selected-info molecular-detail" style="--tile:'+visual.accent+';--detail-accent:'+visual.accent+'">'+
         '<span>'+V.scienceBadge(b.resource)+'</span>'+
         '<div class="detail-structure">'+V.render(b.resource,'detail')+'</div>'+
-        '<strong>'+esc(b.resource)+'</strong>'+
+        '<strong>'+esc(b.resource)+(G.bubbleCount(b)>1?' ×'+G.bubbleCount(b):'')+'</strong>'+
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
@@ -263,13 +268,13 @@
 
   function renderRecipeCatalog(){
     return G.COMBOS.map(recipe=>{
-      const condition=recipe.events&&recipe.events.length
-        ? 'Condições / catalisadores: '+recipe.events.map(conditionLabel).join(' ou ')
-        : 'Condições / catalisadores: sem evento obrigatório';
       const visual=V.spec(recipe.out);
+      const catalysts=recipe.events&&recipe.events.length
+        ? '<small>'+orderedConditions(recipe.events).map(icon=>icon+' '+esc(conditionLabel(icon))).join(' ou ')+'</small>'
+        : '';
       return '<div class="recipe-catalog-row" style="--recipe-color:'+recipe.color+'">'+
         '<span class="recipe-visual">'+V.render(recipe.out,'catalog')+'</span>'+
-        '<span class="recipe-copy"><strong>'+esc(recipe.label)+'</strong><small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small><small>'+esc(condition)+'</small></span>'+
+        '<span class="recipe-copy"><strong>'+esc(recipe.label)+'</strong><small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+catalysts+'</span>'+
       '</div>';
     }).join('');
   }
@@ -323,7 +328,7 @@
     app.innerHTML=
       '<div class="app single-app">'+
         '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+period.atoms.map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
-        '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span>'+conditionMarkup(objective.conditions)+'<small>'+esc(objective.hint)+'</small></section>'+
+        '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span>'+conditionMarkup(objective.conditions)+'</section>'+
         progressMarkup(objective)+
         renderEventStatus()+
         '<section class="arena-shell '+(compartmentActive()?'compartment-stage':'open-stage')+'"><div class="'+(compartmentActive()?'primordial-pond single-pond':'prebiotic-field')+'" id="soupPond">'+
@@ -783,6 +788,7 @@
       const recipes=G.availableCombos(state,sourceId,bubbleTarget.dataset.bubbleId);
       if(recipes.length===1){
         G.combine(state,sourceId,bubbleTarget.dataset.bubbleId,recipes[0].id);
+        state.selectedBubbleId=null;
         render();
         return;
       }
@@ -886,6 +892,7 @@
     document.querySelectorAll('[data-recipe-choice]').forEach(el=>{
       el.onclick=()=>{
         if(pendingChoice) G.combine(state,pendingChoice.sourceId,pendingChoice.targetId,el.dataset.recipeChoice);
+        state.selectedBubbleId=null;
         pendingChoice=null;render();
       };
     });
