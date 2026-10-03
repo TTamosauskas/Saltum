@@ -152,3 +152,12 @@ Produtos recém-formados animam a montagem de ligações e componentes. A mesma 
 - `src/toasts.mjs`
 
 O jogo permanece estático e compatível com GitHub Pages.
+
+
+## Ajustes de legibilidade dos objetos
+
+Os átomos H, C, N, O e P usam glifos centrais ampliados para leitura imediata nas primeiras fases.
+
+Todos os objetos moleculares mantêm seus desenhos internos próprios, porém o invólucro interativo externo passa a ser circular. O diâmetro cresce de acordo com a maior dimensão da estrutura, preservando espaço para moléculas alongadas sem voltar ao cartão retangular arredondado.
+
+A Fotólise deixa de surgir aleatoriamente no fluxo. Existe uma única ferramenta `☀ Fotólise` permanentemente disponível durante a fase. Um clique arma a decomposição e destaca as moléculas elegíveis; outro clique desarma. Depois de uma decomposição, a mesma ferramenta continua disponível.
