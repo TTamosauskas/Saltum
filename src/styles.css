@@ -1396,3 +1396,51 @@ h1,h2,p{margin-top:0}
   }
   .photolysis-tool-copy small{max-width:92px}
 }
+
+
+/* Estoques agrupados de recursos */
+.resource-count{
+  position:absolute;
+  right:-7px;
+  top:-7px;
+  z-index:12;
+  min-width:28px;
+  height:28px;
+  padding:0 6px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  border:2px solid rgba(235,255,252,.82);
+  background:#0b3438;
+  color:#f3fffd;
+  box-shadow:0 3px 10px rgba(0,0,0,.38),0 0 12px rgba(96,220,202,.24);
+  font-size:10px;
+  font-weight:950;
+  line-height:1;
+  pointer-events:none;
+}
+.organic-bubble.selected .resource-count{
+  border-color:#43f28a;
+  background:#103f31;
+}
+
+/* Catalisadores compactos: somente quando a receita exige condição */
+.recipe-condition-inline{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:3px;
+  color:#cce0df;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.25;
+}
+.recipe-condition-inline span{white-space:nowrap}
+.recipe-condition-inline em{
+  color:#718d8f;
+  font-style:normal;
+  font-size:8px;
+  font-weight:700;
+}
