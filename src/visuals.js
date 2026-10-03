@@ -2,11 +2,11 @@
   const ATOM_COLORS={H:'#FFFFFF',C:'#909090',N:'#3050F8',O:'#FF0D0D',P:'#FF8000'};
 
   const RESOURCE_VISUALS={
-    H:{family:'Átomo',kind:'atom',width:34,height:34,accent:'#FFFFFF',formula:'H',detail:'chemical',atom:'H'},
-    C:{family:'Átomo',kind:'atom',width:42,height:42,accent:'#909090',formula:'C',detail:'chemical',atom:'C'},
-    N:{family:'Átomo',kind:'atom',width:40,height:40,accent:'#3050F8',formula:'N',detail:'chemical',atom:'N'},
-    O:{family:'Átomo',kind:'atom',width:40,height:40,accent:'#FF0D0D',formula:'O',detail:'chemical',atom:'O'},
-    P:{family:'Átomo',kind:'atom',width:46,height:46,accent:'#FF8000',formula:'P',detail:'chemical',atom:'P'},
+    H:{family:'Átomo',kind:'atom',width:42,height:42,accent:'#FFFFFF',formula:'H',detail:'chemical',atom:'H'},
+    C:{family:'Átomo',kind:'atom',width:48,height:48,accent:'#909090',formula:'C',detail:'chemical',atom:'C'},
+    N:{family:'Átomo',kind:'atom',width:46,height:46,accent:'#3050F8',formula:'N',detail:'chemical',atom:'N'},
+    O:{family:'Átomo',kind:'atom',width:46,height:46,accent:'#FF0D0D',formula:'O',detail:'chemical',atom:'O'},
+    P:{family:'Átomo',kind:'atom',width:50,height:50,accent:'#FF8000',formula:'P',detail:'chemical',atom:'P'},
 
     'H₂':{family:'Molécula pequena',kind:'diatomic',width:64,height:36,accent:'#DFF6FF',formula:'H₂',detail:'chemical',atoms:['H','H']},
     'H₂O':{family:'Molécula pequena',kind:'bent',width:70,height:54,accent:'#5ED6E3',formula:'H₂O',detail:'chemical',atoms:['H','O','H']},
@@ -72,7 +72,7 @@
     const fill=ATOM_COLORS[atom]||'#CBD7D7';
     const text=atom==='H'?'#1b2628':'#fff';
     return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+fill+'" stroke="rgba(255,255,255,.65)" stroke-width="2"/>'+
-      '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" fill="'+text+'" font-size="'+Math.max(10,r*.8)+'" font-weight="900">'+atom+'</text>';
+      '<text x="'+x+'" y="'+(y+r*.18)+'" text-anchor="middle" dominant-baseline="middle" fill="'+text+'" font-size="'+Math.max(34,r*1.02)+'" font-weight="950" stroke="'+(atom==='H'?'rgba(0,0,0,.18)':'rgba(0,0,0,.28)')+'" stroke-width="1.2" paint-order="stroke">'+atom+'</text>';
   }
 
   function bond(x1,y1,x2,y2,count){
@@ -224,7 +224,11 @@
   function svgFor(resource,detail){
     const s=spec(resource);
     let body='';
-    if(s.kind==='atom') body=circle(90,60,detail?34:30,s.atom);
+    if(s.kind==='atom'){
+      const atomRadius=detail?47:45;
+      body=circle(60,60,atomRadius,s.atom);
+      return '<svg class="molecular-svg kind-'+s.kind+(detail?' detail':'')+'" viewBox="0 0 120 120" aria-hidden="true">'+body+'</svg>';
+    }
     else if(s.kind==='diatomic') body=bond(60,60,120,60,1)+circle(50,60,20,'H')+circle(130,60,20,'H');
     else if(s.kind==='bent') body=bond(90,58,52,88,1)+bond(90,58,128,88,1)+circle(90,52,22,'O')+circle(44,94,15,'H')+circle(136,94,15,'H');
     else if(s.kind==='linear') body=bond(58,60,122,60,s.bond||1)+circle(47,60,19,'C')+circle(133,60,19,'O');
