@@ -122,15 +122,6 @@
     return '<div class="active-event-badge '+active.className+'"><span><i>'+active.icon+'</i></span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">'+seconds+' s restantes</small></div></div>';
   }
 
-  function renderPhotolysisTool(){
-    const active=G.photolysisActive(state);
-    const eligible=state.soup.filter(b=>G.canDecompose(b.resource)).length;
-    return '<button type="button" id="photolysisTool" class="photolysis-tool'+(active?' active':'')+'" aria-pressed="'+(active?'true':'false')+'" aria-label="'+(active?'Desarmar Fotólise':'Ativar Fotólise')+'">'+
-      '<span class="photolysis-diamond"><i>☀</i></span>'+
-      '<span class="photolysis-tool-copy"><strong>Fotólise</strong><small>'+(active?'ATIVA · '+eligible+' alvo(s)':'sempre disponível')+'</small></span>'+
-    '</button>';
-  }
-
   function renderContext(){
     if(G.photolysisActive(state)){
       const eligible=state.soup.filter(b=>G.canDecompose(b.resource));
@@ -335,7 +326,6 @@
         '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span>'+conditionMarkup(objective.conditions)+'<small>'+esc(objective.hint)+'</small></section>'+
         progressMarkup(objective)+
         renderEventStatus()+
-        renderPhotolysisTool()+
         '<section class="arena-shell '+(compartmentActive()?'compartment-stage':'open-stage')+'"><div class="'+(compartmentActive()?'primordial-pond single-pond':'prebiotic-field')+'" id="soupPond">'+
           (compartmentActive()?'<div class="water-caustic caustic-a"></div><div class="water-caustic caustic-b"></div>':'')+
           state.soup.map(renderBubble).join('')+
@@ -349,6 +339,7 @@
     bind();
     emitEventToast();
     state.soup.forEach(b=>{b.isNew=false;});
+    setTimeout(()=>ensurePhotolysisFaller(rainGeneration),0);
   }
 
   function edgePoint(edge){
@@ -593,6 +584,54 @@
     layer.appendChild(node);
   }
 
+  function ensurePhotolysisFaller(token){
+    if(token!==rainGeneration||homeOpen||state.stageComplete||G.photolysisActive(state)) return;
+    const layer=document.getElementById('falling-layer');
+    if(!layer||layer.querySelector('[data-photolysis-singleton="1"]')) return;
+
+    const event=G.EVENTS['☀F'];
+    const node=document.createElement('button');
+    const path=createTrajectory();
+    const duration=13+Math.random()*5;
+
+    node.className='falling-object falling-event '+event.className;
+    node.dataset.kind='event';
+    node.dataset.value='☀F';
+    node.dataset.photolysisSingleton='1';
+    node.dataset.endX=String(path.end.x);
+    node.dataset.endY=String(path.end.y);
+    node.style.setProperty('--start-x',path.start.x+'px');
+    node.style.setProperty('--start-y',path.start.y+'px');
+    node.style.setProperty('--end-x',path.end.x+'px');
+    node.style.setProperty('--end-y',path.end.y+'px');
+    node.style.setProperty('--fall-duration',duration+'s');
+    node.style.setProperty('--travel-rotate',(Math.random()>.5?1:-1)*(20+Math.random()*45)+'deg');
+    node.innerHTML='<span>'+event.icon+'</span><small>'+esc(event.name)+'</small>';
+    node.setAttribute('aria-label','Ativar evento '+event.name);
+
+    const recycle=delay=>{
+      if(node.dataset.finished==='1') return;
+      node.dataset.finished='1';
+      node.remove();
+      setTimeout(()=>{
+        if(token===rainGeneration) ensurePhotolysisFaller(token);
+      },delay);
+    };
+
+    node.onclick=()=>{
+      if(node.dataset.captured==='1') return;
+      node.dataset.captured='1';
+      G.activateEvent(state,'☀F');
+      node.style.pointerEvents='none';
+      node.classList.add('event-triggered');
+      setTimeout(()=>recycle(180),420);
+      render();
+    };
+
+    node.addEventListener('animationend',()=>recycle(220),{once:true});
+    layer.appendChild(node);
+  }
+
   function createFaller(){
     if(state.stageComplete||menuOpen) return;
     const layer=document.getElementById('falling-layer');
@@ -658,7 +697,10 @@
     document.getElementById('falling-layer')?.replaceChildren();
     const token=rainGeneration;
     setTimeout(()=>{
-      if(token===rainGeneration) createFaller();
+      if(token===rainGeneration){
+        createFaller();
+        ensurePhotolysisFaller(token);
+      }
     },300);
     scheduleRain(token);
   }
@@ -768,12 +810,6 @@
 
   function bind(){
     document.getElementById('openMenu').onclick=()=>{menuOpen=true;render();};
-    const photolysisTool=document.getElementById('photolysisTool');
-    if(photolysisTool) photolysisTool.onclick=()=>{
-      G.togglePhotolysis(state);
-      render();
-    };
-
     const next=document.getElementById('nextPhase');
     if(next) next.onclick=()=>{
       if(G.nextPhase(state)){
