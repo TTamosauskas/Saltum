@@ -1267,3 +1267,128 @@ h1,h2,p{margin-top:0}
   border-color:#75D8B9;
   background:rgba(36,82,69,.16);
 }
+
+
+/* Ajustes de legibilidade e invólucro circular */
+.organic-bubble.molecule-object{
+  width:var(--bubble-d);
+  height:var(--bubble-d);
+  min-width:64px;
+  min-height:64px;
+  border-radius:50%;
+  padding:8px 8px 18px;
+  background:
+    radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--visual-accent) 10%,transparent),transparent 66%),
+    rgba(3,18,24,.16);
+}
+.organic-bubble.molecule-object .resource-visual{
+  width:var(--rv-w);
+  height:var(--rv-h);
+  max-width:calc(var(--bubble-d) - 14px);
+  max-height:calc(var(--bubble-d) - 22px);
+}
+.organic-bubble.molecule-object.kind-atom{
+  border-width:1.5px;
+  background:
+    radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--visual-accent) 13%,transparent),transparent 62%),
+    rgba(3,18,24,.12);
+}
+.organic-bubble.molecule-object.kind-atom .molecular-svg text,
+.molecular-faller.kind-atom .molecular-svg text{
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.78));
+}
+.organic-bubble.molecule-object.kind-atom .resource-label,
+.molecular-faller.kind-atom .faller-label{
+  font-size:7px;
+  opacity:.72;
+}
+
+.molecular-faller{
+  width:var(--faller-d);
+  height:var(--faller-d);
+  min-width:64px;
+  min-height:64px;
+  border-radius:50%;
+  padding:8px 8px 18px;
+}
+.molecular-faller .resource-visual{
+  width:var(--rv-w);
+  height:var(--rv-h);
+  max-width:calc(var(--faller-d) - 14px);
+  max-height:calc(var(--faller-d) - 22px);
+}
+
+/* Uma única Fotólise permanente */
+.photolysis-tool{
+  position:fixed;
+  right:14px;
+  bottom:calc(env(safe-area-inset-bottom) + 14px);
+  z-index:82;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:132px;
+  padding:8px 11px 8px 8px;
+  border:1px solid rgba(255,39,39,.72);
+  border-radius:999px;
+  background:rgba(38,5,10,.94);
+  color:#ffe8e8;
+  box-shadow:0 0 18px rgba(255,39,39,.28),0 12px 32px rgba(0,0,0,.32);
+  cursor:pointer;
+  backdrop-filter:blur(10px);
+}
+.photolysis-tool:hover{
+  border-color:#ff5555;
+  box-shadow:0 0 24px rgba(255,39,39,.42),0 12px 32px rgba(0,0,0,.34);
+}
+.photolysis-tool.active{
+  background:rgba(72,5,12,.97);
+  border-color:#ff2727;
+  box-shadow:0 0 16px #ff2727,0 0 34px rgba(255,39,39,.48),0 12px 32px rgba(0,0,0,.34);
+}
+.photolysis-diamond{
+  width:34px;
+  height:34px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  transform:rotate(45deg);
+  border:2px solid #ff2727;
+  border-radius:7px;
+  background:
+    radial-gradient(circle at 35% 28%,rgba(255,255,255,.72),transparent 18%),
+    rgba(70,4,10,.96);
+  color:#fff;
+  box-shadow:0 0 13px rgba(255,39,39,.62);
+}
+.photolysis-diamond i{
+  transform:rotate(-45deg);
+  font-style:normal;
+  font-size:15px;
+  text-shadow:0 0 8px #ff2727;
+}
+.photolysis-tool-copy{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  min-width:0;
+}
+.photolysis-tool-copy strong{
+  font-size:9px;
+  line-height:1.1;
+}
+.photolysis-tool-copy small{
+  margin-top:2px;
+  color:#e9aaaa;
+  font-size:7px;
+  line-height:1.1;
+}
+@media(max-width:520px){
+  .photolysis-tool{
+    right:10px;
+    bottom:calc(env(safe-area-inset-bottom) + 10px);
+    min-width:0;
+    padding-right:9px;
+  }
+  .photolysis-tool-copy small{max-width:92px}
+}
