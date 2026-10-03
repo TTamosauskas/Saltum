@@ -94,12 +94,15 @@
     }[icon]||icon;
   }
 
+  function orderedConditions(conditions){
+    const order=['☀','⚡','♨','◐','❄'];
+    return [...(conditions||[])].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  }
+
   function conditionMarkup(conditions){
     if(!conditions||!conditions.length) return '';
-    const order=['☀','⚡','♨','◐','❄'];
-    const sorted=[...conditions].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
     return '<div class="recipe-condition-inline">'+
-      sorted.map(icon=>'<span>'+icon+' '+esc(conditionLabel(icon))+'</span>').join('<em>ou</em>')+
+      orderedConditions(conditions).map(icon=>'<span>'+icon+' '+esc(conditionLabel(icon))+'</span>').join('<em>ou</em>')+
     '</div>';
   }
 
@@ -267,7 +270,7 @@
     return G.COMBOS.map(recipe=>{
       const visual=V.spec(recipe.out);
       const catalysts=recipe.events&&recipe.events.length
-        ? '<small>'+recipe.events.map(icon=>icon+' '+esc(conditionLabel(icon))).join(' ou ')+'</small>'
+        ? '<small>'+orderedConditions(recipe.events).map(icon=>icon+' '+esc(conditionLabel(icon))).join(' ou ')+'</small>'
         : '';
       return '<div class="recipe-catalog-row" style="--recipe-color:'+recipe.color+'">'+
         '<span class="recipe-visual">'+V.render(recipe.out,'catalog')+'</span>'+
