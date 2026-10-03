@@ -180,7 +180,7 @@
     {id:'replicating-system',title:'Sistema autorreplicante',chapter:'Replicação de RNA',period:'rna',objective:'Integre replicação e compartimento',formula:'Protobionte + RNA autorreplicante → Sistema autorreplicante',hint:'Integre o sistema de RNA ao compartimento prebiótico para concluir a campanha.',target:'Sistema autorreplicante',targetCount:1}
   ].map(p=>{
     const recipe=COMBOS.find(r=>r.id===p.id);
-    return {...p,spawnEvents:['☀F',...((recipe&&recipe.events)||[])]};
+    return {...p,spawnEvents:[...((recipe&&recipe.events)||[])]};
   });
 
   const SIZE = {
@@ -442,6 +442,18 @@
     return {ok:true,recipe,parts:[first,second]};
   }
 
+  function togglePhotolysis(state){
+    if(state.stageComplete) return false;
+    if(state.photolysisActive){
+      state.photolysisActive=false;
+      state.selectedBubbleId=null;
+      state.log.unshift('Fotólise desarmada.');
+      return false;
+    }
+    activateEvent(state,'☀F');
+    return !!state.photolysisActive;
+  }
+
   function activateEvent(state,icon){
     if(state.stageComplete||!EVENTS[icon]) return null;
     const spec=EVENTS[icon];
@@ -645,7 +657,7 @@
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
     createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,recipeUnlocked,
     captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
-    photolysisActive,canDecompose,decomposeBubble,
+    photolysisActive,canDecompose,decomposeBubble,togglePhotolysis,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
     nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
   };
