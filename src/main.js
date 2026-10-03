@@ -35,7 +35,8 @@
 
   function bubbleStyle(b){
     const visual=V.spec(b.resource);
-    return '--x:'+b.x+'%;--y:'+b.y+'%;--visual-w:'+Math.max(56,visual.width)+'px;--visual-h:'+Math.max(56,visual.height)+'px;--drift:'+b.drift+'ms;--delay:'+b.delay+'ms;--ring:'+ringFor(b.resource)+';--visual-accent:'+visual.accent+';';
+    const diameter=Math.max(64,Math.max(visual.width,visual.height)+22);
+    return '--x:'+b.x+'%;--y:'+b.y+'%;--visual-w:'+Math.max(56,visual.width)+'px;--visual-h:'+Math.max(56,visual.height)+'px;--bubble-d:'+diameter+'px;--drift:'+b.drift+'ms;--delay:'+b.delay+'ms;--ring:'+ringFor(b.resource)+';--visual-accent:'+visual.accent+';';
   }
 
   const BASE_PAIR={
@@ -121,10 +122,13 @@
     return '<div class="active-event-badge '+active.className+'"><span><i>'+active.icon+'</i></span><div><strong>'+esc(active.name)+'</strong><small id="activeEventCountdown">'+seconds+' s restantes</small></div></div>';
   }
 
-  function renderPhotolysisStatus(){
-    if(!G.photolysisActive(state)) return '';
+  function renderPhotolysisTool(){
+    const active=G.photolysisActive(state);
     const eligible=state.soup.filter(b=>G.canDecompose(b.resource)).length;
-    return '<div class="photolysis-status"><span>☀</span><div><strong>FOTÓLISE ATIVA</strong><small>'+eligible+' bolha(s) com contorno vermelho podem ser decompostas</small></div></div>';
+    return '<button type="button" id="photolysisTool" class="photolysis-tool'+(active?' active':'')+'" aria-pressed="'+(active?'true':'false')+'" aria-label="'+(active?'Desarmar Fotólise':'Ativar Fotólise')+'">'+
+      '<span class="photolysis-diamond"><i>☀</i></span>'+
+      '<span class="photolysis-tool-copy"><strong>Fotólise</strong><small>'+(active?'ATIVA · '+eligible+' alvo(s)':'sempre disponível')+'</small></span>'+
+    '</button>';
   }
 
   function renderContext(){
@@ -331,7 +335,7 @@
         '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span>'+conditionMarkup(objective.conditions)+'<small>'+esc(objective.hint)+'</small></section>'+
         progressMarkup(objective)+
         renderEventStatus()+
-        renderPhotolysisStatus()+
+        renderPhotolysisTool()+
         '<section class="arena-shell '+(compartmentActive()?'compartment-stage':'open-stage')+'"><div class="'+(compartmentActive()?'primordial-pond single-pond':'prebiotic-field')+'" id="soupPond">'+
           (compartmentActive()?'<div class="water-caustic caustic-a"></div><div class="water-caustic caustic-b"></div>':'')+
           state.soup.map(renderBubble).join('')+
@@ -566,14 +570,16 @@
     node.dataset.value=resource;
     node.dataset.endX=String(end.x);
     node.dataset.endY=String(end.y);
-    node.style.setProperty('--start-x',(clientX-Math.max(56,visual.width)/2)+'px');
-    node.style.setProperty('--start-y',(clientY-Math.max(56,visual.height)/2)+'px');
+    const fallerDiameter=Math.max(64,Math.max(visual.width,visual.height)+22);
+    node.style.setProperty('--start-x',(clientX-fallerDiameter/2)+'px');
+    node.style.setProperty('--start-y',(clientY-fallerDiameter/2)+'px');
     node.style.setProperty('--end-x',end.x+'px');
     node.style.setProperty('--end-y',end.y+'px');
     node.style.setProperty('--fall-duration',duration+'s');
     node.style.setProperty('--travel-rotate',(Math.random()>.5?1:-1)*(15+Math.random()*45)+'deg');
     node.style.setProperty('--faller-w',Math.max(56,visual.width)+'px');
     node.style.setProperty('--faller-h',Math.max(56,visual.height)+'px');
+    node.style.setProperty('--faller-d',fallerDiameter+'px');
     node.style.setProperty('--visual-accent',visual.accent);
     node.innerHTML=V.render(resource,'field')+'<strong class="faller-label">'+esc(resource)+'</strong>';
     node.setAttribute('aria-label','Recapturar '+resource+' · '+visual.family);
@@ -618,8 +624,10 @@
       node.className='falling-object molecular-faller atom-faller kind-'+visual.kind;
       node.dataset.kind='atom';
       node.dataset.value=spec.value;
+      const fallerDiameter=Math.max(64,Math.max(visual.width,visual.height)+22);
       node.style.setProperty('--faller-w',Math.max(56,visual.width)+'px');
       node.style.setProperty('--faller-h',Math.max(56,visual.height)+'px');
+      node.style.setProperty('--faller-d',fallerDiameter+'px');
       node.style.setProperty('--visual-accent',visual.accent);
       node.innerHTML=V.render(spec.value,'field')+'<strong class="faller-label">'+esc(spec.value)+'</strong>';
       node.setAttribute('aria-label','Capturar '+spec.value+' · '+visual.family);
@@ -760,6 +768,12 @@
 
   function bind(){
     document.getElementById('openMenu').onclick=()=>{menuOpen=true;render();};
+    const photolysisTool=document.getElementById('photolysisTool');
+    if(photolysisTool) photolysisTool.onclick=()=>{
+      G.togglePhotolysis(state);
+      render();
+    };
+
     const next=document.getElementById('nextPhase');
     if(next) next.onclick=()=>{
       if(G.nextPhase(state)){
