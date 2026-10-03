@@ -216,12 +216,50 @@
       y:y===undefined?rand(15,82):y,
       drift:rand(3400,6200),
       delay:rand(-1600,0),
-      isNew:isNew!==false
+      isNew:isNew!==false,
+      count:1
     };
   }
 
   function cloneSoup(soup){
     return soup.map(b=>({...b,isNew:false}));
+  }
+
+  function bubbleCount(bubble){
+    return Math.max(1,Number(bubble&&bubble.count)||1);
+  }
+
+  function addResource(state,resource,isNew,x,y,amount){
+    const quantity=Math.max(1,Number(amount)||1);
+    const existing=state.soup.find(b=>b.resource===resource);
+    if(existing){
+      const oldCount=bubbleCount(existing);
+      const total=oldCount+quantity;
+      if(x!==undefined) existing.x=((existing.x*oldCount)+(x*quantity))/total;
+      if(y!==undefined) existing.y=((existing.y*oldCount)+(y*quantity))/total;
+      existing.count=total;
+      existing.isNew=isNew!==false;
+      state.lastBornId=existing.id;
+      return existing;
+    }
+    const bubble=makeBubble(resource,isNew,x,y);
+    bubble.count=quantity;
+    state.soup.push(bubble);
+    state.lastBornId=bubble.id;
+    return bubble;
+  }
+
+  function consumeFromBubble(state,bubble,amount){
+    const quantity=Math.max(1,Number(amount)||1);
+    const current=bubbleCount(bubble);
+    if(current<quantity) return false;
+    if(current===quantity){
+      state.soup=state.soup.filter(item=>item.id!==bubble.id);
+    }else{
+      bubble.count=current-quantity;
+      bubble.isNew=false;
+    }
+    return true;
   }
 
   function molecularCarry(soup){
@@ -344,6 +382,9 @@
     const b=state.soup.find(b=>b.id===targetId);
     if(!a||!b) return [];
     return COMBOS.filter(recipe=>{
+      if(sourceId===targetId){
+        return recipe.a===a.resource&&recipe.b===a.resource&&bubbleCount(a)>=2&&isRecipeEnabled(state,recipe);
+      }
       const pair=(recipe.a===a.resource&&recipe.b===b.resource)||(recipe.a===b.resource&&recipe.b===a.resource);
       return pair&&isRecipeEnabled(state,recipe);
     });
@@ -360,10 +401,8 @@
 
   function captureMatter(state,resource,x,y){
     if(state.stageComplete||!SIZE[resource]) return null;
-    const bubble=makeBubble(resource,true,x,y);
-    state.soup.push(bubble);
-    state.lastBornId=bubble.id;
-    state.log.unshift(resource+' foi capturado para dentro da sopa.');
+    const bubble=addResource(state,resource,true,x,y,1);
+    state.log.unshift(resource+' foi capturado. Estoque: '+bubbleCount(bubble)+'.');
     return bubble;
   }
 
@@ -382,12 +421,13 @@
   }
 
   function releaseBubble(state,bubbleId){
-    const index=state.soup.findIndex(b=>b.id===bubbleId);
-    if(index<0||state.stageComplete) return null;
-    const bubble=state.soup.splice(index,1)[0];
-    if(state.selectedBubbleId===bubbleId) state.selectedBubbleId=null;
+    const bubble=state.soup.find(b=>b.id===bubbleId);
+    if(!bubble||state.stageComplete) return null;
+    const released={...bubble,count:1};
+    consumeFromBubble(state,bubble,1);
+    state.selectedBubbleId=null;
     state.log.unshift(bubble.resource+' foi liberado de volta ao fluxo exterior.');
-    return bubble;
+    return released;
   }
 
   function findPairForRecipe(state,recipe){
@@ -430,11 +470,10 @@
     const recipe=decompositionRecipe(bubble.resource);
     if(!recipe) return {ok:false};
 
-    state.soup.splice(index,1);
+    consumeFromBubble(state,bubble,1);
     const spread=5;
-    const first=makeBubble(recipe.a,true,Math.max(8,bubble.x-spread),Math.max(8,bubble.y-2));
-    const second=makeBubble(recipe.b,true,Math.min(92,bubble.x+spread),Math.min(92,bubble.y+2));
-    state.soup.push(first,second);
+    const first=addResource(state,recipe.a,true,Math.max(8,bubble.x-spread),Math.max(8,bubble.y-2),1);
+    const second=addResource(state,recipe.b,true,Math.min(92,bubble.x+spread),Math.min(92,bubble.y+2),1);
     state.photolysisActive=false;
     state.selectedBubbleId=null;
     state.lastBornId=second.id;
@@ -519,7 +558,7 @@
     if(!clicked) return {selected:false,combined:false};
 
     const previous=state.selectedBubbleId;
-    if(previous&&previous!==bubbleId){
+    if(previous){
       const recipes=availableCombos(state,previous,bubbleId);
       if(recipes.length===1){
         const result=combine(state,previous,bubbleId,recipes[0].id);
@@ -535,7 +574,7 @@
   }
 
   function combine(state,sourceId,targetId,recipeId){
-    if(sourceId===targetId||state.stageComplete) return {ok:false};
+    if(state.stageComplete) return {ok:false};
     const a=state.soup.find(b=>b.id===sourceId);
     const b=state.soup.find(b=>b.id===targetId);
     if(!a||!b) return {ok:false};
@@ -544,16 +583,24 @@
     if(!choices.length) return {ok:false};
     const recipe=(recipeId&&choices.find(r=>r.id===recipeId))||choices[0];
 
-    const x=(a.x+b.x)/2;
-    const y=(a.y+b.y)/2;
+    const x=sourceId===targetId?a.x:(a.x+b.x)/2;
+    const y=sourceId===targetId?a.y:(a.y+b.y)/2;
     const preserve=new Set(recipe.preserve||[]);
-    const ids=[a,b].filter(item=>!preserve.has(item.resource)).map(item=>item.id);
-    state.soup=state.soup.filter(item=>!ids.includes(item.id));
-    const born=makeBubble(recipe.out,true,x,y);
-    state.soup.push(born);
+
+    if(sourceId===targetId){
+      const required=preserve.has(a.resource)?0:2;
+      if(required&&!consumeFromBubble(state,a,required)) return {ok:false};
+    }else{
+      if(!preserve.has(a.resource)&&!consumeFromBubble(state,a,1)) return {ok:false};
+      const currentB=state.soup.find(item=>item.id===targetId);
+      if(!preserve.has(b.resource)&&currentB&&!consumeFromBubble(state,currentB,1)) return {ok:false};
+    }
+
+    const born=addResource(state,recipe.out,true,x,y,1);
     state.selectedBubbleId=null;
     state.lastBornId=born.id;
-    state.log.unshift(recipe.label+'.');
+    state.log.unshift(recipe.label+'. Estoque de '+recipe.out+': '+bubbleCount(born)+'.');
+
     if(recipe.events&&recipe.events.length&&state.activeEvent&&recipe.events.includes(state.activeEvent.icon)){
       state.log.unshift(state.activeEvent.icon+' '+state.activeEvent.name+' foi consumido pela reação.');
       state.activeEvent=null;
@@ -587,7 +634,7 @@
   }
 
   function countResource(state,resource){
-    return state.soup.filter(b=>b.resource===resource).length;
+    return state.soup.filter(b=>b.resource===resource).reduce((sum,b)=>sum+bubbleCount(b),0);
   }
 
   function phaseProgress(state){
@@ -656,7 +703,7 @@
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
     createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,recipeUnlocked,
-    captureAtom,captureMatter,moveBubble,releaseBubble,activateEvent,nextFaller,expireEvent,activeEventIcon,
+    captureAtom,captureMatter,moveBubble,releaseBubble,bubbleCount,activateEvent,nextFaller,expireEvent,activeEventIcon,
     photolysisActive,canDecompose,decomposeBubble,togglePhotolysis,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
     nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
