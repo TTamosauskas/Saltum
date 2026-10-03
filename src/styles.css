@@ -14,18 +14,22 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
 body{
-  display:flex;
-  justify-content:center;
   overflow-x:hidden;
   background:
     radial-gradient(circle at 50% 2%,rgba(75,156,166,.18),transparent 30%),
     linear-gradient(180deg,#071a22 0%,#031016 58%,#020b10 100%);
 }
+#app{
+  width:100%;
+  max-width:620px;
+  min-height:100dvh;
+  margin-inline:auto;
+}
 button{font:inherit}
 button:disabled{opacity:.38;cursor:not-allowed}
 h1,h2,p{margin-top:0}
 .app{
-  width:min(100%,620px);
+  width:100%;
   min-height:100dvh;
   padding:calc(env(safe-area-inset-top) + 12px) 13px calc(env(safe-area-inset-bottom) + 22px);
   display:flex;
@@ -522,7 +526,7 @@ h1,h2,p{margin-top:0}
 
 /* Tela inicial · trilha da campanha */
 .campaign-home{
-  width:min(100%,620px);
+  width:100%;
   min-height:100dvh;
   padding:calc(env(safe-area-inset-top) + 18px) 14px calc(env(safe-area-inset-bottom) + 28px);
   margin:0 auto;
