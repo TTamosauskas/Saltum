@@ -160,4 +160,4 @@ Os átomos H, C, N, O e P usam glifos centrais ampliados para leitura imediata n
 
 Todos os objetos moleculares mantêm seus desenhos internos próprios, porém o invólucro interativo externo passa a ser circular. O diâmetro cresce de acordo com a maior dimensão da estrutura, preservando espaço para moléculas alongadas sem voltar ao cartão retangular arredondado.
 
-A Fotólise deixa de surgir aleatoriamente no fluxo. Existe uma única ferramenta `☀ Fotólise` permanentemente disponível durante a fase. Um clique arma a decomposição e destaca as moléculas elegíveis; outro clique desarma. Depois de uma decomposição, a mesma ferramenta continua disponível.
+A Fotólise continua como losango vermelho flutuante no ambiente. O controlador mantém no máximo uma ocorrência por vez. Ao clicar nela, a Fotólise fica armada e o losango sai do fluxo; depois da decomposição, um novo losango volta a atravessar a tela. Se o losango completar sua travessia sem ser usado, outro entra em seguida.
