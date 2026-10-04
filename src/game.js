@@ -359,6 +359,82 @@
     );
   }
 
+  function learnedRecipes(state){
+    return COMBOS.filter(recipe=>recipeUnlocked(state,recipe));
+  }
+
+  function resourceCountsForRecipe(recipe){
+    const out={};
+    for(const resource of [recipe.a,recipe.b]) out[resource]=(out[resource]||0)+1;
+    return out;
+  }
+
+  function hasRecipeIngredients(recipe,available){
+    if(!recipe) return false;
+    const needs=resourceCountsForRecipe(recipe);
+    return Object.entries(needs).every(([resource,amount])=>(available?.[resource]||0)>=amount);
+  }
+
+  function producerRecipesFor(state,resource){
+    return learnedRecipes(state).filter(recipe=>recipe.out===resource).reverse();
+  }
+
+  function recipeDependencyResources(state,recipe,seen=new Set()){
+    const out=new Set();
+    if(!recipe||seen.has(recipe.id)) return out;
+    seen.add(recipe.id);
+    out.add(recipe.out);
+    out.add(recipe.a);
+    out.add(recipe.b);
+    for(const resource of [recipe.a,recipe.b]){
+      for(const producer of producerRecipesFor(state,resource)){
+        for(const item of recipeDependencyResources(state,producer,new Set(seen))) out.add(item);
+      }
+    }
+    return out;
+  }
+
+  function recipeSupportsTarget(state,candidate,target){
+    return !!candidate&&!!target&&recipeDependencyResources(state,target).has(candidate.out);
+  }
+
+  function nextContextualRecipeToward(state,recipe,available,seen=new Set()){
+    if(!recipe||seen.has(recipe.id)) return null;
+    seen.add(recipe.id);
+    if(hasRecipeIngredients(recipe,available)) return recipe;
+
+    const needs=resourceCountsForRecipe(recipe);
+    const missing=Object.keys(needs)
+      .map(resource=>({
+        resource,
+        missing:Math.max(0,(needs[resource]||0)-(available?.[resource]||0)),
+        producers:producerRecipesFor(state,resource)
+      }))
+      .filter(item=>item.missing>0)
+      .sort((a,b)=>Number(b.producers.length>0)-Number(a.producers.length>0));
+
+    for(const item of missing){
+      for(const producer of item.producers){
+        const action=nextContextualRecipeToward(state,producer,available,new Set(seen));
+        if(action) return action;
+      }
+    }
+    return null;
+  }
+
+  function contextualRecipe(state,available,previousRecipeId){
+    const target=phaseRecipe(state);
+    if(!target) return null;
+    if(hasRecipeIngredients(target,available)) return target;
+
+    const previous=recipeById(previousRecipeId);
+    if(previous&&recipeUnlocked(state,previous)&&hasRecipeIngredients(previous,available)&&recipeSupportsTarget(state,previous,target)){
+      return previous;
+    }
+
+    return nextContextualRecipeToward(state,target,available,new Set())||target;
+  }
+
   function recipeConditions(recipe){
     return recipe&&Array.isArray(recipe.events)?recipe.events.slice():[];
   }
@@ -702,7 +778,7 @@
 
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
-    createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,recipeUnlocked,
+    createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,recipeUnlocked,contextualRecipe,
     captureAtom,captureMatter,moveBubble,releaseBubble,bubbleCount,activateEvent,nextFaller,expireEvent,activeEventIcon,
     photolysisActive,canDecompose,decomposeBubble,togglePhotolysis,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
