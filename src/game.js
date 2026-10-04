@@ -96,8 +96,8 @@
     { id:'uracil', a:'Aspartato', b:'CO', out:'Uracila', events:['☀','◐'], color:'#c29bff', label:'Aspartato + CO → Uracila' },
     { id:'cytosine', a:'Uracila', b:'NH₃', out:'Citosina', events:['☀','♨'], color:'#ee91cf', label:'Uracila + NH₃ → Citosina' },
 
-    { id:'simple-lipid', a:'Ácidos graxos', b:'Ácidos graxos', out:'Lipídio simples', color:'#e7d875', label:'Ácidos graxos + Ácidos graxos → Lipídio simples' },
-    { id:'vesicle', a:'Lipídio simples', b:'Lipídio simples', out:'Vesícula', color:'#e9df84', label:'Lipídio simples + Lipídio simples → Vesícula' },
+    { id:'simple-lipid', a:'Ácidos graxos', b:'Ácidos graxos', out:'Lipídio simples', color:'#e7d875', label:'Ácidos graxos → auto-organização anfifílica → Lipídio simples' },
+    { id:'vesicle', a:'Lipídio simples', b:'Lipídio simples', out:'Vesícula', color:'#e9df84', label:'Lipídios simples → auto-organização → Vesícula' },
     { id:'short-peptide', a:'Glicina', b:'Aspartato', out:'Peptídeo curto', events:['◐','♨'], color:'#ff8f72', label:'Glicina + Aspartato → Peptídeo curto' },
     { id:'catalytic-peptide', a:'Peptídeo curto', b:'Glutamina', out:'Peptídeo catalítico', events:['◐','♨'], color:'#ff776d', label:'Peptídeo curto + Glutamina → Peptídeo catalítico' },
     { id:'protobiont', a:'Vesícula', b:'Peptídeo catalítico', out:'Protobionte', color:'#75d8b9', label:'Vesícula + Peptídeo catalítico → Protobionte' },
@@ -139,21 +139,23 @@
     {id:'cyanide',title:'Cianeto',chapter:'Precursores orgânicos',period:'organic',objective:'Produza 3 cianetos',formula:'C + N → Cianeto',hint:'Ative UV ou descarga elétrica para formar o precursor nitrogenado do jogo.',target:'Cianeto',targetCount:3},
     {id:'sugars',title:'Mistura de açúcares',chapter:'Precursores orgânicos',period:'organic',objective:'Forme 2 pools de açúcares',formula:'2 Formaldeídos → Açúcares',hint:'Um ciclo úmido-seco concentra a química de carbonilas.',target:'Açúcares',targetCount:2},
     {id:'ribose',title:'Ribose',chapter:'Precursores orgânicos',period:'organic',objective:'Separe 4 riboses',formula:'Açúcares + H₂O → Ribose',hint:'O jogo resume formação e seleção de ribose em uma etapa de concentração.',target:'Ribose',targetCount:4},
+    {id:'fatty',title:'Ácidos graxos',chapter:'Precursores orgânicos',period:'organic',objective:'Produza 4 ácidos graxos',formula:'CO + H₂ → Ácidos graxos',hint:'Capture ♨ e acumule anfifílicos capazes de se auto-organizar em membranas simples.',target:'Ácidos graxos',targetCount:4},
+
+    {id:'simple-lipid',title:'Agregados anfifílicos',chapter:'Primeiras membranas',period:'protocell',objective:'Concentre 2 agregados anfifílicos',formula:'Ácidos graxos → auto-organização anfifílica → Lipídio simples',hint:'A etapa representa auto-organização supramolecular de anfifílicos, não uma reação estequiométrica literal.',target:'Lipídio simples',targetCount:2},
+    {id:'vesicle',title:'Primeira vesícula',chapter:'Primeiras membranas',period:'protocell',objective:'Forme a primeira vesícula',formula:'Lipídios simples → auto-organização → Vesícula',hint:'Anfifílicos se organizam espontaneamente em uma fronteira membranosa; a partir daqui a química ocorre em microambientes compartimentalizados.',target:'Vesícula',targetCount:1},
+
     {id:'glycine',title:'Glicina',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 glicinas',formula:'Formaldeído + Cianeto → Glicina',hint:'⚡, ☀ ou ♨ podem fornecer a condição ambiental desta síntese abstrata.',target:'Glicina',targetCount:2},
     {id:'aspartate',title:'Aspartato',chapter:'Aminoácidos',period:'organic',objective:'Produza 2 aspartatos',formula:'Glicina + CO → Aspartato',hint:'A etapa representa uma rota de diversificação de aminoácidos do jogo.',target:'Aspartato',targetCount:2},
     {id:'glutamine',title:'Glutamina',chapter:'Aminoácidos',period:'organic',objective:'Produza Glutamina',formula:'Aspartato + NH₃ → Glutamina',hint:'A rota é uma abstração estratégica e utiliza ambiente hidrotermal.',target:'Glutamina',targetCount:1},
-    {id:'fatty',title:'Ácidos graxos',chapter:'Precursores orgânicos',period:'organic',objective:'Produza 4 ácidos graxos',formula:'CO + H₂ → Ácidos graxos',hint:'Capture ♨ e acumule anfifílicos suficientes para a futura membrana.',target:'Ácidos graxos',targetCount:4},
 
     {id:'adenine',title:'Adenina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Adenina',formula:'2 Cianetos → Adenina',hint:'O jogo comprime uma rede de química de cianeto em uma descoberta de purina.',target:'Adenina',targetCount:1},
     {id:'guanine',title:'Guanina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Guanina',formula:'Cianeto + NH₃ → Guanina',hint:'Uma segunda rota nitrogenada abre a outra purina.',target:'Guanina',targetCount:1},
     {id:'uracil',title:'Uracila',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza 2 Uracilas',formula:'Aspartato + CO → Uracila',hint:'A receita representa um ramo de pirimidinas do jogo.',target:'Uracila',targetCount:2},
     {id:'cytosine',title:'Citosina',chapter:'Bases nitrogenadas',period:'organic',objective:'Produza Citosina',formula:'Uracila + NH₃ → Citosina',hint:'Complete o segundo ramo de pirimidinas.',target:'Citosina',targetCount:1},
 
-    {id:'simple-lipid',title:'Lipídios simples',chapter:'Compartimentalização',period:'protocell',objective:'Forme 2 lipídios simples',formula:'2 Ácidos graxos → Lipídio simples',hint:'Concentre anfifílicos antes da auto-organização da membrana.',target:'Lipídio simples',targetCount:2},
-    {id:'vesicle',title:'Primeira vesícula',chapter:'Compartimentalização',period:'protocell',objective:'Feche a primeira vesícula',formula:'2 Lipídios simples → Vesícula',hint:'Ao concluir esta fase surge pela primeira vez o contorno do compartimento.',target:'Vesícula',targetCount:1},
-    {id:'short-peptide',title:'Peptídeo curto',chapter:'Compartimentalização',period:'protocell',objective:'Forme um peptídeo curto',formula:'Glicina + Aspartato → Peptídeo curto',hint:'Ciclos úmido-seco ou ambiente hidrotermal favorecem a condensação do jogo.',target:'Peptídeo curto',targetCount:1},
-    {id:'catalytic-peptide',title:'Peptídeo catalítico',chapter:'Compartimentalização',period:'protocell',objective:'Forme um peptídeo catalítico',formula:'Peptídeo curto + Glutamina → Peptídeo catalítico',hint:'A cadeia peptídica passa a estabilizar e enriquecer o compartimento.',target:'Peptídeo catalítico',targetCount:1},
-    {id:'protobiont',title:'Protobionte',chapter:'Compartimentalização',period:'protocell',objective:'Integre um protobionte',formula:'Vesícula + Peptídeo catalítico → Protobionte',hint:'Integre membrana e química peptídica em um único sistema.',target:'Protobionte',targetCount:1},
+    {id:'short-peptide',title:'Peptídeo curto',chapter:'Protobiontes',period:'protocell',objective:'Forme um peptídeo curto',formula:'Glicina + Aspartato → Peptídeo curto',hint:'Dentro de microambientes compartimentalizados, ciclos úmido-seco ou ambiente hidrotermal favorecem a condensação do jogo.',target:'Peptídeo curto',targetCount:1},
+    {id:'catalytic-peptide',title:'Peptídeo catalítico',chapter:'Protobiontes',period:'protocell',objective:'Forme um peptídeo catalítico',formula:'Peptídeo curto + Glutamina → Peptídeo catalítico',hint:'A cadeia peptídica passa a estabilizar e enriquecer o compartimento.',target:'Peptídeo catalítico',targetCount:1},
+    {id:'protobiont',title:'Protobionte',chapter:'Protobiontes',period:'protocell',objective:'Integre um protobionte',formula:'Vesícula + Peptídeo catalítico → Protobionte',hint:'Integre uma membrana já existente à química peptídica mais sofisticada.',target:'Protobionte',targetCount:1},
 
     {id:'adenosine',title:'Adenosina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Adenosina',formula:'Adenina + Ribose → Adenosina',hint:'Una a purina A à ribose.',target:'Adenosina',targetCount:1},
     {id:'guanosine',title:'Guanosina',chapter:'Nucleosídeos',period:'rna',objective:'Forme Guanosina',formula:'Guanina + Ribose → Guanosina',hint:'Una a purina G à ribose.',target:'Guanosina',targetCount:1},
