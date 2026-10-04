@@ -142,12 +142,12 @@
       if(!compartmentActive()){
         return '<section class="info-panel panel">'+
           '<div class="info-tile idle"><span>AMBIENTE</span><strong>+</strong><small>selecione matéria</small></div>'+
-          '<div class="info-copy"><strong>Química dispersa</strong><p>Clique em uma partícula para interromper seu movimento. Clique depois em outra compatível para reagir. Clique no espaço vazio para liberar a seleção e fazê-la voltar ao fluxo.</p></div>'+
+          '<div class="info-copy"><strong>Química dispersa</strong><p>Arraste qualquer partícula diretamente. Ao aproximá-la de um parceiro compatível, o alvo acende; solte sobre ele para reagir. O clique continua disponível como alternativa.</p></div>'+
         '</section>';
       }
       return '<section class="info-panel panel">'+
         '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
-        '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Clique para sugá-lo automaticamente ou arraste o átomo diretamente para dentro da sopa. Depois combine ingredientes por dois cliques em sequência ou por arraste. Dentro da sopa, arraste livremente para organizar; arraste para fora para liberar uma bolha ao fluxo.</p></div>'+
+        '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Todos os elementos flutuantes podem ser arrastados. Leve matéria diretamente a um ingrediente compatível para reagir, arraste para uma área livre para apenas capturar ou arraste uma bolha para fora para devolvê-la ao fluxo. O clique permanece como alternativa.</p></div>'+
       '</section>';
     }
 
@@ -543,6 +543,11 @@
       if(!gesture.moved){
         gesture.moved=true;
         markFloatingRecipeTargets(resource);
+        const preferred=preferredRecipeForResource(resource);
+        if(preferred){
+          M?.arm?.(preferred);
+          gesture.armedRecipeId=preferred.id;
+        }
         const rect=node.getBoundingClientRect();
         node.style.animation='none';
         node.style.position='fixed';
@@ -889,6 +894,13 @@
       if(target) return target;
     }
     return recipes.length===1?recipes[0]:null;
+  }
+
+  function preferredRecipeForResource(resource){
+    const recipes=G.possibleRecipes(state,resource);
+    if(!recipes.length) return null;
+    const objective=G.phaseRecipe(state);
+    return recipes.find(recipe=>recipe.id===objective?.id)||(recipes.length===1?recipes[0]:null);
   }
 
   function reactantSnapshot(bubble){
