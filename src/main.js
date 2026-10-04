@@ -629,6 +629,74 @@
     node.addEventListener('pointercancel',finish);
   }
 
+  function enableFloatingEventDrag(node,activate){
+    let gesture=null;
+
+    node.addEventListener('pointerdown',event=>{
+      if(event.button!==undefined&&event.button!==0) return;
+      if(reactionBusy||state.stageComplete||node.dataset.captured==='1') return;
+      event.preventDefault();
+      gesture={
+        pointerId:event.pointerId,
+        startX:event.clientX,
+        startY:event.clientY,
+        moved:false
+      };
+      node.setPointerCapture&&node.setPointerCapture(event.pointerId);
+    });
+
+    node.addEventListener('pointermove',event=>{
+      if(!gesture||event.pointerId!==gesture.pointerId) return;
+      const dx=event.clientX-gesture.startX;
+      const dy=event.clientY-gesture.startY;
+      if(Math.abs(dx)+Math.abs(dy)<8&&!gesture.moved) return;
+
+      if(!gesture.moved){
+        gesture.moved=true;
+        const rect=node.getBoundingClientRect();
+        node.style.animation='none';
+        node.style.position='fixed';
+        node.style.left=rect.left+'px';
+        node.style.top=rect.top+'px';
+        node.style.transform='none';
+        node.style.zIndex='92';
+        node.classList.add('incoming-dragging');
+      }
+
+      node.style.left=(event.clientX-node.offsetWidth/2)+'px';
+      node.style.top=(event.clientY-node.offsetHeight/2)+'px';
+      const pond=document.getElementById('soupPond');
+      const pondRect=pond&&pond.getBoundingClientRect();
+      const over=pondRect&&event.clientX>=pondRect.left&&event.clientX<=pondRect.right&&event.clientY>=pondRect.top&&event.clientY<=pondRect.bottom;
+      pond&&pond.classList.toggle('capture-target',!!over);
+      node.classList.toggle('event-drop-ready',!!over);
+    });
+
+    const finish=event=>{
+      if(!gesture||event.pointerId!==gesture.pointerId) return;
+      const moved=gesture.moved;
+      gesture=null;
+      node.classList.remove('incoming-dragging','event-drop-ready');
+      document.getElementById('soupPond')?.classList.remove('capture-target');
+      if(!moved) return;
+
+      node.dataset.suppressClick='1';
+      const pond=document.getElementById('soupPond');
+      const rect=pond&&pond.getBoundingClientRect();
+      const inside=rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
+      if(inside){
+        activate();
+        return;
+      }
+
+      resumeIncomingAtom(node);
+      setTimeout(()=>{node.dataset.suppressClick='';},0);
+    };
+
+    node.addEventListener('pointerup',finish);
+    node.addEventListener('pointercancel',finish);
+  }
+
   function createReleasedMatter(resource,clientX,clientY){
     const layer=document.getElementById('falling-layer');
     if(!layer) return;
@@ -701,7 +769,7 @@
       },delay);
     };
 
-    node.onclick=()=>{
+    const activatePhotolysis=()=>{
       if(node.dataset.captured==='1') return;
       node.dataset.captured='1';
       G.activateEvent(state,'☀F');
@@ -710,6 +778,8 @@
       setTimeout(()=>recycle(180),420);
       render();
     };
+    node.onclick=activatePhotolysis;
+    enableFloatingEventDrag(node,activatePhotolysis);
 
     node.addEventListener('animationend',()=>recycle(220),{once:true});
     layer.appendChild(node);
@@ -740,7 +810,9 @@
       node.dataset.value=spec.value;
       node.innerHTML='<span>'+event.icon+'</span><small>'+esc(event.name)+'</small>';
       node.setAttribute('aria-label','Ativar evento '+event.name);
-      node.onclick=()=>triggerEventObject(node,spec.value);
+      const activateEvent=()=>triggerEventObject(node,spec.value);
+      node.onclick=activateEvent;
+      enableFloatingEventDrag(node,activateEvent);
     }else{
       const visual=V.spec(spec.value);
       node.className='falling-object molecular-faller atom-faller kind-'+visual.kind;
