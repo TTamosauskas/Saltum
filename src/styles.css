@@ -1680,3 +1680,35 @@ h1,h2,p{margin-top:0}
   border-color:rgba(94,233,255,.42);
   background:rgba(94,233,255,.065);
 }
+
+
+/* Contextual recipe guidance */
+.objective-recipe-kicker{
+  text-transform:uppercase;
+  letter-spacing:.11em;
+  font-weight:900;
+  color:#78aeb0!important;
+}
+.objective-card.contextual-guidance{
+  border-color:rgba(94,233,255,.24);
+  background:
+    linear-gradient(180deg,rgba(94,233,255,.045),rgba(255,255,255,.035)),
+    var(--panel);
+}
+.objective-card.contextual-guidance .objective-recipe-kicker{
+  color:#79e8f5!important;
+}
+.objective-card.contextual-guidance .objective-formula{
+  color:#e8ffff;
+}
+.contextual-recipe-shift{
+  animation:contextualRecipeShift .7s cubic-bezier(.2,.78,.2,1);
+}
+@keyframes contextualRecipeShift{
+  0%{opacity:.3;transform:translateY(3px);filter:brightness(1.7)}
+  45%{opacity:1;transform:translateY(0);filter:brightness(1.22)}
+  100%{opacity:1;transform:translateY(0);filter:brightness(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .contextual-recipe-shift{animation:none!important}
+}
