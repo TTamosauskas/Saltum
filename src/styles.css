@@ -1652,3 +1652,31 @@ h1,h2,p{margin-top:0}
   .organic-bubble.drag-armed,
   .organic-bubble.candidate.drag-target{transition:none!important}
 }
+
+
+/* Editor: every phase is an explicit test target */
+.trail-node.editor-clickable,
+.phase-list-item.editor-clickable{
+  cursor:pointer;
+}
+.trail-node.editor-clickable{
+  opacity:1;
+  border-color:rgba(94,233,255,.2);
+}
+.trail-node.editor-clickable:hover{
+  transform:translateX(3px);
+  border-color:rgba(94,233,255,.48);
+  background:linear-gradient(90deg,rgba(94,233,255,.08),rgba(4,16,23,.62));
+}
+.trail-node.editor-clickable .trail-state,
+.phase-list-item.editor-clickable em{
+  color:#7cecff;
+  font-weight:900;
+}
+.phase-list-item.editor-clickable{
+  opacity:1;
+}
+.phase-list-item.editor-clickable:hover{
+  border-color:rgba(94,233,255,.42);
+  background:rgba(94,233,255,.065);
+}
