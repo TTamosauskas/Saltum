@@ -201,73 +201,77 @@
       return false;
     }
 
-    await confirm(recipe);
-
     const reduced=reducedMotion();
-    const stage=document.createElement('div');
-    stage.className='reaction-motif-stage';
-    stage.setAttribute('aria-hidden','true');
+    let stage=null;
     document.documentElement.classList.add('reaction-motif-running');
     pond.classList.add('reaction-motif-active');
-    pond.appendChild(stage);
-    markSources(reactants);
 
-    const nodes=reactants.map((reactant,index)=>{
-      const node=nodeFor(reactant.resource,'reactant',recipe.color);
-      node.dataset.side=index?'right':'left';
-      node.style.left=(Number(reactant.x)||50)+'%';
-      node.style.top=(Number(reactant.y)||50)+'%';
-      stage.appendChild(node);
-      return node;
-    });
+    try{
+      stage=document.createElement('div');
+      stage.className='reaction-motif-stage';
+      stage.setAttribute('aria-hidden','true');
+      pond.appendChild(stage);
+      markSources(reactants);
 
-    await wait(reduced?25:50);
-    nodes[0].style.left='28%';
-    nodes[1].style.left='72%';
-    for(const node of nodes){
-      node.style.top='50%';
-      node.classList.add('aligned');
+      const nodes=reactants.map((reactant,index)=>{
+        const node=nodeFor(reactant.resource,'reactant',recipe.color);
+        node.dataset.side=index?'right':'left';
+        node.style.left=(Number(reactant.x)||50)+'%';
+        node.style.top=(Number(reactant.y)||50)+'%';
+        stage.appendChild(node);
+        return node;
+      });
+
+      await confirm(recipe);
+      await wait(reduced?25:50);
+      nodes[0].style.left='28%';
+      nodes[1].style.left='72%';
+      for(const node of nodes){
+        node.style.top='50%';
+        node.classList.add('aligned');
+      }
+
+      await wait(reduced?80:285);
+      if(motif){
+        playNote(recipe,2);
+        motif.step=3;
+      }
+      stage.classList.add('aligned');
+
+      await wait(reduced?50:115);
+      for(const node of nodes){
+        node.style.left='50%';
+        node.style.top='50%';
+        node.classList.add('converging');
+      }
+
+      await wait(reduced?65:190);
+      const result=nodeFor(product.resource,'result',recipe.color);
+      result.style.left='50%';
+      result.style.top='50%';
+      stage.appendChild(result);
+      requestAnimationFrame(()=>result.classList.add('visible'));
+      playChord(recipe,final);
+      for(let i=0;i<8;i++) spark(stage,recipe.color,i);
+      if(motif){
+        motif.step=4;
+        motif.done=true;
+      }
+
+      await wait(reduced?90:310);
+      result.classList.add('settling');
+      result.style.left=(Number(product.x)||50)+'%';
+      result.style.top=(Number(product.y)||50)+'%';
+
+      await wait(reduced?70:245);
+      return true;
+    }finally{
+      stage?.remove();
+      pond.classList.remove('reaction-motif-active');
+      document.documentElement.classList.remove('reaction-motif-running');
+      document.querySelectorAll('.organic-bubble.motif-source').forEach(node=>node.classList.remove('motif-source'));
+      motif=null;
     }
-
-    await wait(reduced?80:285);
-    if(motif){
-      playNote(recipe,2);
-      motif.step=3;
-    }
-    stage.classList.add('aligned');
-
-    await wait(reduced?50:115);
-    for(const node of nodes){
-      node.style.left='50%';
-      node.style.top='50%';
-      node.classList.add('converging');
-    }
-
-    await wait(reduced?65:190);
-    const result=nodeFor(product.resource,'result',recipe.color);
-    result.style.left='50%';
-    result.style.top='50%';
-    stage.appendChild(result);
-    requestAnimationFrame(()=>result.classList.add('visible'));
-    playChord(recipe,final);
-    for(let i=0;i<8;i++) spark(stage,recipe.color,i);
-    if(motif){
-      motif.step=4;
-      motif.done=true;
-    }
-
-    await wait(reduced?90:310);
-    result.classList.add('settling');
-    result.style.left=(Number(product.x)||50)+'%';
-    result.style.top=(Number(product.y)||50)+'%';
-
-    await wait(reduced?70:245);
-    stage.remove();
-    pond.classList.remove('reaction-motif-active');
-    document.documentElement.classList.remove('reaction-motif-running');
-    document.querySelectorAll('.organic-bubble.motif-source').forEach(node=>node.classList.remove('motif-source'));
-    motif=null;
-    return true;
   }
 
   document.addEventListener('pointerdown',ensureAudio,{capture:true,passive:true});
