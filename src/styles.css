@@ -1444,3 +1444,163 @@ h1,h2,p{margin-top:0}
   font-size:8px;
   font-weight:700;
 }
+
+
+/* Reaction motif · audiovisual resolution for successful recipes */
+.reaction-motif-running #falling-layer{
+  pointer-events:none!important;
+  opacity:.36;
+  filter:brightness(.72) saturate(.7);
+  transition:opacity .18s ease,filter .18s ease;
+}
+.reaction-motif-running #app button{
+  pointer-events:none!important;
+}
+#soupPond.reaction-motif-active{
+  isolation:isolate;
+}
+#soupPond.reaction-motif-active>.organic-bubble{
+  opacity:.32;
+  filter:brightness(.68) saturate(.72);
+  transition:opacity .2s ease,filter .2s ease;
+}
+#soupPond.reaction-motif-active>.organic-bubble.motif-source{
+  opacity:.055;
+  filter:brightness(.5) saturate(.4);
+}
+.reaction-motif-stage{
+  position:absolute;
+  inset:0;
+  z-index:66;
+  pointer-events:none;
+  overflow:visible;
+}
+.reaction-motif-stage::before{
+  content:"";
+  position:absolute;
+  inset:4%;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at center,rgba(220,255,249,.085),rgba(3,20,27,.24) 45%,rgba(1,9,13,.52) 78%,transparent 100%);
+  opacity:.95;
+  backdrop-filter:blur(1px);
+}
+.reaction-motif-node{
+  position:absolute;
+  width:clamp(88px,22vw,126px);
+  height:clamp(88px,22vw,126px);
+  transform:translate(-50%,-50%) scale(.64);
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  color:#efffff;
+  background:
+    radial-gradient(circle at 34% 27%,rgba(255,255,255,.30),rgba(255,255,255,.05) 18%,transparent 22%),
+    radial-gradient(circle at 50% 48%,color-mix(in srgb,var(--motif-color) 22%,#0a2e38),rgba(3,21,28,.96) 72%);
+  border:2px solid color-mix(in srgb,var(--motif-color) 64%,rgba(255,255,255,.45));
+  box-shadow:
+    inset 0 0 24px rgba(255,255,255,.10),
+    0 12px 32px rgba(0,0,0,.32),
+    0 0 26px color-mix(in srgb,var(--motif-color) 32%,transparent);
+  opacity:.82;
+  transition:
+    left .33s cubic-bezier(.18,.78,.2,1),
+    top .33s cubic-bezier(.18,.78,.2,1),
+    transform .26s cubic-bezier(.18,.78,.2,1),
+    opacity .22s ease,
+    filter .22s ease;
+}
+.reaction-motif-node .reaction-motif-art{
+  display:grid;
+  place-items:center;
+  width:min(82%,var(--motif-visual-w));
+  height:min(82%,var(--motif-visual-h));
+}
+.reaction-motif-node .resource-visual{
+  max-width:100%;
+  max-height:100%;
+  filter:drop-shadow(0 4px 9px rgba(0,0,0,.28));
+}
+.reaction-motif-node>small{
+  position:absolute;
+  left:50%;
+  top:calc(100% + 7px);
+  transform:translateX(-50%);
+  max-width:150px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#e9fbf8;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  text-shadow:0 2px 8px #000;
+}
+.reaction-motif-node.aligned{
+  transform:translate(-50%,-50%) scale(1);
+  opacity:1;
+  filter:brightness(1.12);
+  box-shadow:
+    inset 0 0 27px rgba(255,255,255,.14),
+    0 15px 35px rgba(0,0,0,.34),
+    0 0 38px color-mix(in srgb,var(--motif-color) 46%,transparent);
+}
+.reaction-motif-node.converging{
+  transform:translate(-50%,-50%) scale(.42);
+  opacity:0;
+  filter:brightness(1.75);
+}
+.reaction-motif-node.result{
+  z-index:3;
+  transform:translate(-50%,-50%) scale(.38);
+  opacity:0;
+}
+.reaction-motif-node.result.visible{
+  transform:translate(-50%,-50%) scale(1.18);
+  opacity:1;
+  filter:brightness(1.18);
+  box-shadow:
+    inset 0 0 30px rgba(255,255,255,.16),
+    0 0 48px color-mix(in srgb,var(--motif-color) 58%,transparent),
+    0 17px 38px rgba(0,0,0,.34);
+}
+.reaction-motif-node.result.settling{
+  transform:translate(-50%,-50%) scale(.52);
+  opacity:.16;
+  filter:brightness(1.1);
+}
+.reaction-motif-spark{
+  --spark-angle:0deg;
+  --spark-distance:52px;
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--motif-color) 72%,#fff);
+  box-shadow:0 0 12px var(--motif-color);
+  opacity:0;
+  animation:reactionMotifSpark .56s ease-out both;
+}
+@keyframes reactionMotifSpark{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) rotate(var(--spark-angle)) translateX(9px) scale(.25);
+  }
+  28%{opacity:1}
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) rotate(var(--spark-angle)) translateX(var(--spark-distance)) scale(.72);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .reaction-motif-running #falling-layer{transition:none}
+  #soupPond.reaction-motif-active>.organic-bubble{transition:none}
+  .reaction-motif-stage::before{backdrop-filter:none}
+  .reaction-motif-node{
+    transition:left .08s linear,top .08s linear,transform .08s linear,opacity .08s linear,filter .08s linear;
+  }
+  .reaction-motif-spark{animation-duration:.16s}
+}
