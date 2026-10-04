@@ -1,6 +1,7 @@
 (function () {
   const G=window.SopaGame;
   const V=window.SopaVisuals;
+  const M=window.SopaReactionMotif;
   const editorMode=window.location.hash==='#editor';
   let state=G.createGame(editorMode);
   let homeOpen=true;
@@ -11,6 +12,7 @@
   let rainGeneration=0;
   let rainTimer=null;
   let eventTickTimer=null;
+  let reactionBusy=false;
   window.SopaToastQueue=window.SopaToastQueue||[];
 
   function esc(value){
@@ -365,7 +367,7 @@
   }
 
   function absorbMatter(node,resource){
-    if(node.dataset.captured==='1') return;
+    if(reactionBusy||node.dataset.captured==='1') return;
     const field=document.getElementById('soupPond');
     if(!field) return;
 
@@ -380,14 +382,9 @@
 
     if(!compartmentActive()){
       const captured=G.captureMatter(state,resource,fieldX,fieldY);
-      if(captured){
-        const selection=G.selectBubble(state,captured.id);
-        if(selection.choices){
-          pendingChoice={sourceId:selection.sourceId,targetId:selection.targetId,recipes:selection.choices};
-        }
-      }
       node.remove();
-      render();
+      if(captured) void handleBubbleTap(captured.id);
+      else render();
       return;
     }
 
@@ -421,7 +418,7 @@
   }
 
   function triggerEventObject(node,icon){
-    if(node.dataset.captured==='1') return;
+    if(reactionBusy||node.dataset.captured==='1') return;
     node.dataset.captured='1';
     G.activateEvent(state,icon);
     node.style.pointerEvents='none';
@@ -450,6 +447,7 @@
   }
 
   function captureDraggedMatter(node,resource,clientX,clientY){
+    if(reactionBusy) return;
     const pond=document.getElementById('soupPond');
     if(!pond) return;
     const rect=pond.getBoundingClientRect();
@@ -532,14 +530,9 @@
           const x=Math.max(8,Math.min(92,((event.clientX-fieldRect.left)/fieldRect.width)*100));
           const y=Math.max(8,Math.min(92,((event.clientY-fieldRect.top)/fieldRect.height)*100));
           const captured=G.captureMatter(state,resource,x,y);
-          if(captured){
-            const selection=G.selectBubble(state,captured.id);
-            if(selection.choices){
-              pendingChoice={sourceId:selection.sourceId,targetId:selection.targetId,recipes:selection.choices};
-            }
-          }
           node.remove();
-          render();
+          if(captured) void handleBubbleTap(captured.id);
+          else render();
         }
       }else{
         resumeIncomingAtom(node);
@@ -722,10 +715,109 @@
     }
   }
 
+  function recipesForSource(sourceId){
+    const unique=new Map();
+    for(const bubble of state.soup){
+      for(const recipe of G.availableCombos(state,sourceId,bubble.id)) unique.set(recipe.id,recipe);
+    }
+    return [...unique.values()];
+  }
+
+  function preferredRecipeForSource(sourceId){
+    const recipes=recipesForSource(sourceId);
+    if(!recipes.length) return null;
+    const objectiveRecipe=G.phaseRecipe(state);
+    if(objectiveRecipe){
+      const target=recipes.find(recipe=>recipe.id===objectiveRecipe.id);
+      if(target) return target;
+    }
+    return recipes.length===1?recipes[0]:null;
+  }
+
+  function reactantSnapshot(bubble){
+    return bubble?{id:bubble.id,resource:bubble.resource,x:bubble.x,y:bubble.y}:null;
+  }
+
+  async function performReaction(sourceId,targetId,recipeId){
+    if(reactionBusy||state.stageComplete) return false;
+    const choices=G.availableCombos(state,sourceId,targetId);
+    const recipe=choices.find(item=>item.id===recipeId)||choices[0];
+    if(!recipe){
+      M?.cancel?.();
+      return false;
+    }
+
+    const source=state.soup.find(bubble=>bubble.id===sourceId);
+    const target=state.soup.find(bubble=>bubble.id===targetId);
+    if(!source||!target){
+      M?.cancel?.();
+      return false;
+    }
+
+    const reactants=[reactantSnapshot(source),reactantSnapshot(target)];
+    reactionBusy=true;
+    state.selectedBubbleId=null;
+    pendingChoice=null;
+    document.querySelector('.choice-backdrop')?.remove();
+
+    const result=G.combine(state,sourceId,targetId,recipe.id);
+    if(!result.ok){
+      reactionBusy=false;
+      M?.cancel?.();
+      render();
+      return false;
+    }
+
+    const product={
+      id:result.born.id,
+      resource:result.born.resource,
+      x:result.born.x,
+      y:result.born.y,
+      count:G.bubbleCount(result.born)
+    };
+
+    try{
+      if(M?.resolve){
+        await M.resolve({recipe,reactants,product,final:state.stageComplete});
+        result.born.isNew=false;
+      }
+    }finally{
+      reactionBusy=false;
+      render();
+    }
+    return true;
+  }
+
+  async function handleBubbleTap(bubbleId){
+    if(reactionBusy||state.stageComplete) return;
+    const clicked=state.soup.find(bubble=>bubble.id===bubbleId);
+    if(!clicked) return;
+
+    const previous=state.selectedBubbleId;
+    if(previous){
+      const recipes=G.availableCombos(state,previous,bubbleId);
+      if(recipes.length===1){
+        await performReaction(previous,bubbleId,recipes[0].id);
+        return;
+      }
+      if(recipes.length>1){
+        pendingChoice={sourceId:previous,targetId:bubbleId,recipes};
+        render();
+        return;
+      }
+    }
+
+    state.selectedBubbleId=previous===bubbleId?null:bubbleId;
+    if(state.selectedBubbleId) M?.arm?.(preferredRecipeForSource(bubbleId));
+    else M?.cancel?.();
+    render();
+  }
+
   function startDrag(event,el){
     if(event.button!==undefined&&event.button!==0) return;
-    if(state.stageComplete) return;
+    if(reactionBusy||state.stageComplete) return;
     const id=el.dataset.bubbleId;
+    if(!state.selectedBubbleId) M?.arm?.(preferredRecipeForSource(id));
 
     if(G.photolysisActive(state)){
       if(G.canDecompose(el.dataset.resource)){
@@ -760,7 +852,7 @@
     drag.el.style.transform='translate('+dx+'px,'+dy+'px) scale(1.08)';
   }
 
-  function finishDrag(event){
+  async function finishDrag(event){
     if(!drag||event.pointerId!==drag.pointerId) return;
     const sourceId=drag.id;
     const moved=drag.moved;
@@ -775,30 +867,26 @@
 
     if(!moved){
       state.selectedBubbleId=previousSelected;
-      const result=G.selectBubble(state,sourceId);
-      if(result.choices){
-        pendingChoice={sourceId:result.sourceId,targetId:result.targetId,recipes:result.choices};
-      }
-      render();
+      await handleBubbleTap(sourceId);
       return;
     }
 
     const bubbleTarget=target&&target.closest('.organic-bubble');
     if(bubbleTarget&&bubbleTarget.dataset.bubbleId!==sourceId){
-      const recipes=G.availableCombos(state,sourceId,bubbleTarget.dataset.bubbleId);
+      const targetId=bubbleTarget.dataset.bubbleId;
+      const recipes=G.availableCombos(state,sourceId,targetId);
       if(recipes.length===1){
-        G.combine(state,sourceId,bubbleTarget.dataset.bubbleId,recipes[0].id);
-        state.selectedBubbleId=null;
-        render();
+        await performReaction(sourceId,targetId,recipes[0].id);
         return;
       }
       if(recipes.length>1){
-        pendingChoice={sourceId,targetId:bubbleTarget.dataset.bubbleId,recipes};
+        pendingChoice={sourceId,targetId,recipes};
         render();
         return;
       }
     }
 
+    M?.cancel?.();
     const pond=document.getElementById('soupPond');
     const pondRect=pond&&pond.getBoundingClientRect();
     const inside=pondRect&&event.clientX>=pondRect.left&&event.clientX<=pondRect.right&&event.clientY>=pondRect.top&&event.clientY<=pondRect.bottom;
@@ -870,9 +958,11 @@
     const field=document.getElementById('soupPond');
     if(field&&!compartmentActive()){
       field.addEventListener('pointerdown',event=>{
+        if(reactionBusy) return;
         if(event.target.closest('.organic-bubble')) return;
         if(!state.selectedBubbleId) return;
         const released=G.releaseBubble(state,state.selectedBubbleId);
+        M?.cancel?.();
         if(released) createReleasedMatter(released.resource,event.clientX,event.clientY);
         render();
       });
@@ -887,18 +977,19 @@
     window.onpointercancel=finishDrag;
 
     const clear=document.getElementById('clearSelection');
-    if(clear) clear.onclick=()=>{state.selectedBubbleId=null;render();};
+    if(clear) clear.onclick=()=>{state.selectedBubbleId=null;M?.cancel?.();render();};
 
     document.querySelectorAll('[data-recipe-choice]').forEach(el=>{
       el.onclick=()=>{
-        if(pendingChoice) G.combine(state,pendingChoice.sourceId,pendingChoice.targetId,el.dataset.recipeChoice);
-        state.selectedBubbleId=null;
-        pendingChoice=null;render();
+        if(!pendingChoice) return;
+        const choice=pendingChoice;
+        pendingChoice=null;
+        void performReaction(choice.sourceId,choice.targetId,el.dataset.recipeChoice);
       };
     });
 
     const cancel=document.getElementById('cancelChoice');
-    if(cancel) cancel.onclick=()=>{pendingChoice=null;render();};
+    if(cancel) cancel.onclick=()=>{pendingChoice=null;M?.cancel?.();render();};
   }
 
   eventTickTimer=setInterval(tickEvent,250);
