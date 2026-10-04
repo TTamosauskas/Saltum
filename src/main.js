@@ -174,6 +174,7 @@
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
+        (context.available.length?'<p class="drag-reaction-hint">Arraste o item selecionado até um parceiro destacado para completar a receita.</p>':'')+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
@@ -813,6 +814,38 @@
     render();
   }
 
+  function reactionDropTarget(sourceId,clientX,clientY){
+    const direct=document.elementFromPoint(clientX,clientY)?.closest?.('.organic-bubble');
+    if(direct&&direct.dataset.bubbleId!==sourceId&&G.availableCombos(state,sourceId,direct.dataset.bubbleId).length){
+      return direct;
+    }
+
+    let best=null;
+    let bestDistance=Infinity;
+    document.querySelectorAll('.organic-bubble.candidate').forEach(candidate=>{
+      if(candidate.dataset.bubbleId===sourceId) return;
+      const rect=candidate.getBoundingClientRect();
+      const pad=18;
+      const within=clientX>=rect.left-pad&&clientX<=rect.right+pad&&clientY>=rect.top-pad&&clientY<=rect.bottom+pad;
+      if(!within) return;
+      const cx=rect.left+rect.width/2;
+      const cy=rect.top+rect.height/2;
+      const distance=Math.hypot(clientX-cx,clientY-cy);
+      if(distance<bestDistance){
+        best=candidate;
+        bestDistance=distance;
+      }
+    });
+    return best;
+  }
+
+  function updateDragReactionTarget(sourceId,clientX,clientY){
+    const target=reactionDropTarget(sourceId,clientX,clientY);
+    document.querySelectorAll('.organic-bubble.drag-target').forEach(node=>node.classList.remove('drag-target'));
+    if(target) target.classList.add('drag-target');
+    return target?.dataset.bubbleId||null;
+  }
+
   function startDrag(event,el){
     if(event.button!==undefined&&event.button!==0) return;
     if(reactionBusy||state.stageComplete) return;
@@ -830,13 +863,16 @@
       id,
       el,
       previousSelected:state.selectedBubbleId,
+      selectedSource:state.selectedBubbleId===id,
       startX:event.clientX,
       startY:event.clientY,
       moved:false,
+      targetId:null,
       pointerId:event.pointerId
     };
     el.setPointerCapture&&el.setPointerCapture(event.pointerId);
     el.classList.add('dragging','selected');
+    if(drag.selectedSource) el.classList.add('drag-armed');
 
     document.querySelectorAll('.organic-bubble').forEach(other=>{
       if(other.dataset.bubbleId===id) return;
@@ -850,6 +886,7 @@
     const dy=event.clientY-drag.startY;
     if(Math.abs(dx)+Math.abs(dy)>7) drag.moved=true;
     drag.el.style.transform='translate('+dx+'px,'+dy+'px) scale(1.08)';
+    if(drag.moved) drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY);
   }
 
   async function finishDrag(event){
@@ -857,13 +894,14 @@
     const sourceId=drag.id;
     const moved=drag.moved;
     const previousSelected=drag.previousSelected;
-    drag.el.classList.remove('dragging');
+    const trackedTargetId=drag.targetId;
+    drag.el.classList.remove('dragging','drag-armed');
     drag.el.style.transform='';
     drag.el.style.pointerEvents='none';
     const target=document.elementFromPoint(event.clientX,event.clientY);
     drag.el.style.pointerEvents='';
     drag=null;
-    document.querySelectorAll('.candidate').forEach(el=>el.classList.remove('candidate'));
+    document.querySelectorAll('.candidate').forEach(el=>el.classList.remove('candidate','drag-target'));
 
     if(!moved){
       state.selectedBubbleId=previousSelected;
@@ -871,9 +909,12 @@
       return;
     }
 
-    const bubbleTarget=target&&target.closest('.organic-bubble');
-    if(bubbleTarget&&bubbleTarget.dataset.bubbleId!==sourceId){
-      const targetId=bubbleTarget.dataset.bubbleId;
+    const bubbleTargetId=trackedTargetId||
+      (target&&target.closest('.organic-bubble')?.dataset.bubbleId)||
+      reactionDropTarget(sourceId,event.clientX,event.clientY)?.dataset.bubbleId||
+      null;
+    if(bubbleTargetId&&bubbleTargetId!==sourceId){
+      const targetId=bubbleTargetId;
       const recipes=G.availableCombos(state,sourceId,targetId);
       if(recipes.length===1){
         await performReaction(sourceId,targetId,recipes[0].id);
