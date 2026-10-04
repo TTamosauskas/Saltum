@@ -618,6 +618,56 @@
     return event;
   }
 
+  function chapterBlock(index){
+    const safe=Math.max(0,Math.min(PHASES.length-1,Number(index)||0));
+    const chapter=PHASES[safe].chapter;
+    let start=safe;
+    let end=safe;
+    while(start>0&&PHASES[start-1].chapter===chapter) start--;
+    while(end<PHASES.length-1&&PHASES[end+1].chapter===chapter) end++;
+    return {start,end,chapter};
+  }
+
+  function firstProducerIndex(resource){
+    return PHASES.findIndex(p=>p.target===resource);
+  }
+
+  function uniqueResources(resources){
+    return [...new Set((resources||[]).filter(Boolean))];
+  }
+
+  function wanderingResources(state){
+    const index=state.phaseIndex;
+    const block=chapterBlock(index);
+
+    // A primeira etapa é a matéria-prima atmosférica: apenas átomos simples.
+    if(block.start===0) return [...PERIODS.atmosphere.atoms];
+
+    // A etapa seguinte herda visualmente os produtos da etapa imediatamente anterior.
+    const previous=chapterBlock(block.start-1);
+    const previousOutputs=uniqueResources(
+      PHASES.slice(previous.start,previous.end+1).map(p=>p.target)
+    );
+
+    // Além da herança principal, mantenha apenas insumos indispensáveis à etapa atual
+    // que já existiam antes dela (ou são matérias-primas exógenas sem receita produtora).
+    // Isso preserva a jogabilidade sem voltar ao fluxo atômico genérico de todas as eras.
+    const currentRecipes=PHASES.slice(block.start,block.end+1)
+      .map(p=>recipeById(p.id))
+      .filter(Boolean);
+    const currentNeeds=uniqueResources(currentRecipes.flatMap(r=>[r.a,r.b]));
+    const support=currentNeeds.filter(resource=>{
+      const producerIndex=firstProducerIndex(resource);
+      return producerIndex<0||producerIndex<block.start;
+    });
+
+    const pool=[];
+    previousOutputs.forEach(resource=>pool.push(resource,resource));
+    support.forEach(resource=>pool.push(resource,resource,resource));
+
+    return pool.length?pool:[...period(state).atoms];
+  }
+
   function nextFaller(state){
     const p=phase(state);
     const hasEvents=p.spawnEvents.length>0;
@@ -625,7 +675,7 @@
     if(Math.random()<eventProbability){
       return {kind:'event',value:sample(p.spawnEvents)};
     }
-    return {kind:'atom',value:sample(period(state).atoms)};
+    return {kind:'atom',value:sample(wanderingResources(state))};
   }
 
   function selectBubble(state,bubbleId){
@@ -779,7 +829,7 @@
   window.SopaGame={
     ATOMS,EVENTS,PERIODS,COMBOS,PHASES,
     createGame,phase,period,objective,phaseProgress,phaseStatus,hasCompartment,phaseRecipe,phaseConditions,recipeConditions,recipeUnlocked,contextualRecipe,
-    captureAtom,captureMatter,moveBubble,releaseBubble,bubbleCount,activateEvent,nextFaller,expireEvent,activeEventIcon,
+    captureAtom,captureMatter,moveBubble,releaseBubble,bubbleCount,activateEvent,nextFaller,wanderingResources,expireEvent,activeEventIcon,
     photolysisActive,canDecompose,decomposeBubble,togglePhotolysis,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
     nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
