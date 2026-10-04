@@ -174,7 +174,7 @@
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
-        (context.available.length?'<p class="drag-reaction-hint">Arraste o item selecionado até um parceiro destacado para completar a receita.</p>':'')+
+        (context.available.length?'<p class="drag-reaction-hint">Qualquer ingrediente pode ser arrastado diretamente. Leve-o até um parceiro destacado para completar a receita.</p>':'')+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
@@ -447,6 +447,54 @@
     node.style.animation='traverseMatter 7s linear forwards';
   }
 
+  function recipesForResourcePair(sourceResource,targetResource){
+    return G.possibleRecipes(state,sourceResource).filter(recipe=>
+      (recipe.a===sourceResource&&recipe.b===targetResource)||
+      (recipe.b===sourceResource&&recipe.a===targetResource)
+    );
+  }
+
+  function floatingReactionDropTarget(resource,clientX,clientY){
+    let best=null;
+    let bestDistance=Infinity;
+    document.querySelectorAll('.organic-bubble.floating-candidate').forEach(candidate=>{
+      const rect=candidate.getBoundingClientRect();
+      const pad=20;
+      const within=clientX>=rect.left-pad&&clientX<=rect.right+pad&&clientY>=rect.top-pad&&clientY<=rect.bottom+pad;
+      if(!within) return;
+      const distance=Math.hypot(clientX-(rect.left+rect.width/2),clientY-(rect.top+rect.height/2));
+      if(distance<bestDistance){
+        best=candidate;
+        bestDistance=distance;
+      }
+    });
+    return best;
+  }
+
+  function markFloatingRecipeTargets(resource){
+    document.querySelectorAll('.organic-bubble').forEach(candidate=>{
+      const recipes=recipesForResourcePair(resource,candidate.dataset.resource);
+      candidate.classList.toggle('candidate',recipes.length>0);
+      candidate.classList.toggle('floating-candidate',recipes.length>0);
+    });
+  }
+
+  function clearFloatingRecipeTargets(){
+    document.querySelectorAll('.organic-bubble.floating-candidate').forEach(candidate=>{
+      candidate.classList.remove('floating-candidate','candidate','drag-target');
+    });
+  }
+
+  function armRecipeForPair(sourceResource,targetEl,currentRecipeId){
+    if(!targetEl) return null;
+    const recipes=recipesForResourcePair(sourceResource,targetEl.dataset.resource);
+    if(!recipes.length) return null;
+    const objective=G.phaseRecipe(state);
+    const recipe=recipes.find(item=>item.id===objective?.id)||(recipes.length===1?recipes[0]:null);
+    if(recipe&&recipe.id!==currentRecipeId) M?.arm?.(recipe);
+    return recipe?.id||null;
+  }
+
   function captureDraggedMatter(node,resource,clientX,clientY){
     if(reactionBusy) return;
     const pond=document.getElementById('soupPond');
@@ -473,11 +521,15 @@
 
     node.addEventListener('pointerdown',event=>{
       if(event.button!==undefined&&event.button!==0) return;
+      if(reactionBusy||state.stageComplete) return;
+      event.preventDefault();
       gesture={
         pointerId:event.pointerId,
         startX:event.clientX,
         startY:event.clientY,
-        moved:false
+        moved:false,
+        targetId:null,
+        armedRecipeId:null
       };
       node.setPointerCapture&&node.setPointerCapture(event.pointerId);
     });
@@ -490,6 +542,7 @@
 
       if(!gesture.moved){
         gesture.moved=true;
+        markFloatingRecipeTargets(resource);
         const rect=node.getBoundingClientRect();
         node.style.animation='none';
         node.style.position='fixed';
@@ -506,14 +559,25 @@
       const pondRect=pond&&pond.getBoundingClientRect();
       const over=pondRect&&event.clientX>=pondRect.left&&event.clientX<=pondRect.right&&event.clientY>=pondRect.top&&event.clientY<=pondRect.bottom;
       pond&&pond.classList.toggle('capture-target',!!over);
+      document.querySelectorAll('.organic-bubble.drag-target').forEach(candidate=>candidate.classList.remove('drag-target'));
+      const reactionTarget=over?floatingReactionDropTarget(resource,event.clientX,event.clientY):null;
+      if(reactionTarget){
+        reactionTarget.classList.add('drag-target');
+        gesture.targetId=reactionTarget.dataset.bubbleId;
+        gesture.armedRecipeId=armRecipeForPair(resource,reactionTarget,gesture.armedRecipeId);
+      }else{
+        gesture.targetId=null;
+      }
     });
 
-    const finish=event=>{
+    const finish=async event=>{
       if(!gesture||event.pointerId!==gesture.pointerId) return;
       const moved=gesture.moved;
+      const trackedTargetId=gesture.targetId;
       gesture=null;
       node.classList.remove('incoming-dragging');
       document.getElementById('soupPond')?.classList.remove('capture-target');
+      clearFloatingRecipeTargets();
 
       if(!moved) return;
 
@@ -522,6 +586,26 @@
       const rect=pond&&pond.getBoundingClientRect();
       const inside=rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
 
+      if(inside&&trackedTargetId){
+        const x=Math.max(8,Math.min(92,((event.clientX-rect.left)/rect.width)*100));
+        const y=Math.max(8,Math.min(92,((event.clientY-rect.top)/rect.height)*100));
+        const captured=G.captureMatter(state,resource,x,y);
+        if(captured){
+          const recipes=G.availableCombos(state,captured.id,trackedTargetId);
+          node.remove();
+          if(recipes.length===1){
+            await performReaction(captured.id,trackedTargetId,recipes[0].id);
+            return;
+          }
+          if(recipes.length>1){
+            pendingChoice={sourceId:captured.id,targetId:trackedTargetId,recipes};
+            render();
+            return;
+          }
+        }
+      }
+
+      M?.cancel?.();
       if(inside){
         if(compartmentActive()){
           captureDraggedMatter(node,resource,event.clientX,event.clientY);
@@ -849,8 +933,11 @@
   function startDrag(event,el){
     if(event.button!==undefined&&event.button!==0) return;
     if(reactionBusy||state.stageComplete) return;
+    event.preventDefault();
     const id=el.dataset.bubbleId;
-    if(!state.selectedBubbleId) M?.arm?.(preferredRecipeForSource(id));
+    const preferred=preferredRecipeForSource(id);
+    if(preferred) M?.arm?.(preferred);
+    else M?.cancel?.();
 
     if(G.photolysisActive(state)){
       if(G.canDecompose(el.dataset.resource)){
@@ -868,11 +955,12 @@
       startY:event.clientY,
       moved:false,
       targetId:null,
+      armedRecipeId:preferred?.id||null,
       pointerId:event.pointerId
     };
     el.setPointerCapture&&el.setPointerCapture(event.pointerId);
     el.classList.add('dragging','selected');
-    if(drag.selectedSource) el.classList.add('drag-armed');
+    if(recipesForSource(id).length) el.classList.add('drag-armed');
 
     document.querySelectorAll('.organic-bubble').forEach(other=>{
       if(other.dataset.bubbleId===id) return;
@@ -886,7 +974,18 @@
     const dy=event.clientY-drag.startY;
     if(Math.abs(dx)+Math.abs(dy)>7) drag.moved=true;
     drag.el.style.transform='translate('+dx+'px,'+dy+'px) scale(1.08)';
-    if(drag.moved) drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY);
+    if(drag.moved){
+      drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY);
+      if(drag.targetId){
+        const recipes=G.availableCombos(state,drag.id,drag.targetId);
+        const objective=G.phaseRecipe(state);
+        const recipe=recipes.find(item=>item.id===objective?.id)||(recipes.length===1?recipes[0]:null);
+        if(recipe&&recipe.id!==drag.armedRecipeId){
+          M?.arm?.(recipe);
+          drag.armedRecipeId=recipe.id;
+        }
+      }
+    }
   }
 
   async function finishDrag(event){
