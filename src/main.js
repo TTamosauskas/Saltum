@@ -2,7 +2,7 @@
   const G=window.SopaGame;
   const V=window.SopaVisuals;
   const M=window.SopaReactionMotif;
-  const editorMode=window.location.hash==='#editor';
+  const editorMode=window.location.hash.toLowerCase().startsWith('#editor');
   let state=G.createGame(editorMode);
   let homeOpen=true;
   let drag=null;
@@ -192,18 +192,19 @@
   function renderCampaignTrail(){
     let previousChapter='';
     return G.PHASES.map((p,index)=>{
-      const status=G.phaseStatus(state,index);
-      const clickable=status!=='locked'||state.editorMode;
+      const rawStatus=G.phaseStatus(state,index);
+      const status=state.editorMode&&rawStatus==='locked'?'available':rawStatus;
+      const clickable=state.editorMode||status!=='locked';
       const period=G.PERIODS[p.period];
       const chapter=p.chapter!==previousChapter
         ? '<div class="trail-chapter"><span></span><strong>'+esc(p.chapter)+'</strong><em>'+String(index+1).padStart(2,'0')+'</em></div>'
         : '';
       previousChapter=p.chapter;
       return chapter+
-        '<button type="button" class="trail-node '+status+'" data-home-phase="'+index+'" '+(clickable?'':'disabled')+'>'+
+        '<button type="button" class="trail-node '+status+(state.editorMode?' editor-clickable':'')+'" data-home-phase="'+index+'" aria-label="'+esc(state.editorMode?'Testar fase '+(index+1)+': '+p.title:'Abrir fase '+(index+1)+': '+p.title)+'" '+(clickable?'':'disabled')+'>'+
           '<span class="trail-dot" aria-hidden="true"></span>'+
           '<span class="trail-node-copy"><small>FASE '+(index+1)+' · '+esc(period.name)+'</small><span class="trail-product">'+V.render(p.target,'trail')+'<strong>'+esc(p.title)+'</strong></span><em>'+esc(p.formula)+'</em></span>'+
-          '<span class="trail-state">'+esc(state.editorMode&&status==='locked'?'Editor':phaseStateLabel(status))+'</span>'+
+          '<span class="trail-state">'+esc(state.editorMode?'Testar':phaseStateLabel(status))+'</span>'+
         '</button>';
     }).join('');
   }
@@ -226,6 +227,20 @@
     bindHome();
   }
 
+  function openPhase(index){
+    if(!Number.isInteger(index)||index<0||index>=G.PHASES.length) return false;
+    if(!state.editorMode&&G.phaseStatus(state,index)==='locked') return false;
+    if(index!==state.phaseIndex&&!G.jumpToPhase(state,index)) return false;
+    homeOpen=false;
+    pendingChoice=null;
+    menuOpen=false;
+    lastToastEventId=null;
+    M?.cancel?.();
+    render();
+    restartRain();
+    return true;
+  }
+
   function bindHome(){
     const continueBtn=document.getElementById('continueCampaign');
     if(continueBtn) continueBtn.onclick=()=>{
@@ -235,36 +250,18 @@
     };
 
     document.querySelectorAll('[data-home-phase]').forEach(el=>{
-      el.onclick=()=>{
-        const index=Number(el.dataset.homePhase);
-        if(index===state.phaseIndex){
-          homeOpen=false;
-          pendingChoice=null;
-          menuOpen=false;
-          render();
-          restartRain();
-          return;
-        }
-        if(G.jumpToPhase(state,index)){
-          homeOpen=false;
-          pendingChoice=null;
-          menuOpen=false;
-          lastToastEventId=null;
-          render();
-          restartRain();
-        }
-      };
+      el.onclick=()=>{ openPhase(Number(el.dataset.homePhase)); };
     });
   }
 
   function renderPhaseMenu(){
     return G.PHASES.map((p,index)=>{
-      const status=G.phaseStatus(state,index);
-      const unlocked=status!=='locked'||state.editorMode;
-      const current=status==='current';
-      return '<button class="phase-list-item '+status+'" data-phase="'+index+'" '+(unlocked?'':'disabled')+'>'+
+      const rawStatus=G.phaseStatus(state,index);
+      const status=state.editorMode&&rawStatus==='locked'?'available':rawStatus;
+      const unlocked=state.editorMode||status!=='locked';
+      return '<button class="phase-list-item '+status+(state.editorMode?' editor-clickable':'')+'" data-phase="'+index+'" aria-label="'+esc(state.editorMode?'Testar fase '+(index+1)+': '+p.title:'Abrir fase '+(index+1)+': '+p.title)+'" '+(unlocked?'':'disabled')+'>'+
         '<span>'+(index+1)+'</span><div><strong>'+esc(p.title)+'</strong><small>'+esc(p.chapter)+'</small></div>'+
-        '<em>'+esc(state.editorMode&&status==='locked'?'EDITOR':phaseStateLabel(status).toUpperCase())+'</em>'+
+        '<em>'+esc(state.editorMode?'TESTAR':phaseStateLabel(status).toUpperCase())+'</em>'+
       '</button>';
     }).join('');
   }
@@ -1171,12 +1168,7 @@
     };
 
     document.querySelectorAll('[data-phase]').forEach(el=>{
-      el.onclick=()=>{
-        if(G.jumpToPhase(state,Number(el.dataset.phase))){
-          menuOpen=false;pendingChoice=null;lastToastEventId=null;
-          render();restartRain();
-        }
-      };
+      el.onclick=()=>{ openPhase(Number(el.dataset.phase)); };
     });
 
     const field=document.getElementById('soupPond');
