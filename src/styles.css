@@ -150,9 +150,9 @@ h1,h2,p{margin-top:0}
   top:var(--start-y);
   border:0;
   pointer-events:auto;
-  cursor:pointer;
+  cursor:grab;
   user-select:none;
-  touch-action:manipulation;
+  touch-action:none;
   animation:traverseMatter var(--fall-duration) linear forwards;
   will-change:left,top,transform,opacity,filter;
 }
@@ -497,6 +497,23 @@ h1,h2,p{margin-top:0}
     0 0 0 4px rgba(67,242,138,.22),
     0 0 30px rgba(67,242,138,.48),
     inset -7px -9px 15px rgba(0,0,0,.18);
+}
+
+.falling-event.incoming-dragging{
+  cursor:grabbing;
+  animation:none!important;
+  filter:brightness(1.18);
+  box-shadow:
+    0 0 0 4px rgba(67,242,138,.2),
+    0 0 34px rgba(67,242,138,.52),
+    0 0 48px color-mix(in srgb,currentColor 32%,transparent);
+}
+.falling-event.event-drop-ready{
+  filter:brightness(1.35);
+  box-shadow:
+    0 0 0 6px rgba(67,242,138,.18),
+    0 0 42px rgba(67,242,138,.58),
+    0 0 58px color-mix(in srgb,currentColor 38%,transparent);
 }
 
 /* Catálogo auditável de receitas */

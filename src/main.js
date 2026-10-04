@@ -142,12 +142,12 @@
       if(!compartmentActive()){
         return '<section class="info-panel panel">'+
           '<div class="info-tile idle"><span>AMBIENTE</span><strong>+</strong><small>selecione matéria</small></div>'+
-          '<div class="info-copy"><strong>Química dispersa</strong><p>Clique em uma partícula para interromper seu movimento. Clique depois em outra compatível para reagir. Clique no espaço vazio para liberar a seleção e fazê-la voltar ao fluxo.</p></div>'+
+          '<div class="info-copy"><strong>Química dispersa</strong><p>Arraste qualquer partícula diretamente. Ao aproximá-la de um parceiro compatível, o alvo acende; solte sobre ele para reagir. O clique continua disponível como alternativa.</p></div>'+
         '</section>';
       }
       return '<section class="info-panel panel">'+
         '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
-        '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Clique para sugá-lo automaticamente ou arraste o átomo diretamente para dentro da sopa. Depois combine ingredientes por dois cliques em sequência ou por arraste. Dentro da sopa, arraste livremente para organizar; arraste para fora para liberar uma bolha ao fluxo.</p></div>'+
+        '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Todos os elementos flutuantes podem ser arrastados. Leve matéria diretamente a um ingrediente compatível para reagir, arraste para uma área livre para apenas capturar ou arraste uma bolha para fora para devolvê-la ao fluxo. O clique permanece como alternativa.</p></div>'+
       '</section>';
     }
 
@@ -174,7 +174,7 @@
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
-        (context.available.length?'<p class="drag-reaction-hint">Arraste o item selecionado até um parceiro destacado para completar a receita.</p>':'')+
+        (context.available.length?'<p class="drag-reaction-hint">Qualquer ingrediente pode ser arrastado diretamente. Leve-o até um parceiro destacado para completar a receita.</p>':'')+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
@@ -447,6 +447,54 @@
     node.style.animation='traverseMatter 7s linear forwards';
   }
 
+  function recipesForResourcePair(sourceResource,targetResource){
+    return G.possibleRecipes(state,sourceResource).filter(recipe=>
+      (recipe.a===sourceResource&&recipe.b===targetResource)||
+      (recipe.b===sourceResource&&recipe.a===targetResource)
+    );
+  }
+
+  function floatingReactionDropTarget(resource,clientX,clientY){
+    let best=null;
+    let bestDistance=Infinity;
+    document.querySelectorAll('.organic-bubble.floating-candidate').forEach(candidate=>{
+      const rect=candidate.getBoundingClientRect();
+      const pad=20;
+      const within=clientX>=rect.left-pad&&clientX<=rect.right+pad&&clientY>=rect.top-pad&&clientY<=rect.bottom+pad;
+      if(!within) return;
+      const distance=Math.hypot(clientX-(rect.left+rect.width/2),clientY-(rect.top+rect.height/2));
+      if(distance<bestDistance){
+        best=candidate;
+        bestDistance=distance;
+      }
+    });
+    return best;
+  }
+
+  function markFloatingRecipeTargets(resource){
+    document.querySelectorAll('.organic-bubble').forEach(candidate=>{
+      const recipes=recipesForResourcePair(resource,candidate.dataset.resource);
+      candidate.classList.toggle('candidate',recipes.length>0);
+      candidate.classList.toggle('floating-candidate',recipes.length>0);
+    });
+  }
+
+  function clearFloatingRecipeTargets(){
+    document.querySelectorAll('.organic-bubble.floating-candidate').forEach(candidate=>{
+      candidate.classList.remove('floating-candidate','candidate','drag-target');
+    });
+  }
+
+  function armRecipeForPair(sourceResource,targetEl,currentRecipeId){
+    if(!targetEl) return null;
+    const recipes=recipesForResourcePair(sourceResource,targetEl.dataset.resource);
+    if(!recipes.length) return null;
+    const objective=G.phaseRecipe(state);
+    const recipe=recipes.find(item=>item.id===objective?.id)||(recipes.length===1?recipes[0]:null);
+    if(recipe&&recipe.id!==currentRecipeId) M?.arm?.(recipe);
+    return recipe?.id||null;
+  }
+
   function captureDraggedMatter(node,resource,clientX,clientY){
     if(reactionBusy) return;
     const pond=document.getElementById('soupPond');
@@ -473,6 +521,126 @@
 
     node.addEventListener('pointerdown',event=>{
       if(event.button!==undefined&&event.button!==0) return;
+      if(reactionBusy||state.stageComplete) return;
+      event.preventDefault();
+      gesture={
+        pointerId:event.pointerId,
+        startX:event.clientX,
+        startY:event.clientY,
+        moved:false,
+        targetId:null,
+        armedRecipeId:null
+      };
+      node.setPointerCapture&&node.setPointerCapture(event.pointerId);
+    });
+
+    node.addEventListener('pointermove',event=>{
+      if(!gesture||event.pointerId!==gesture.pointerId) return;
+      const dx=event.clientX-gesture.startX;
+      const dy=event.clientY-gesture.startY;
+      if(Math.abs(dx)+Math.abs(dy)<8&&!gesture.moved) return;
+
+      if(!gesture.moved){
+        gesture.moved=true;
+        markFloatingRecipeTargets(resource);
+        const preferred=preferredRecipeForResource(resource);
+        if(preferred){
+          M?.arm?.(preferred);
+          gesture.armedRecipeId=preferred.id;
+        }
+        const rect=node.getBoundingClientRect();
+        node.style.animation='none';
+        node.style.position='fixed';
+        node.style.left=rect.left+'px';
+        node.style.top=rect.top+'px';
+        node.style.transform='none';
+        node.style.zIndex='90';
+        node.classList.add('incoming-dragging');
+      }
+
+      node.style.left=(event.clientX-node.offsetWidth/2)+'px';
+      node.style.top=(event.clientY-node.offsetHeight/2)+'px';
+      const pond=document.getElementById('soupPond');
+      const pondRect=pond&&pond.getBoundingClientRect();
+      const over=pondRect&&event.clientX>=pondRect.left&&event.clientX<=pondRect.right&&event.clientY>=pondRect.top&&event.clientY<=pondRect.bottom;
+      pond&&pond.classList.toggle('capture-target',!!over);
+      document.querySelectorAll('.organic-bubble.drag-target').forEach(candidate=>candidate.classList.remove('drag-target'));
+      const reactionTarget=over?floatingReactionDropTarget(resource,event.clientX,event.clientY):null;
+      if(reactionTarget){
+        reactionTarget.classList.add('drag-target');
+        gesture.targetId=reactionTarget.dataset.bubbleId;
+        gesture.armedRecipeId=armRecipeForPair(resource,reactionTarget,gesture.armedRecipeId);
+      }else{
+        gesture.targetId=null;
+      }
+    });
+
+    const finish=async event=>{
+      if(!gesture||event.pointerId!==gesture.pointerId) return;
+      const moved=gesture.moved;
+      const trackedTargetId=gesture.targetId;
+      gesture=null;
+      node.classList.remove('incoming-dragging');
+      document.getElementById('soupPond')?.classList.remove('capture-target');
+      clearFloatingRecipeTargets();
+
+      if(!moved) return;
+
+      node.dataset.suppressClick='1';
+      const pond=document.getElementById('soupPond');
+      const rect=pond&&pond.getBoundingClientRect();
+      const inside=rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
+
+      if(inside&&trackedTargetId){
+        const x=Math.max(8,Math.min(92,((event.clientX-rect.left)/rect.width)*100));
+        const y=Math.max(8,Math.min(92,((event.clientY-rect.top)/rect.height)*100));
+        const captured=G.captureMatter(state,resource,x,y);
+        if(captured){
+          const recipes=G.availableCombos(state,captured.id,trackedTargetId);
+          node.remove();
+          if(recipes.length===1){
+            await performReaction(captured.id,trackedTargetId,recipes[0].id);
+            return;
+          }
+          if(recipes.length>1){
+            pendingChoice={sourceId:captured.id,targetId:trackedTargetId,recipes};
+            render();
+            return;
+          }
+        }
+      }
+
+      M?.cancel?.();
+      if(inside){
+        if(compartmentActive()){
+          captureDraggedMatter(node,resource,event.clientX,event.clientY);
+        }else{
+          const field=document.getElementById('soupPond');
+          const fieldRect=field.getBoundingClientRect();
+          const x=Math.max(8,Math.min(92,((event.clientX-fieldRect.left)/fieldRect.width)*100));
+          const y=Math.max(8,Math.min(92,((event.clientY-fieldRect.top)/fieldRect.height)*100));
+          const captured=G.captureMatter(state,resource,x,y);
+          node.remove();
+          if(captured) void handleBubbleTap(captured.id);
+          else render();
+        }
+      }else{
+        resumeIncomingAtom(node);
+        setTimeout(()=>{node.dataset.suppressClick='';},0);
+      }
+    };
+
+    node.addEventListener('pointerup',finish);
+    node.addEventListener('pointercancel',finish);
+  }
+
+  function enableFloatingEventDrag(node,activate){
+    let gesture=null;
+
+    node.addEventListener('pointerdown',event=>{
+      if(event.button!==undefined&&event.button!==0) return;
+      if(reactionBusy||state.stageComplete||node.dataset.captured==='1') return;
+      event.preventDefault();
       gesture={
         pointerId:event.pointerId,
         startX:event.clientX,
@@ -496,7 +664,7 @@
         node.style.left=rect.left+'px';
         node.style.top=rect.top+'px';
         node.style.transform='none';
-        node.style.zIndex='90';
+        node.style.zIndex='92';
         node.classList.add('incoming-dragging');
       }
 
@@ -506,39 +674,28 @@
       const pondRect=pond&&pond.getBoundingClientRect();
       const over=pondRect&&event.clientX>=pondRect.left&&event.clientX<=pondRect.right&&event.clientY>=pondRect.top&&event.clientY<=pondRect.bottom;
       pond&&pond.classList.toggle('capture-target',!!over);
+      node.classList.toggle('event-drop-ready',!!over);
     });
 
     const finish=event=>{
       if(!gesture||event.pointerId!==gesture.pointerId) return;
       const moved=gesture.moved;
       gesture=null;
-      node.classList.remove('incoming-dragging');
+      node.classList.remove('incoming-dragging','event-drop-ready');
       document.getElementById('soupPond')?.classList.remove('capture-target');
-
       if(!moved) return;
 
       node.dataset.suppressClick='1';
       const pond=document.getElementById('soupPond');
       const rect=pond&&pond.getBoundingClientRect();
       const inside=rect&&event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
-
       if(inside){
-        if(compartmentActive()){
-          captureDraggedMatter(node,resource,event.clientX,event.clientY);
-        }else{
-          const field=document.getElementById('soupPond');
-          const fieldRect=field.getBoundingClientRect();
-          const x=Math.max(8,Math.min(92,((event.clientX-fieldRect.left)/fieldRect.width)*100));
-          const y=Math.max(8,Math.min(92,((event.clientY-fieldRect.top)/fieldRect.height)*100));
-          const captured=G.captureMatter(state,resource,x,y);
-          node.remove();
-          if(captured) void handleBubbleTap(captured.id);
-          else render();
-        }
-      }else{
-        resumeIncomingAtom(node);
-        setTimeout(()=>{node.dataset.suppressClick='';},0);
+        activate();
+        return;
       }
+
+      resumeIncomingAtom(node);
+      setTimeout(()=>{node.dataset.suppressClick='';},0);
     };
 
     node.addEventListener('pointerup',finish);
@@ -617,7 +774,7 @@
       },delay);
     };
 
-    node.onclick=()=>{
+    const activatePhotolysis=()=>{
       if(node.dataset.captured==='1') return;
       node.dataset.captured='1';
       G.activateEvent(state,'☀F');
@@ -626,6 +783,8 @@
       setTimeout(()=>recycle(180),420);
       render();
     };
+    node.onclick=activatePhotolysis;
+    enableFloatingEventDrag(node,activatePhotolysis);
 
     node.addEventListener('animationend',()=>recycle(220),{once:true});
     layer.appendChild(node);
@@ -656,7 +815,9 @@
       node.dataset.value=spec.value;
       node.innerHTML='<span>'+event.icon+'</span><small>'+esc(event.name)+'</small>';
       node.setAttribute('aria-label','Ativar evento '+event.name);
-      node.onclick=()=>triggerEventObject(node,spec.value);
+      const activateEvent=()=>triggerEventObject(node,spec.value);
+      node.onclick=activateEvent;
+      enableFloatingEventDrag(node,activateEvent);
     }else{
       const visual=V.spec(spec.value);
       node.className='falling-object molecular-faller atom-faller kind-'+visual.kind;
@@ -733,6 +894,13 @@
       if(target) return target;
     }
     return recipes.length===1?recipes[0]:null;
+  }
+
+  function preferredRecipeForResource(resource){
+    const recipes=G.possibleRecipes(state,resource);
+    if(!recipes.length) return null;
+    const objective=G.phaseRecipe(state);
+    return recipes.find(recipe=>recipe.id===objective?.id)||(recipes.length===1?recipes[0]:null);
   }
 
   function reactantSnapshot(bubble){
@@ -849,8 +1017,11 @@
   function startDrag(event,el){
     if(event.button!==undefined&&event.button!==0) return;
     if(reactionBusy||state.stageComplete) return;
+    event.preventDefault();
     const id=el.dataset.bubbleId;
-    if(!state.selectedBubbleId) M?.arm?.(preferredRecipeForSource(id));
+    const preferred=preferredRecipeForSource(id);
+    if(preferred) M?.arm?.(preferred);
+    else M?.cancel?.();
 
     if(G.photolysisActive(state)){
       if(G.canDecompose(el.dataset.resource)){
@@ -868,11 +1039,12 @@
       startY:event.clientY,
       moved:false,
       targetId:null,
+      armedRecipeId:preferred?.id||null,
       pointerId:event.pointerId
     };
     el.setPointerCapture&&el.setPointerCapture(event.pointerId);
     el.classList.add('dragging','selected');
-    if(drag.selectedSource) el.classList.add('drag-armed');
+    if(recipesForSource(id).length) el.classList.add('drag-armed');
 
     document.querySelectorAll('.organic-bubble').forEach(other=>{
       if(other.dataset.bubbleId===id) return;
@@ -886,7 +1058,18 @@
     const dy=event.clientY-drag.startY;
     if(Math.abs(dx)+Math.abs(dy)>7) drag.moved=true;
     drag.el.style.transform='translate('+dx+'px,'+dy+'px) scale(1.08)';
-    if(drag.moved) drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY);
+    if(drag.moved){
+      drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY);
+      if(drag.targetId){
+        const recipes=G.availableCombos(state,drag.id,drag.targetId);
+        const objective=G.phaseRecipe(state);
+        const recipe=recipes.find(item=>item.id===objective?.id)||(recipes.length===1?recipes[0]:null);
+        if(recipe&&recipe.id!==drag.armedRecipeId){
+          M?.arm?.(recipe);
+          drag.armedRecipeId=recipe.id;
+        }
+      }
+    }
   }
 
   async function finishDrag(event){
