@@ -13,6 +13,8 @@
   let rainTimer=null;
   let eventTickTimer=null;
   let reactionBusy=false;
+  let contextRecipeId=null;
+  let contextRecipePhase=-1;
   window.SopaToastQueue=window.SopaToastQueue||[];
 
   function esc(value){
@@ -106,6 +108,75 @@
     return '<div class="recipe-condition-inline">'+
       orderedConditions(conditions).map(icon=>'<span>'+icon+' '+esc(conditionLabel(icon))+'</span>').join('<em>ou</em>')+
     '</div>';
+  }
+
+  function visibleResourceCounts(){
+    const out={};
+    for(const bubble of state.soup){
+      out[bubble.resource]=(out[bubble.resource]||0)+G.bubbleCount(bubble);
+    }
+    document.querySelectorAll('#falling-layer .molecular-faller[data-value]').forEach(node=>{
+      if(node.dataset.captured==='1'||node.dataset.finished==='1') return;
+      const resource=node.dataset.value;
+      if(resource) out[resource]=(out[resource]||0)+1;
+    });
+    return out;
+  }
+
+  function currentContextualRecipe(){
+    if(contextRecipePhase!==state.phaseIndex){
+      contextRecipePhase=state.phaseIndex;
+      contextRecipeId=null;
+    }
+    const recipe=G.contextualRecipe(state,visibleResourceCounts(),contextRecipeId);
+    contextRecipeId=recipe?.id||null;
+    return recipe;
+  }
+
+  function contextualRecipeView(){
+    const target=G.phaseRecipe(state);
+    const recipe=currentContextualRecipe()||target;
+    return {
+      recipe,
+      target,
+      contextual:!!recipe&&!!target&&recipe.id!==target.id,
+      label:recipe?.label||G.objective(state).formula,
+      conditions:recipe?.events||[]
+    };
+  }
+
+  function objectiveMarkup(objective){
+    const view=contextualRecipeView();
+    return '<section class="objective-card'+(view.contextual?' contextual-guidance':'')+'" id="objectiveCard">'+
+      '<strong>'+esc(objective.title)+'</strong>'+
+      '<small class="objective-recipe-kicker" id="objectiveRecipeKicker">'+(view.contextual?'PRÓXIMA RECEITA POSSÍVEL':'RECEITA DA FASE')+'</small>'+
+      '<span class="objective-formula" id="objectiveFormula" data-recipe-id="'+esc(view.recipe?.id||'')+'">'+esc(view.label)+'</span>'+
+      '<div id="objectiveConditions">'+conditionMarkup(view.conditions)+'</div>'+
+    '</section>';
+  }
+
+  function refreshContextualObjective(){
+    if(homeOpen||reactionBusy) return;
+    const formula=document.getElementById('objectiveFormula');
+    const kicker=document.getElementById('objectiveRecipeKicker');
+    const conditions=document.getElementById('objectiveConditions');
+    const card=document.getElementById('objectiveCard');
+    if(!formula||!kicker||!conditions||!card) return;
+
+    const view=contextualRecipeView();
+    const nextId=view.recipe?.id||'';
+    const changed=formula.dataset.recipeId!==nextId;
+    formula.dataset.recipeId=nextId;
+    formula.textContent=view.label;
+    kicker.textContent=view.contextual?'PRÓXIMA RECEITA POSSÍVEL':'RECEITA DA FASE';
+    conditions.innerHTML=conditionMarkup(view.conditions);
+    card.classList.toggle('contextual-guidance',view.contextual);
+
+    if(changed){
+      formula.classList.remove('contextual-recipe-shift');
+      void formula.offsetWidth;
+      formula.classList.add('contextual-recipe-shift');
+    }
   }
 
   function progressMarkup(objective){
@@ -328,7 +399,7 @@
     app.innerHTML=
       '<div class="app single-app">'+
         '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+period.atoms.map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
-        '<section class="objective-card"><strong>'+esc(objective.title)+'</strong><span class="objective-formula">'+esc(objective.formula)+'</span>'+conditionMarkup(objective.conditions)+'</section>'+
+        objectiveMarkup(objective)+
         progressMarkup(objective)+
         renderEventStatus()+
         '<section class="arena-shell '+(compartmentActive()?'compartment-stage':'open-stage')+'"><div class="'+(compartmentActive()?'primordial-pond single-pond':'prebiotic-field')+'" id="soupPond">'+
@@ -1209,6 +1280,11 @@
   }
 
   eventTickTimer=setInterval(tickEvent,250);
+  const fallingLayer=document.getElementById('falling-layer');
+  if(fallingLayer&&window.MutationObserver){
+    const observer=new MutationObserver(()=>refreshContextualObjective());
+    observer.observe(fallingLayer,{childList:true});
+  }
   render();
   if(!homeOpen) restartRain();
 })();
