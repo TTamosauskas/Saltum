@@ -361,6 +361,7 @@
     menuOpen=false;
     lastToastEventId=null;
     M?.cancel?.();
+    scheduleSave();
     render();
     restartRain();
     return true;
@@ -591,8 +592,11 @@
     if(!compartmentActive()){
       const captured=G.captureMatter(state,resource,fieldX,fieldY);
       node.remove();
-      if(captured) void handleBubbleTap(captured.id);
-      else render();
+      if(captured){
+        discoverStructure(resource);
+        scheduleSave();
+        void handleBubbleTap(captured.id);
+      }else render();
       return;
     }
 
@@ -619,8 +623,12 @@
     });
 
     setTimeout(()=>{
-      G.captureMatter(state,resource,fieldX,fieldY);
+      const captured=G.captureMatter(state,resource,fieldX,fieldY);
       node.remove();
+      if(captured){
+        discoverStructure(resource);
+        scheduleSave();
+      }
       render();
     },690);
   }
@@ -629,6 +637,7 @@
     if(reactionBusy||node.dataset.captured==='1') return;
     node.dataset.captured='1';
     G.activateEvent(state,icon);
+    discoverProcess(icon);
     node.style.pointerEvents='none';
     node.classList.add('event-triggered');
     setTimeout(()=>node.remove(),420);
@@ -985,6 +994,7 @@
       if(node.dataset.captured==='1') return;
       node.dataset.captured='1';
       G.activateEvent(state,'☀F');
+      discoverProcess('☀F');
       node.style.pointerEvents='none';
       node.classList.add('event-triggered');
       setTimeout(()=>recycle(180),420);
@@ -1159,6 +1169,11 @@
       }
     }finally{
       reactionBusy=false;
+      discover(
+        [A.structureKey(result.born.resource),A.reactionKey(recipe.id)],
+        A.structureKey(result.born.resource)
+      );
+      scheduleSave();
       render();
     }
     return true;
@@ -1232,7 +1247,8 @@
 
     if(G.photolysisActive(state)){
       if(G.canDecompose(el.dataset.resource)){
-        G.decomposeBubble(state,id);
+        const decomposed=G.decomposeBubble(state,id);
+        if(decomposed?.ok) scheduleSave();
         render();
       }
       return;
@@ -1330,6 +1346,7 @@
       const released=G.releaseBubble(state,sourceId);
       if(released) createReleasedMatter(released.resource,event.clientX,event.clientY);
     }
+    scheduleSave();
     render();
   }
 
