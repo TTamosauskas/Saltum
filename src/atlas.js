@@ -60,8 +60,42 @@
     'Sistema autorreplicante':['O sistema autorreplicante é o ponto final da campanha: compartimento e química informacional passam a funcionar como um conjunto.','Ele não representa uma célula viva moderna, mas um limiar conceitual em que fronteira, catálise e replicação podem começar a participar de seleção evolutiva.',wiki('Origem da vida'),'fatty-acid.png']
   };
 
+  const EDITORIAL_IMAGE={};
+  function assignEditorialImage(filename,resources){
+    for(const resource of resources) EDITORIAL_IMAGE[resource]=filename;
+  }
+
+  assignEditorialImage('lightning.jpg',[
+    'H','C','O','N','H₂','CO','CH₄','NH₃','Formaldeído','Cianeto',
+    'Glicina','Aspartato','Glutamina'
+  ]);
+  assignEditorialImage('black-smoker.jpg',['P','H₂O','Fosfato']);
+  assignEditorialImage('dry-mud.jpg',[
+    'Açúcares','Ribose','Peptídeo curto','Peptídeo catalítico'
+  ]);
+  assignEditorialImage('liposome-microscopy.png',[
+    'Ácidos graxos','Lipídio simples','Vesícula','Protobionte','Sistema autorreplicante'
+  ]);
+  assignEditorialImage('rna-bases.webp',[
+    'Adenina','Guanina','Uracila','Citosina',
+    'Adenosina','Guanosina','Uridina','Citidina',
+    'AMP','GMP','UMP','CMP','Pool A/U','Pool C/G','Pool de RNA',
+    'Nucleotídeos ativados','Trinucleotídeos ativados','Oligômero de RNA',
+    'RNA molde','RNA catalítico','QT45','Fita complementar','Cópia de QT45','RNA autorreplicante'
+  ]);
+
+  function imageFilename(resource,info){
+    return EDITORIAL_IMAGE[resource]||info?.[3]||'miller-urey.png';
+  }
+
+  function imageFit(filename){
+    return /(?:rna-bases|solar-spectrum)/.test(filename)?'contain':'cover';
+  }
+
   const IMAGE_BY_RESOURCE={};
-  Object.entries(STRUCTURE_INFO).forEach(([resource,info])=>{IMAGE_BY_RESOURCE[resource]=IMG+info[3]});
+  Object.entries(STRUCTURE_INFO).forEach(([resource,info])=>{
+    IMAGE_BY_RESOURCE[resource]=IMG+imageFilename(resource,info);
+  });
 
   function structureKey(resource){return 'structure:'+resource}
   function reactionKey(id){return 'reaction:'+id}
@@ -78,7 +112,9 @@
       key:structureKey(resource),
       category:'structures',
       title:resource,
-      image:IMG+info[3],
+      image:IMG+imageFilename(resource,info),
+      imageFit:imageFit(imageFilename(resource,info)),
+      imageAlt:'Imagem científica contextual relacionada a '+resource,
       paragraphs:[info[0],info[1]],
       wikipedia:info[2],
       resource
@@ -99,6 +135,8 @@
       category:'reactions',
       title:recipe.label,
       image:product.image,
+      imageFit:product.imageFit,
+      imageAlt:'Contexto visual da reação '+recipe.label,
       paragraphs:[
         'Na Sopa Primordial, esta receita representa a transformação '+recipe.label+'. Ela é a ação jogável que libera '+recipe.out+' pela primeira vez.',
         (phase?.hint||'A transformação resume uma rede química mais ampla.')+' A equação do jogo deve ser lida como uma abstração estratégica, não como uma descrição estequiométrica completa da química real.'
@@ -112,7 +150,9 @@
   const PROCESS_INFO={
     '☀F':{
       title:'Fotólise',
-      image:IMG+'miller-urey.png',
+      image:IMG+'solar-spectrum.png',
+      imageFit:'contain',
+      imageAlt:'Espectro da radiação solar',
       paragraphs:[
         'Fotólise é a quebra ou transformação de moléculas provocada pela absorção de luz. Fótons suficientemente energéticos podem abrir rotas químicas que não ocorreriam no escuro.',
         'Na Sopa, a Fotólise desmonta uma estrutura em seus precursores imediatos como ferramenta didática. Na química real, os produtos dependem da molécula, do comprimento de onda e do ambiente.'
@@ -121,7 +161,9 @@
     },
     '☀':{
       title:'Radiação ultravioleta',
-      image:IMG+'miller-urey.png',
+      image:IMG+'solar-spectrum.png',
+      imageFit:'contain',
+      imageAlt:'Espectro da radiação solar com faixas de absorção',
       paragraphs:[
         'Radiação ultravioleta possui energia suficiente para excitar ou romper determinadas ligações químicas e alterar a reatividade de moléculas.',
         'Sem uma camada de ozônio como a atual, a superfície da Terra primitiva recebeu um regime de UV diferente. Essa energia pode tanto destruir compostos quanto alimentar sínteses prebióticas.'
@@ -130,7 +172,9 @@
     },
     '⚡':{
       title:'Descarga elétrica',
-      image:IMG+'miller-urey.png',
+      image:IMG+'lightning.jpg',
+      imageFit:'cover',
+      imageAlt:'Descarga elétrica atmosférica',
       paragraphs:[
         'Descargas elétricas transferem grande quantidade de energia para gases em pouco tempo, criando íons, radicais e espécies altamente reativas.',
         'Experimentos clássicos como Miller–Urey mostraram que faíscas em misturas gasosas podem gerar moléculas orgânicas. O resultado depende fortemente da composição da atmosfera usada.'
@@ -140,6 +184,8 @@
     '♨':{
       title:'Ambiente hidrotermal',
       image:IMG+'black-smoker.jpg',
+      imageFit:'cover',
+      imageAlt:'Fonte hidrotermal submarina do tipo black smoker',
       paragraphs:[
         'Sistemas hidrotermais surgem quando água circula por rochas quentes e retorna carregada de minerais, gases e fortes gradientes de temperatura e composição.',
         'Esses ambientes oferecem energia química, superfícies minerais e microcompartimentos naturais, por isso aparecem em várias hipóteses sobre etapas iniciais da origem da vida.'
@@ -148,7 +194,9 @@
     },
     '◐':{
       title:'Ciclo úmido-seco',
-      image:IMG+'miller-urey.png',
+      image:IMG+'dry-mud.jpg',
+      imageFit:'cover',
+      imageAlt:'Sedimento ressecado após perda de água',
       paragraphs:[
         'Ciclos úmido-seco alternam períodos de diluição em água com fases de evaporação e concentração de solutos.',
         'A concentração durante a secagem pode favorecer reações de condensação e associação molecular. Lagos rasos, margens e áreas geotérmicas são cenários estudados para esse mecanismo.'
@@ -157,7 +205,9 @@
     },
     '❄':{
       title:'Gelo eutético',
-      image:IMG+'water.png',
+      image:IMG+'ice-crystals.jpg',
+      imageFit:'cover',
+      imageAlt:'Cristais de gelo',
       paragraphs:[
         'Quando água congela, muitos solutos são expulsos da rede cristalina do gelo e ficam concentrados em pequenos canais e bolsões líquidos.',
         'Esses microambientes frios podem concentrar RNA e reagentes ao mesmo tempo em que reduzem certas degradações. A campanha usa essa condição nas etapas experimentais ligadas a QT45.'
