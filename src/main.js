@@ -404,16 +404,101 @@
     }).join('');
   }
 
-  function renderMenu(){
-    if(!menuOpen) return '';
+  function atlasCategoryLabel(category){
+    return {
+      structures:'Moléculas e estruturas',
+      reactions:'Reações',
+      processes:'Ambientes e processos'
+    }[category]||category;
+  }
+
+  function renderAtlasList(){
+    if(!A||!atlasState) return '<div class="atlas-empty">Atlas indisponível.</div>';
+    const counts=A.counts(atlasState,editorMode);
+    const items=A.entries(atlasTab).filter(entry=>A.isKnown(atlasState,entry.key,editorMode));
+    return '<div class="atlas-category-tabs" role="tablist" aria-label="Categorias do Atlas">'+
+      ['structures','reactions','processes'].map(category=>
+        '<button type="button" class="atlas-category-tab'+(atlasTab===category?' active':'')+'" data-atlas-tab="'+category+'">'+
+          '<strong>'+esc(atlasCategoryLabel(category))+'</strong>'+
+          '<small>'+counts[category].known+'/'+counts[category].total+'</small>'+
+        '</button>'
+      ).join('')+
+    '</div>'+
+    (items.length
+      ? '<div class="atlas-grid">'+items.map(entry=>
+          '<button type="button" class="atlas-card'+(atlasState.unread.has(entry.key)?' unread':'')+'" data-atlas-entry="'+esc(entry.key)+'">'+
+            '<span class="atlas-card-image"><img src="'+esc(entry.image)+'" alt="" loading="lazy"></span>'+
+            '<span class="atlas-card-copy"><small>'+esc(atlasCategoryLabel(entry.category))+(atlasState.unread.has(entry.key)?' · NOVA':'')+'</small><strong>'+esc(entry.title)+'</strong><span>'+esc(entry.paragraphs[0])+'</span></span>'+
+          '</button>'
+        ).join('')+'</div>'
+      : '<div class="atlas-empty">Nenhuma descoberta nesta categoria ainda.</div>');
+  }
+
+  function renderAtlasDetail(){
+    const entry=A?.entry?.(atlasSelectedKey);
+    if(!entry||!A.isKnown(atlasState,entry.key,editorMode)){
+      atlasSelectedKey=null;
+      return renderAtlasList();
+    }
+    return '<article class="atlas-detail">'+
+      '<button type="button" class="atlas-back" id="atlasBack">← Voltar ao Atlas</button>'+
+      '<div class="atlas-hero"><img src="'+esc(entry.image)+'" alt="'+esc(entry.title)+'"></div>'+
+      '<small class="atlas-detail-category">'+esc(atlasCategoryLabel(entry.category))+'</small>'+
+      '<h3>'+esc(entry.title)+'</h3>'+
+      entry.paragraphs.map(paragraph=>'<p>'+esc(paragraph)+'</p>').join('')+
+      '<a class="atlas-wikipedia" href="'+esc(entry.wikipedia)+'" target="_blank" rel="noopener noreferrer">Ler mais na Wikipédia ↗</a>'+
+    '</article>';
+  }
+
+  function renderAtlasMenu(){
+    const counts=A?.counts?.(atlasState,editorMode);
+    const unread=counts?.unread||0;
+    return '<p class="menu-intro">O Atlas registra apenas aquilo que você encontrou durante a campanha. Cada descoberta reúne uma imagem científica, contexto curto e um caminho para aprofundamento.</p>'+
+      (editorMode?'<p class="atlas-editor-note">#editor · catálogo completo visível sem alterar a campanha persistida.</p>':'')+
+      '<section class="menu-section atlas-section">'+
+        '<div class="atlas-summary"><strong>Atlas de Descobertas</strong><span>'+((counts?.structures.known||0)+(counts?.reactions.known||0)+(counts?.processes.known||0))+' registradas'+(unread?' · '+unread+' novas':'')+'</span></div>'+
+        (atlasSelectedKey?renderAtlasDetail():renderAtlasList())+
+      '</section>';
+  }
+
+  function renderCampaignMenu(){
     const p=G.phase(state);
-    return '<div class="modal-backdrop"><div class="menu-card">'+
-      '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">A campanha possui 44 descobertas. Cada fase libera uma receita própria; produtos anteriores continuam disponíveis como precursores. A química começa dispersa, anfifílicos formam uma vesícula cedo e as etapas seguintes passam a ocorrer em microambientes compartimentalizados até a replicação de RNA.</p>'+
+    return '<p class="menu-intro">A campanha possui 44 descobertas. Cada fase libera uma receita própria; produtos anteriores continuam disponíveis como precursores. A química começa dispersa, anfifílicos formam uma vesícula cedo e as etapas seguintes passam a ocorrer em microambientes compartimentalizados até a replicação de RNA.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="openTrail" class="menu-action">Trilha de fases</button><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
-      '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
+      '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+
+      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>';
+  }
+
+  function renderMenu(){
+    if(!menuOpen) return '';
+    const unread=A?.counts?.(atlasState,editorMode)?.unread||0;
+    return '<div class="modal-backdrop"><div class="menu-card">'+
+      '<div class="menu-head"><div><p class="eyebrow">Sopa Primordial</p><h2>'+(menuView==='atlas'?'Atlas de Descobertas':'Campanha')+'</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
+      '<div class="menu-primary-tabs">'+
+        '<button type="button" id="menuCampaignTab" class="'+(menuView==='campaign'?'active':'')+'">Campanha</button>'+
+        '<button type="button" id="menuAtlasTab" class="'+(menuView==='atlas'?'active':'')+'">Atlas'+(unread?'<span>'+unread+'</span>':'')+'</button>'+
+      '</div>'+
+      (menuView==='atlas'?renderAtlasMenu():renderCampaignMenu())+
     '</div></div>';
+  }
+
+  function renderDiscoveryModal(){
+    if(!activeDiscovery||!A) return '';
+    const entry=A.entry(activeDiscovery.primaryKey);
+    if(!entry) return '';
+    const related=activeDiscovery.keys
+      .filter(key=>key!==activeDiscovery.primaryKey)
+      .map(key=>A.entry(key)?.title)
+      .filter(Boolean);
+    return '<div class="discovery-modal" role="presentation"><section class="discovery-card" role="dialog" aria-modal="true" aria-labelledby="discoveryTitle">'+
+      '<div class="discovery-image"><img src="'+esc(entry.image)+'" alt="'+esc(entry.title)+'"></div>'+
+      '<small>NOVA DESCOBERTA</small>'+
+      '<h2 id="discoveryTitle">'+esc(entry.title)+'</h2>'+
+      '<p>'+esc(entry.paragraphs[0])+'</p>'+
+      (related.length?'<div class="discovery-related">Também registrado: '+related.map(esc).join(' · ')+'</div>':'')+
+      '<div class="discovery-actions"><button type="button" id="discoveryContinue" class="secondary">Continuar</button><button type="button" id="discoveryOpenAtlas">Ver no Atlas</button></div>'+
+    '</section></div>';
   }
 
   function renderChoice(){
