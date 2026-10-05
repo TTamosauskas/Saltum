@@ -176,7 +176,7 @@
       known:new Set(Array.isArray(saved?.known)?saved.known.filter(key=>BY_KEY.has(key)):[]),
       unread:new Set(Array.isArray(saved?.unread)?saved.unread.filter(key=>BY_KEY.has(key)):[])
     };
-    for(const key of BASE_KN) state.known.add(key);
+    for(const key of BASE_KNOWN) state.known.add(key);
     if(editor) for(const entry of ALL) state.known.add(entry.key);
     return state;
   }
