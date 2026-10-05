@@ -2,8 +2,12 @@
   const G=window.SopaGame;
   const V=window.SopaVisuals;
   const M=window.SopaReactionMotif;
+  const P=window.SopaPersistence;
+  const A=window.SopaAtlas;
   const editorMode=window.location.hash.toLowerCase().startsWith('#editor');
-  let state=G.createGame(editorMode);
+  const persisted=editorMode?null:P?.load?.();
+  let state=G.restoreGame?.(persisted?.campaign,editorMode)||G.createGame(editorMode);
+  let atlasState=A?.createState?.(persisted?.discoveries,editorMode);
   let homeOpen=true;
   let drag=null;
   let pendingChoice=null;
@@ -15,10 +19,60 @@
   let reactionBusy=false;
   let contextRecipeId=null;
   let contextRecipePhase=-1;
+  let menuView='campaign';
+  let atlasTab='structures';
+  let atlasSelectedKey=null;
+  let discoveryQueue=[];
+  let activeDiscovery=null;
+  let saveTimer=null;
   window.SopaToastQueue=window.SopaToastQueue||[];
 
   function esc(value){
     return String(value).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+
+  function saveNow(){
+    if(editorMode||!P||!A||!atlasState) return null;
+    return P.save({campaign:G.serializeGame(state),discoveries:A.serialize(atlasState)});
+  }
+
+  function scheduleSave(){
+    if(editorMode) return;
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer=setTimeout(()=>{saveTimer=null;saveNow();},80);
+  }
+
+  function presentNextDiscovery(){
+    if(activeDiscovery||!discoveryQueue.length) return;
+    activeDiscovery=discoveryQueue.shift();
+  }
+
+  function discover(keys,primaryKey){
+    if(editorMode||!A||!atlasState) return [];
+    const fresh=A.discover(atlasState,keys);
+    if(!fresh.length) return fresh;
+    discoveryQueue.push({
+      keys:fresh,
+      primaryKey:fresh.includes(primaryKey)?primaryKey:fresh[0]
+    });
+    presentNextDiscovery();
+    scheduleSave();
+    return fresh;
+  }
+
+  function discoverStructure(resource){
+    return discover([A.structureKey(resource)],A.structureKey(resource));
+  }
+
+  function discoverProcess(icon){
+    const fresh=discover([A.processKey(icon)],A.processKey(icon));
+    if(fresh.length&&state.lastEvent) lastToastEventId=state.lastEvent.id;
+    return fresh;
+  }
+
+  function dismissDiscovery(){
+    activeDiscovery=null;
+    presentNextDiscovery();
   }
 
   function emitEventToast(){
