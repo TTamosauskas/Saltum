@@ -113,6 +113,7 @@
   }
 
   function imageAlt(resource,filename){
+    if(filename==='fatty-acid.png') return 'Estrutura molecular representativa de um ácido graxo';
     return MOLECULAR_IMAGE_FILES.has(filename)
       ? 'Estrutura molecular de '+resource
       : 'Imagem científica contextual relacionada a '+resource;
