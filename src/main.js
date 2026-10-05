@@ -464,7 +464,7 @@
 
   function renderCampaignMenu(){
     const p=G.phase(state);
-    return '<p class="menu-intro">A campanha possui 44 descobertas. Cada fase libera uma receita própria; produtos anteriores continuam disponíveis como precursores. A química começa dispersa, anfifílicos formam uma vesícula cedo e as etapas seguintes passam a ocorrer em microambientes compartimentalizados até a replicação de RNA.</p>'+
+    return '<p class="menu-intro">A campanha possui 44 fases. Cada fase libera uma receita própria; produtos anteriores continuam disponíveis como precursores. A química começa dispersa, anfifílicos formam uma vesícula cedo e as etapas seguintes passam a ocorrer em microambientes compartimentalizados até a replicação de RNA.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="openTrail" class="menu-action">Trilha de fases</button><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+
@@ -1437,7 +1437,7 @@
     const restartCampaign=document.getElementById('restartCampaign');
     if(restartCampaign) restartCampaign.onclick=()=>{
       if(!editorMode&&!window.confirm('Reiniciar a campanha? O progresso salvo e todas as descobertas do Atlas serão apagados.')) return;
-      P?.clear?.();
+      if(!editorMode) P?.clear?.();
       state=G.createGame(editorMode);
       atlasState=A?.createState?.(null,editorMode);
       discoveryQueue=[];
