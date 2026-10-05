@@ -1351,20 +1351,61 @@
   }
 
   function bind(){
-    document.getElementById('openMenu').onclick=()=>{menuOpen=true;render();};
+    const openMenu=document.getElementById('openMenu');
+    if(openMenu) openMenu.onclick=()=>{menuOpen=true;render();};
     const next=document.getElementById('nextPhase');
     if(next) next.onclick=()=>{
       if(G.nextPhase(state)){
         pendingChoice=null;
         menuOpen=false;
         lastToastEventId=null;
+        scheduleSave();
         render();
         restartRain();
       }
     };
 
     const close=document.getElementById('closeMenu');
-    if(close) close.onclick=()=>{menuOpen=false;render();};
+    if(close) close.onclick=()=>{
+      menuOpen=false;
+      atlasSelectedKey=null;
+      presentNextDiscovery();
+      render();
+    };
+
+    const campaignTab=document.getElementById('menuCampaignTab');
+    if(campaignTab) campaignTab.onclick=()=>{
+      menuView='campaign';
+      atlasSelectedKey=null;
+      render();
+    };
+
+    const atlasMenuTab=document.getElementById('menuAtlasTab');
+    if(atlasMenuTab) atlasMenuTab.onclick=()=>{
+      menuView='atlas';
+      atlasSelectedKey=null;
+      render();
+    };
+
+    document.querySelectorAll('[data-atlas-tab]').forEach(el=>{
+      el.onclick=()=>{
+        atlasTab=el.dataset.atlasTab;
+        atlasSelectedKey=null;
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-atlas-entry]').forEach(el=>{
+      el.onclick=()=>{
+        const key=el.dataset.atlasEntry;
+        atlasSelectedKey=key;
+        if(A?.markRead?.(atlasState,key)) scheduleSave();
+        render();
+      };
+    });
+
+    const atlasBack=document.getElementById('atlasBack');
+    if(atlasBack) atlasBack.onclick=()=>{atlasSelectedKey=null;render();};
 
     const openTrail=document.getElementById('openTrail');
     if(openTrail) openTrail.onclick=()=>{
@@ -1380,17 +1421,30 @@
     if(restartPhase) restartPhase.onclick=()=>{
       G.restartPhase(state);
       menuOpen=false;pendingChoice=null;lastToastEventId=null;
+      scheduleSave();
       render();restartRain();
     };
 
     const restartCampaign=document.getElementById('restartCampaign');
     if(restartCampaign) restartCampaign.onclick=()=>{
+      if(!editorMode&&!window.confirm('Reiniciar a campanha? O progresso salvo e todas as descobertas do Atlas serão apagados.')) return;
+      P?.clear?.();
       state=G.createGame(editorMode);
+      atlasState=A?.createState?.(null,editorMode);
+      discoveryQueue=[];
+      activeDiscovery=null;
+      contextRecipeId=null;
+      contextRecipePhase=-1;
       homeOpen=true;
-      menuOpen=false;pendingChoice=null;lastToastEventId=null;
+      menuOpen=false;
+      menuView='campaign';
+      atlasSelectedKey=null;
+      pendingChoice=null;
+      lastToastEventId=null;
       rainGeneration+=1;
       if(rainTimer) clearTimeout(rainTimer);
       document.getElementById('falling-layer')?.replaceChildren();
+      saveNow();
       render();
     };
 
@@ -1406,7 +1460,10 @@
         if(!state.selectedBubbleId) return;
         const released=G.releaseBubble(state,state.selectedBubbleId);
         M?.cancel?.();
-        if(released) createReleasedMatter(released.resource,event.clientX,event.clientY);
+        if(released){
+          createReleasedMatter(released.resource,event.clientX,event.clientY);
+          scheduleSave();
+        }
         render();
       });
     }
@@ -1433,6 +1490,24 @@
 
     const cancel=document.getElementById('cancelChoice');
     if(cancel) cancel.onclick=()=>{pendingChoice=null;M?.cancel?.();render();};
+
+    const discoveryContinue=document.getElementById('discoveryContinue');
+    if(discoveryContinue) discoveryContinue.onclick=()=>{
+      dismissDiscovery();
+      render();
+    };
+
+    const discoveryOpenAtlas=document.getElementById('discoveryOpenAtlas');
+    if(discoveryOpenAtlas) discoveryOpenAtlas.onclick=()=>{
+      const key=activeDiscovery?.primaryKey||null;
+      if(key&&A?.markRead?.(atlasState,key)) scheduleSave();
+      activeDiscovery=null;
+      menuOpen=true;
+      menuView='atlas';
+      atlasTab=A?.entry?.(key)?.category||'structures';
+      atlasSelectedKey=key;
+      render();
+    };
   }
 
   eventTickTimer=setInterval(tickEvent,250);
@@ -1441,6 +1516,7 @@
     const observer=new MutationObserver(()=>refreshContextualObjective());
     observer.observe(fallingLayer,{childList:true});
   }
+  window.addEventListener('beforeunload',()=>{if(!editorMode) saveNow();});
   render();
   if(!homeOpen) restartRain();
 })();
