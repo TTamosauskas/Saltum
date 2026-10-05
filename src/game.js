@@ -816,6 +816,92 @@
     return true;
   }
 
+  function serializeBubble(bubble){
+    if(!bubble||!SIZE[bubble.resource]) return null;
+    return {
+      id:String(bubble.id||''),
+      resource:bubble.resource,
+      size:SIZE[bubble.resource]||72,
+      x:Math.max(8,Math.min(92,Number(bubble.x)||50)),
+      y:Math.max(8,Math.min(92,Number(bubble.y)||50)),
+      drift:Math.max(2500,Math.min(9000,Number(bubble.drift)||4800)),
+      delay:Math.max(-4000,Math.min(0,Number(bubble.delay)||0)),
+      isNew:false,
+      count:Math.max(1,Math.min(999,Math.floor(Number(bubble.count)||1)))
+    };
+  }
+
+  function serializeGame(state){
+    const snapshots={};
+    for(const [rawIndex,soup] of Object.entries(state.phaseSnapshots||{})){
+      const index=Number(rawIndex);
+      const phaseId=PHASES[index]?.id;
+      if(!phaseId||!Array.isArray(soup)) continue;
+      snapshots[phaseId]=soup.map(serializeBubble).filter(Boolean);
+    }
+    return {
+      phaseId:phase(state)?.id||PHASES[0].id,
+      unlockedPhaseId:PHASES[Math.max(0,Math.min(PHASES.length-1,state.unlockedPhase||0))]?.id||PHASES[0].id,
+      completedPhaseIds:(state.completedPhases||[]).map(index=>PHASES[index]?.id).filter(Boolean),
+      soup:(state.soup||[]).map(serializeBubble).filter(Boolean),
+      phaseSnapshots:snapshots,
+      log:Array.isArray(state.log)?state.log.slice(0,60).map(String):[]
+    };
+  }
+
+  function restoreGame(payload,editorMode){
+    if(editorMode||!payload||typeof payload!=='object') return createGame(!!editorMode);
+    const phaseIndex=PHASES.findIndex(item=>item.id===payload.phaseId);
+    if(phaseIndex<0) return createGame(false);
+
+    const state=createGame(false);
+    const completedIds=Array.isArray(payload.completedPhaseIds)?payload.completedPhaseIds:[];
+    const completed=[...new Set(completedIds.map(value=>PHASES.findIndex(item=>item.id===value)).filter(index=>index>=0))];
+    const unlockedSaved=PHASES.findIndex(item=>item.id===payload.unlockedPhaseId);
+    const unlockedFromCompleted=completed.length?Math.min(PHASES.length-1,Math.max(...completed)+1):0;
+
+    state.phaseIndex=phaseIndex;
+    state.unlockedPhase=Math.max(phaseIndex,unlockedSaved>=0?unlockedSaved:0,unlockedFromCompleted);
+    state.completedPhases=completed;
+    state.editorMode=false;
+    state.phaseTurn=1;
+    state.totalTurn=1;
+    state.soup=Array.isArray(payload.soup)?payload.soup.map(serializeBubble).filter(Boolean):[];
+    state.phaseSnapshots={};
+
+    if(payload.phaseSnapshots&&typeof payload.phaseSnapshots==='object'){
+      for(const [phaseId,soup] of Object.entries(payload.phaseSnapshots)){
+        const index=PHASES.findIndex(item=>item.id===phaseId);
+        if(index<0||!Array.isArray(soup)) continue;
+        state.phaseSnapshots[index]=soup.map(serializeBubble).filter(Boolean);
+      }
+    }
+    if(!state.phaseSnapshots[phaseIndex]) state.phaseSnapshots[phaseIndex]=cloneSoup(state.soup);
+
+    state.selectedBubbleId=null;
+    state.activeEvent=null;
+    state.photolysisActive=false;
+    state.lastBornId=null;
+    state.lastEvent=null;
+    state.stageComplete=countResource(state,PHASES[phaseIndex].target)>=PHASES[phaseIndex].targetCount;
+    state.winner=state.stageComplete&&phaseIndex===PHASES.length-1;
+    state.log=Array.isArray(payload.log)&&payload.log.length
+      ? payload.log.slice(0,60).map(String)
+      : ['Campanha restaurada. A sopa retomou seu estado persistido.'];
+
+    let maxId=0;
+    const inspect=soup=>{
+      for(const bubble of soup||[]){
+        const match=String(bubble.id||'').match(/^b(\d+)$/);
+        if(match) maxId=Math.max(maxId,Number(match[1])||0);
+      }
+    };
+    inspect(state.soup);
+    Object.values(state.phaseSnapshots).forEach(inspect);
+    nextId=Math.max(nextId,maxId+1);
+    return state;
+  }
+
   function hasCompartment(state){
     const vesicleIndex=PHASES.findIndex(p=>p.id==='vesicle');
     return state.completedPhases.includes(vesicleIndex)||state.phaseIndex>vesicleIndex;
@@ -834,6 +920,6 @@
     captureAtom,captureMatter,moveBubble,releaseBubble,bubbleCount,activateEvent,nextFaller,wanderingResources,expireEvent,activeEventIcon,
     photolysisActive,canDecompose,decomposeBubble,togglePhotolysis,
     selectBubble,selectedContext,possibleRecipes,availableCombos,combine,
-    nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit
+    nextPhase,restartPhase,jumpToPhase,countResource,recipeAudit,serializeGame,restoreGame
   };
 })();
