@@ -11,16 +11,6 @@ Authors: W. R. Normark / Dudley Foster / USGS
 License/status: public domain (USGS)  
 Repository copy used for transfer: https://github.com/urkrass/presentations
 
-### `miller-urey.png`
-
-Source page: https://commons.wikimedia.org/wiki/File:Miller-Urey_experiment-en.svg  
-Author: YassineMrabet  
-License: CC BY-SA 3.0  
-License: https://creativecommons.org/licenses/by-sa/3.0/  
-Repository copy used for transfer: https://github.com/urkrass/presentations
-
-The Atlas uses the locally stored raster PNG copy; the source artwork is not loaded remotely at runtime.
-
 
 ## Editorial/context imagery
 
@@ -67,4 +57,5 @@ Repository copy used for transfer: https://github.com/caretak3r/self-assembly-la
 Source page: https://commons.wikimedia.org/wiki/File:Solar_Spectrum.png  
 Author: Robert A. Rohde  
 License: GNU Free Documentation License 1.2 or later  
+Full license text: [GFDL-1.2.txt](GFDL-1.2.txt)  
 Repository copy used for transfer: https://github.com/brian-rose/ClimateModeling_courseware
