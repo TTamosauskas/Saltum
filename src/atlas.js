@@ -84,8 +84,8 @@
     'RNA molde','RNA catalítico','QT45','Fita complementar','Cópia de QT45','RNA autorreplicante'
   ]);
 
-  function imageFilename(resource,info){
-    return EDITORIAL_IMAGE[resource]||info?.[3]||'miller-urey.png';
+  function imageFilename(resource){
+    return EDITORIAL_IMAGE[resource]||'lightning.jpg';
   }
 
   function imageFit(filename){
@@ -94,7 +94,7 @@
 
   const IMAGE_BY_RESOURCE={};
   Object.entries(STRUCTURE_INFO).forEach(([resource,info])=>{
-    IMAGE_BY_RESOURCE[resource]=IMG+imageFilename(resource,info);
+    IMAGE_BY_RESOURCE[resource]=IMG+imageFilename(resource);
   });
 
   function structureKey(resource){return 'structure:'+resource}
@@ -112,8 +112,8 @@
       key:structureKey(resource),
       category:'structures',
       title:resource,
-      image:IMG+imageFilename(resource,info),
-      imageFit:imageFit(imageFilename(resource,info)),
+      image:IMG+imageFilename(resource),
+      imageFit:imageFit(imageFilename(resource)),
       imageAlt:'Imagem científica contextual relacionada a '+resource,
       paragraphs:[info[0],info[1]],
       wikipedia:info[2],
