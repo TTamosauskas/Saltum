@@ -2,8 +2,12 @@
   const G=window.SopaGame;
   const V=window.SopaVisuals;
   const M=window.SopaReactionMotif;
+  const P=window.SopaPersistence;
+  const A=window.SopaAtlas;
   const editorMode=window.location.hash.toLowerCase().startsWith('#editor');
-  let state=G.createGame(editorMode);
+  const persisted=editorMode?null:P?.load?.();
+  let state=G.restoreGame?.(persisted?.campaign,editorMode)||G.createGame(editorMode);
+  let atlasState=A?.createState?.(persisted?.discoveries,editorMode);
   let homeOpen=true;
   let drag=null;
   let pendingChoice=null;
@@ -15,10 +19,60 @@
   let reactionBusy=false;
   let contextRecipeId=null;
   let contextRecipePhase=-1;
+  let menuView='campaign';
+  let atlasTab='structures';
+  let atlasSelectedKey=null;
+  let discoveryQueue=[];
+  let activeDiscovery=null;
+  let saveTimer=null;
   window.SopaToastQueue=window.SopaToastQueue||[];
 
   function esc(value){
     return String(value).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+
+  function saveNow(){
+    if(editorMode||!P||!A||!atlasState) return null;
+    return P.save({campaign:G.serializeGame(state),discoveries:A.serialize(atlasState)});
+  }
+
+  function scheduleSave(){
+    if(editorMode) return;
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer=setTimeout(()=>{saveTimer=null;saveNow();},80);
+  }
+
+  function presentNextDiscovery(){
+    if(activeDiscovery||!discoveryQueue.length) return;
+    activeDiscovery=discoveryQueue.shift();
+  }
+
+  function discover(keys,primaryKey){
+    if(editorMode||!A||!atlasState) return [];
+    const fresh=A.discover(atlasState,keys);
+    if(!fresh.length) return fresh;
+    discoveryQueue.push({
+      keys:fresh,
+      primaryKey:fresh.includes(primaryKey)?primaryKey:fresh[0]
+    });
+    presentNextDiscovery();
+    scheduleSave();
+    return fresh;
+  }
+
+  function discoverStructure(resource){
+    return discover([A.structureKey(resource)],A.structureKey(resource));
+  }
+
+  function discoverProcess(icon){
+    const fresh=discover([A.processKey(icon)],A.processKey(icon));
+    if(fresh.length&&state.lastEvent) lastToastEventId=state.lastEvent.id;
+    return fresh;
+  }
+
+  function dismissDiscovery(){
+    activeDiscovery=null;
+    presentNextDiscovery();
   }
 
   function emitEventToast(){
@@ -307,6 +361,7 @@
     menuOpen=false;
     lastToastEventId=null;
     M?.cancel?.();
+    scheduleSave();
     render();
     restartRain();
     return true;
@@ -350,16 +405,101 @@
     }).join('');
   }
 
-  function renderMenu(){
-    if(!menuOpen) return '';
+  function atlasCategoryLabel(category){
+    return {
+      structures:'Moléculas e estruturas',
+      reactions:'Reações',
+      processes:'Ambientes e processos'
+    }[category]||category;
+  }
+
+  function renderAtlasList(){
+    if(!A||!atlasState) return '<div class="atlas-empty">Atlas indisponível.</div>';
+    const counts=A.counts(atlasState,editorMode);
+    const items=A.entries(atlasTab).filter(entry=>A.isKnown(atlasState,entry.key,editorMode));
+    return '<div class="atlas-category-tabs" role="tablist" aria-label="Categorias do Atlas">'+
+      ['structures','reactions','processes'].map(category=>
+        '<button type="button" class="atlas-category-tab'+(atlasTab===category?' active':'')+'" data-atlas-tab="'+category+'">'+
+          '<strong>'+esc(atlasCategoryLabel(category))+'</strong>'+
+          '<small>'+counts[category].known+'/'+counts[category].total+'</small>'+
+        '</button>'
+      ).join('')+
+    '</div>'+
+    (items.length
+      ? '<div class="atlas-grid">'+items.map(entry=>
+          '<button type="button" class="atlas-card'+(atlasState.unread.has(entry.key)?' unread':'')+'" data-atlas-entry="'+esc(entry.key)+'">'+
+            '<span class="atlas-card-image"><img class="fit-'+esc(entry.imageFit||'cover')+'" src="'+esc(entry.image)+'" alt="" loading="lazy"></span>'+
+            '<span class="atlas-card-copy"><small>'+esc(atlasCategoryLabel(entry.category))+(atlasState.unread.has(entry.key)?' · NOVA':'')+'</small><strong>'+esc(entry.title)+'</strong><span>'+esc(entry.paragraphs[0])+'</span></span>'+
+          '</button>'
+        ).join('')+'</div>'
+      : '<div class="atlas-empty">Nenhuma descoberta nesta categoria ainda.</div>');
+  }
+
+  function renderAtlasDetail(){
+    const entry=A?.entry?.(atlasSelectedKey);
+    if(!entry||!A.isKnown(atlasState,entry.key,editorMode)){
+      atlasSelectedKey=null;
+      return renderAtlasList();
+    }
+    return '<article class="atlas-detail">'+
+      '<button type="button" class="atlas-back" id="atlasBack">← Voltar ao Atlas</button>'+
+      '<div class="atlas-hero"><img class="fit-'+esc(entry.imageFit||'cover')+'" src="'+esc(entry.image)+'" alt="'+esc(entry.imageAlt||entry.title)+'"></div>'+
+      '<small class="atlas-detail-category">'+esc(atlasCategoryLabel(entry.category))+'</small>'+
+      '<h3>'+esc(entry.title)+'</h3>'+
+      entry.paragraphs.map(paragraph=>'<p>'+esc(paragraph)+'</p>').join('')+
+      '<a class="atlas-wikipedia" href="'+esc(entry.wikipedia)+'" target="_blank" rel="noopener noreferrer">Ler mais na Wikipédia ↗</a>'+
+    '</article>';
+  }
+
+  function renderAtlasMenu(){
+    const counts=A?.counts?.(atlasState,editorMode);
+    const unread=counts?.unread||0;
+    return '<p class="menu-intro">O Atlas registra apenas aquilo que você encontrou durante a campanha. Cada descoberta reúne uma imagem científica, contexto curto e um caminho para aprofundamento.</p>'+
+      (editorMode?'<p class="atlas-editor-note">#editor · catálogo completo visível sem alterar a campanha persistida.</p>':'')+
+      '<section class="menu-section atlas-section">'+
+        '<div class="atlas-summary"><strong>Atlas de Descobertas</strong><span>'+((counts?.structures.known||0)+(counts?.reactions.known||0)+(counts?.processes.known||0))+' registradas'+(unread?' · '+unread+' novas':'')+'</span></div>'+
+        (atlasSelectedKey?renderAtlasDetail():renderAtlasList())+
+      '</section>';
+  }
+
+  function renderCampaignMenu(){
     const p=G.phase(state);
-    return '<div class="modal-backdrop"><div class="menu-card">'+
-      '<div class="menu-head"><div><p class="eyebrow">Campanha singleplayer</p><h2>Fases</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
-      '<p class="menu-intro">A campanha possui 44 descobertas. Cada fase libera uma receita própria; produtos anteriores continuam disponíveis como precursores. A química começa dispersa, anfifílicos formam uma vesícula cedo e as etapas seguintes passam a ocorrer em microambientes compartimentalizados até a replicação de RNA.</p>'+
+    return '<p class="menu-intro">A campanha possui 44 fases. Cada fase libera uma receita própria; produtos anteriores continuam disponíveis como precursores. A química começa dispersa, anfifílicos formam uma vesícula cedo e as etapas seguintes passam a ocorrer em microambientes compartimentalizados até a replicação de RNA.</p>'+
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="openTrail" class="menu-action">Trilha de fases</button><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
-      '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>'+
+      '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+
+      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>';
+  }
+
+  function renderMenu(){
+    if(!menuOpen) return '';
+    const unread=A?.counts?.(atlasState,editorMode)?.unread||0;
+    return '<div class="modal-backdrop"><div class="menu-card">'+
+      '<div class="menu-head"><div><p class="eyebrow">Sopa Primordial</p><h2>'+(menuView==='atlas'?'Atlas de Descobertas':'Campanha')+'</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
+      '<div class="menu-primary-tabs">'+
+        '<button type="button" id="menuCampaignTab" class="'+(menuView==='campaign'?'active':'')+'">Campanha</button>'+
+        '<button type="button" id="menuAtlasTab" class="'+(menuView==='atlas'?'active':'')+'">Atlas'+(unread?'<span>'+unread+'</span>':'')+'</button>'+
+      '</div>'+
+      (menuView==='atlas'?renderAtlasMenu():renderCampaignMenu())+
     '</div></div>';
+  }
+
+  function renderDiscoveryModal(){
+    if(!activeDiscovery||!A) return '';
+    const entry=A.entry(activeDiscovery.primaryKey);
+    if(!entry) return '';
+    const related=activeDiscovery.keys
+      .filter(key=>key!==activeDiscovery.primaryKey)
+      .map(key=>A.entry(key)?.title)
+      .filter(Boolean);
+    return '<div class="discovery-modal" role="presentation"><section class="discovery-card" role="dialog" aria-modal="true" aria-labelledby="discoveryTitle">'+
+      '<div class="discovery-image"><img class="fit-'+esc(entry.imageFit||'cover')+'" src="'+esc(entry.image)+'" alt="'+esc(entry.imageAlt||entry.title)+'"></div>'+
+      '<small>NOVA DESCOBERTA</small>'+
+      '<h2 id="discoveryTitle">'+esc(entry.title)+'</h2>'+
+      '<p>'+esc(entry.paragraphs[0])+'</p>'+
+      (related.length?'<div class="discovery-related">Também registrado: '+related.map(esc).join(' · ')+'</div>':'')+
+      '<div class="discovery-actions"><button type="button" id="discoveryContinue" class="secondary">Continuar</button><button type="button" id="discoveryOpenAtlas">Ver no Atlas</button></div>'+
+    '</section></div>';
   }
 
   function renderChoice(){
@@ -398,7 +538,7 @@
 
     app.innerHTML=
       '<div class="app single-app">'+
-        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+[...new Set(G.wanderingResources(state))].map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
+        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+[...new Set(G.wanderingResources(state))].map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu'+((A?.counts?.(atlasState,editorMode)?.unread||0)?'<span class="menu-unread-badge">'+A.counts(atlasState,editorMode).unread+'</span>':'')+'</button></header>'+
         objectiveMarkup(objective)+
         progressMarkup(objective)+
         renderEventStatus()+
@@ -410,7 +550,7 @@
         '</div></section>'+
         renderContext()+
       '</div>'+
-      renderMenu()+renderChoice();
+      renderMenu()+renderChoice()+renderDiscoveryModal();
 
     bind();
     emitEventToast();
@@ -452,8 +592,11 @@
     if(!compartmentActive()){
       const captured=G.captureMatter(state,resource,fieldX,fieldY);
       node.remove();
-      if(captured) void handleBubbleTap(captured.id);
-      else render();
+      if(captured){
+        discoverStructure(resource);
+        scheduleSave();
+        void handleBubbleTap(captured.id);
+      }else render();
       return;
     }
 
@@ -480,8 +623,12 @@
     });
 
     setTimeout(()=>{
-      G.captureMatter(state,resource,fieldX,fieldY);
+      const captured=G.captureMatter(state,resource,fieldX,fieldY);
       node.remove();
+      if(captured){
+        discoverStructure(resource);
+        scheduleSave();
+      }
       render();
     },690);
   }
@@ -490,6 +637,7 @@
     if(reactionBusy||node.dataset.captured==='1') return;
     node.dataset.captured='1';
     G.activateEvent(state,icon);
+    discoverProcess(icon);
     node.style.pointerEvents='none';
     node.classList.add('event-triggered');
     setTimeout(()=>node.remove(),420);
@@ -578,8 +726,12 @@
     node.style.filter='brightness(1.9)';
 
     setTimeout(()=>{
-      G.captureMatter(state,resource,pondX,pondY);
+      const captured=G.captureMatter(state,resource,pondX,pondY);
       node.remove();
+      if(captured){
+        discoverStructure(resource);
+        scheduleSave();
+      }
       render();
     },240);
   }
@@ -664,6 +816,8 @@
         const y=Math.max(8,Math.min(92,((event.clientY-rect.top)/rect.height)*100));
         const captured=G.captureMatter(state,resource,x,y);
         if(captured){
+          discoverStructure(resource);
+          scheduleSave();
           const recipes=G.availableCombos(state,captured.id,trackedTargetId);
           node.remove();
           if(recipes.length===1){
@@ -689,8 +843,11 @@
           const y=Math.max(8,Math.min(92,((event.clientY-fieldRect.top)/fieldRect.height)*100));
           const captured=G.captureMatter(state,resource,x,y);
           node.remove();
-          if(captured) void handleBubbleTap(captured.id);
-          else render();
+          if(captured){
+            discoverStructure(resource);
+            scheduleSave();
+            void handleBubbleTap(captured.id);
+          }else render();
         }
       }else{
         resumeIncomingAtom(node);
@@ -846,6 +1003,7 @@
       if(node.dataset.captured==='1') return;
       node.dataset.captured='1';
       G.activateEvent(state,'☀F');
+      discoverProcess('☀F');
       node.style.pointerEvents='none';
       node.classList.add('event-triggered');
       setTimeout(()=>recycle(180),420);
@@ -1020,6 +1178,11 @@
       }
     }finally{
       reactionBusy=false;
+      discover(
+        [A.structureKey(result.born.resource),A.reactionKey(recipe.id)],
+        A.structureKey(result.born.resource)
+      );
+      scheduleSave();
       render();
     }
     return true;
@@ -1093,7 +1256,8 @@
 
     if(G.photolysisActive(state)){
       if(G.canDecompose(el.dataset.resource)){
-        G.decomposeBubble(state,id);
+        const decomposed=G.decomposeBubble(state,id);
+        if(decomposed?.ok) scheduleSave();
         render();
       }
       return;
@@ -1191,24 +1355,66 @@
       const released=G.releaseBubble(state,sourceId);
       if(released) createReleasedMatter(released.resource,event.clientX,event.clientY);
     }
+    scheduleSave();
     render();
   }
 
   function bind(){
-    document.getElementById('openMenu').onclick=()=>{menuOpen=true;render();};
+    const openMenu=document.getElementById('openMenu');
+    if(openMenu) openMenu.onclick=()=>{menuOpen=true;render();};
     const next=document.getElementById('nextPhase');
     if(next) next.onclick=()=>{
       if(G.nextPhase(state)){
         pendingChoice=null;
         menuOpen=false;
         lastToastEventId=null;
+        scheduleSave();
         render();
         restartRain();
       }
     };
 
     const close=document.getElementById('closeMenu');
-    if(close) close.onclick=()=>{menuOpen=false;render();};
+    if(close) close.onclick=()=>{
+      menuOpen=false;
+      atlasSelectedKey=null;
+      presentNextDiscovery();
+      render();
+    };
+
+    const campaignTab=document.getElementById('menuCampaignTab');
+    if(campaignTab) campaignTab.onclick=()=>{
+      menuView='campaign';
+      atlasSelectedKey=null;
+      render();
+    };
+
+    const atlasMenuTab=document.getElementById('menuAtlasTab');
+    if(atlasMenuTab) atlasMenuTab.onclick=()=>{
+      menuView='atlas';
+      atlasSelectedKey=null;
+      render();
+    };
+
+    document.querySelectorAll('[data-atlas-tab]').forEach(el=>{
+      el.onclick=()=>{
+        atlasTab=el.dataset.atlasTab;
+        atlasSelectedKey=null;
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-atlas-entry]').forEach(el=>{
+      el.onclick=()=>{
+        const key=el.dataset.atlasEntry;
+        atlasSelectedKey=key;
+        if(A?.markRead?.(atlasState,key)) scheduleSave();
+        render();
+      };
+    });
+
+    const atlasBack=document.getElementById('atlasBack');
+    if(atlasBack) atlasBack.onclick=()=>{atlasSelectedKey=null;render();};
 
     const openTrail=document.getElementById('openTrail');
     if(openTrail) openTrail.onclick=()=>{
@@ -1224,17 +1430,30 @@
     if(restartPhase) restartPhase.onclick=()=>{
       G.restartPhase(state);
       menuOpen=false;pendingChoice=null;lastToastEventId=null;
+      scheduleSave();
       render();restartRain();
     };
 
     const restartCampaign=document.getElementById('restartCampaign');
     if(restartCampaign) restartCampaign.onclick=()=>{
+      if(!editorMode&&!window.confirm('Reiniciar a campanha? O progresso salvo e todas as descobertas do Atlas serão apagados.')) return;
+      if(!editorMode) P?.clear?.();
       state=G.createGame(editorMode);
+      atlasState=A?.createState?.(null,editorMode);
+      discoveryQueue=[];
+      activeDiscovery=null;
+      contextRecipeId=null;
+      contextRecipePhase=-1;
       homeOpen=true;
-      menuOpen=false;pendingChoice=null;lastToastEventId=null;
+      menuOpen=false;
+      menuView='campaign';
+      atlasSelectedKey=null;
+      pendingChoice=null;
+      lastToastEventId=null;
       rainGeneration+=1;
       if(rainTimer) clearTimeout(rainTimer);
       document.getElementById('falling-layer')?.replaceChildren();
+      saveNow();
       render();
     };
 
@@ -1250,7 +1469,10 @@
         if(!state.selectedBubbleId) return;
         const released=G.releaseBubble(state,state.selectedBubbleId);
         M?.cancel?.();
-        if(released) createReleasedMatter(released.resource,event.clientX,event.clientY);
+        if(released){
+          createReleasedMatter(released.resource,event.clientX,event.clientY);
+          scheduleSave();
+        }
         render();
       });
     }
@@ -1277,6 +1499,24 @@
 
     const cancel=document.getElementById('cancelChoice');
     if(cancel) cancel.onclick=()=>{pendingChoice=null;M?.cancel?.();render();};
+
+    const discoveryContinue=document.getElementById('discoveryContinue');
+    if(discoveryContinue) discoveryContinue.onclick=()=>{
+      dismissDiscovery();
+      render();
+    };
+
+    const discoveryOpenAtlas=document.getElementById('discoveryOpenAtlas');
+    if(discoveryOpenAtlas) discoveryOpenAtlas.onclick=()=>{
+      const key=activeDiscovery?.primaryKey||null;
+      if(key&&A?.markRead?.(atlasState,key)) scheduleSave();
+      activeDiscovery=null;
+      menuOpen=true;
+      menuView='atlas';
+      atlasTab=A?.entry?.(key)?.category||'structures';
+      atlasSelectedKey=key;
+      render();
+    };
   }
 
   eventTickTimer=setInterval(tickEvent,250);
@@ -1285,6 +1525,7 @@
     const observer=new MutationObserver(()=>refreshContextualObjective());
     observer.observe(fallingLayer,{childList:true});
   }
+  window.addEventListener('beforeunload',()=>{if(!editorMode) saveNow();});
   render();
   if(!homeOpen) restartRain();
 })();
