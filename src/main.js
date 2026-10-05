@@ -726,8 +726,12 @@
     node.style.filter='brightness(1.9)';
 
     setTimeout(()=>{
-      G.captureMatter(state,resource,pondX,pondY);
+      const captured=G.captureMatter(state,resource,pondX,pondY);
       node.remove();
+      if(captured){
+        discoverStructure(resource);
+        scheduleSave();
+      }
       render();
     },240);
   }
@@ -812,6 +816,8 @@
         const y=Math.max(8,Math.min(92,((event.clientY-rect.top)/rect.height)*100));
         const captured=G.captureMatter(state,resource,x,y);
         if(captured){
+          discoverStructure(resource);
+          scheduleSave();
           const recipes=G.availableCombos(state,captured.id,trackedTargetId);
           node.remove();
           if(recipes.length===1){
@@ -837,8 +843,11 @@
           const y=Math.max(8,Math.min(92,((event.clientY-fieldRect.top)/fieldRect.height)*100));
           const captured=G.captureMatter(state,resource,x,y);
           node.remove();
-          if(captured) void handleBubbleTap(captured.id);
-          else render();
+          if(captured){
+            discoverStructure(resource);
+            scheduleSave();
+            void handleBubbleTap(captured.id);
+          }else render();
         }
       }else{
         resumeIncomingAtom(node);
