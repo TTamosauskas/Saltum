@@ -59,3 +59,29 @@ Author: Robert A. Rohde
 License: GNU Free Documentation License 1.2 or later  
 Full license text: [GFDL-1.2.txt](GFDL-1.2.txt)  
 Repository copy used for transfer: https://github.com/brian-rose/ClimateModeling_courseware
+
+
+## Molecular structure imagery
+
+The following local PNG files are used for Atlas entries that represent a specific, well-defined molecule or representative fatty acid structure:
+
+- `water.png`
+- `methane.png`
+- `ammonia.png`
+- `formaldehyde.png`
+- `ribose.png`
+- `glycine.png`
+- `aspartic-acid.png`
+- `glutamine.png`
+- `fatty-acid.png`
+- `adenine.png`
+- `guanine.png`
+- `uracil.png`
+- `cytosine.png`
+
+Source repository: https://github.com/MSEP-one/msep.one  
+Source paths: `godot_project/chemical_structures/`  
+Source license: MIT, as published in the source repository's `LICENSE` file.  
+Files are stored locally in this repository and are not hotlinked at runtime.
+
+For `fatty-acid.png`, the source image is lauric acid and is used as a representative fatty-acid structure rather than as a claim that the game's generic “Ácidos graxos” resource is specifically lauric acid.
