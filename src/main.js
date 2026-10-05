@@ -537,7 +537,7 @@
 
     app.innerHTML=
       '<div class="app single-app">'+
-        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+[...new Set(G.wanderingResources(state))].map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu</button></header>'+
+        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+[...new Set(G.wanderingResources(state))].map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu'+((A?.counts?.(atlasState,editorMode)?.unread||0)?'<span class="menu-unread-badge">'+A.counts(atlasState,editorMode).unread+'</span>':'')+'</button></header>'+
         objectiveMarkup(objective)+
         progressMarkup(objective)+
         renderEventStatus()+
@@ -549,7 +549,7 @@
         '</div></section>'+
         renderContext()+
       '</div>'+
-      renderMenu()+renderChoice();
+      renderMenu()+renderChoice()+renderDiscoveryModal();
 
     bind();
     emitEventToast();
