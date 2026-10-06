@@ -299,7 +299,7 @@
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
-        (context.available.length?'<p class="drag-reaction-hint">O ingrediente selecionado pode ser arrastado até um parceiro destacado; você também pode arrastar o outro ingrediente até ele.</p>':'')+
+        (context.available.length?'<p class="drag-reaction-hint">Ao segurar um ingrediente, os parceiros de receita ficam selecionados temporariamente. Solte sobre um deles para reagir; se soltar fora, apenas o primeiro ingrediente permanece selecionado.</p>':'')+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
@@ -1213,18 +1213,33 @@
     render();
   }
 
-  function reactionDropTarget(sourceId,clientX,clientY){
+  function compatiblePartnerIds(sourceId){
+    return new Set(
+      state.soup
+        .filter(bubble=>bubble.id!==sourceId&&G.availableCombos(state,sourceId,bubble.id).length>0)
+        .map(bubble=>bubble.id)
+    );
+  }
+
+  function reactionDropTarget(sourceId,clientX,clientY,allowedTargetIds){
+    const allowed=allowedTargetIds instanceof Set?allowedTargetIds:new Set(allowedTargetIds||[]);
+    const validTarget=node=>{
+      if(!node) return false;
+      const targetId=node.dataset.bubbleId;
+      return targetId!==sourceId&&
+        (!allowed.size||allowed.has(targetId))&&
+        G.availableCombos(state,sourceId,targetId).length>0;
+    };
+
     const direct=document.elementFromPoint(clientX,clientY)?.closest?.('.organic-bubble');
-    if(direct&&direct.dataset.bubbleId!==sourceId&&G.availableCombos(state,sourceId,direct.dataset.bubbleId).length){
-      return direct;
-    }
+    if(validTarget(direct)) return direct;
 
     let best=null;
     let bestDistance=Infinity;
-    document.querySelectorAll('.organic-bubble.candidate').forEach(candidate=>{
-      if(candidate.dataset.bubbleId===sourceId) return;
+    document.querySelectorAll('.organic-bubble.reaction-partner,.organic-bubble.candidate').forEach(candidate=>{
+      if(!validTarget(candidate)) return;
       const rect=candidate.getBoundingClientRect();
-      const pad=18;
+      const pad=22;
       const within=clientX>=rect.left-pad&&clientX<=rect.right+pad&&clientY>=rect.top-pad&&clientY<=rect.bottom+pad;
       if(!within) return;
       const cx=rect.left+rect.width/2;
@@ -1238,8 +1253,8 @@
     return best;
   }
 
-  function updateDragReactionTarget(sourceId,clientX,clientY){
-    const target=reactionDropTarget(sourceId,clientX,clientY);
+  function updateDragReactionTarget(sourceId,clientX,clientY,allowedTargetIds){
+    const target=reactionDropTarget(sourceId,clientX,clientY,allowedTargetIds);
     document.querySelectorAll('.organic-bubble.drag-target').forEach(node=>node.classList.remove('drag-target'));
     if(target) target.classList.add('drag-target');
     return target?.dataset.bubbleId||null;
@@ -1248,20 +1263,24 @@
   function primeBubbleSelection(sourceId){
     const previousSelected=state.selectedBubbleId;
     const hasRecipes=recipesForSource(sourceId).length>0;
+    const compatibleTargetIds=compatiblePartnerIds(sourceId);
     state.selectedBubbleId=sourceId;
 
     document.querySelectorAll('.organic-bubble').forEach(node=>{
       const nodeId=node.dataset.bubbleId;
       const selected=nodeId===sourceId;
-      const candidate=!selected&&G.availableCombos(state,sourceId,nodeId).length>0;
+      const partner=compatibleTargetIds.has(nodeId);
       node.classList.toggle('selected',selected);
-      node.classList.toggle('candidate',candidate);
+      node.classList.toggle('candidate',partner);
+      node.classList.toggle('reaction-partner',partner);
       node.classList.toggle('drag-armed',selected&&hasRecipes);
-      if(!candidate) node.classList.remove('drag-target');
+      if(!partner) node.classList.remove('drag-target');
       node.setAttribute('aria-pressed',selected?'true':'false');
+      if(partner) node.setAttribute('data-reaction-partner','1');
+      else node.removeAttribute('data-reaction-partner');
     });
 
-    return previousSelected;
+    return {previousSelected,compatibleTargetIds};
   }
 
   function startDrag(event,el){
@@ -1282,11 +1301,12 @@
       return;
     }
 
-    const previousSelected=primeBubbleSelection(id);
+    const primed=primeBubbleSelection(id);
     drag={
       id,
       el,
-      previousSelected,
+      previousSelected:primed.previousSelected,
+      compatibleTargetIds:primed.compatibleTargetIds,
       startX:event.clientX,
       startY:event.clientY,
       moved:false,
@@ -1305,7 +1325,7 @@
     if(Math.abs(dx)+Math.abs(dy)>7) drag.moved=true;
     drag.el.style.transform='translate('+dx+'px,'+dy+'px) scale(1.08)';
     if(drag.moved){
-      drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY);
+      drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY,drag.compatibleTargetIds);
       if(drag.targetId){
         const recipes=G.availableCombos(state,drag.id,drag.targetId);
         const objective=G.phaseRecipe(state);
@@ -1323,6 +1343,7 @@
     const sourceId=drag.id;
     const moved=drag.moved;
     const previousSelected=drag.previousSelected;
+    const compatibleTargetIds=drag.compatibleTargetIds;
     const trackedTargetId=drag.targetId;
     drag.el.classList.remove('dragging','drag-armed');
     drag.el.style.transform='';
@@ -1330,7 +1351,10 @@
     const target=document.elementFromPoint(event.clientX,event.clientY);
     drag.el.style.pointerEvents='';
     drag=null;
-    document.querySelectorAll('.candidate').forEach(el=>el.classList.remove('candidate','drag-target'));
+    document.querySelectorAll('.organic-bubble.reaction-partner,.organic-bubble.candidate,.organic-bubble.drag-target').forEach(el=>{
+      el.classList.remove('reaction-partner','candidate','drag-target');
+      el.removeAttribute('data-reaction-partner');
+    });
 
     if(!moved){
       state.selectedBubbleId=previousSelected;
@@ -1338,9 +1362,10 @@
       return;
     }
 
+    const directTargetId=target&&target.closest('.organic-bubble')?.dataset.bubbleId;
     const bubbleTargetId=trackedTargetId||
-      (target&&target.closest('.organic-bubble')?.dataset.bubbleId)||
-      reactionDropTarget(sourceId,event.clientX,event.clientY)?.dataset.bubbleId||
+      (compatibleTargetIds?.has(directTargetId)?directTargetId:null)||
+      reactionDropTarget(sourceId,event.clientX,event.clientY,compatibleTargetIds)?.dataset.bubbleId||
       null;
     if(bubbleTargetId&&bubbleTargetId!==sourceId){
       const targetId=bubbleTargetId;
