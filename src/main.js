@@ -413,6 +413,28 @@
     }[category]||category;
   }
 
+  function atlasMediaItems(entry){
+    if(Array.isArray(entry?.images)&&entry.images.length){
+      return entry.images.slice(0,4);
+    }
+    return [{
+      src:entry?.image||'',
+      fit:entry?.imageFit||'cover',
+      alt:entry?.imageAlt||entry?.title||''
+    }];
+  }
+
+  function atlasMediaClass(entry){
+    const count=atlasMediaItems(entry).length;
+    return count>1?' atlas-media-mosaic atlas-media-count-'+count:'';
+  }
+
+  function atlasMediaMarkup(entry,{decorative=false,lazy=false}={}){
+    return atlasMediaItems(entry).map(item=>
+      '<img class="fit-'+esc(item.fit||'cover')+'" src="'+esc(item.src||'')+'" alt="'+(decorative?'':esc(item.alt||entry.title||''))+'"'+(lazy?' loading="lazy"':'')+'>'
+    ).join('');
+  }
+
   function renderAtlasList(){
     if(!A||!atlasState) return '<div class="atlas-empty">Atlas indisponível.</div>';
     const counts=A.counts(atlasState,editorMode);
@@ -428,7 +450,7 @@
     (items.length
       ? '<div class="atlas-grid">'+items.map(entry=>
           '<button type="button" class="atlas-card'+(atlasState.unread.has(entry.key)?' unread':'')+'" data-atlas-entry="'+esc(entry.key)+'">'+
-            '<span class="atlas-card-image"><img class="fit-'+esc(entry.imageFit||'cover')+'" src="'+esc(entry.image)+'" alt="" loading="lazy"></span>'+
+            '<span class="atlas-card-image'+atlasMediaClass(entry)+'">'+atlasMediaMarkup(entry,{decorative:true,lazy:true})+'</span>'+
             '<span class="atlas-card-copy"><small>'+esc(atlasCategoryLabel(entry.category))+(atlasState.unread.has(entry.key)?' · NOVA':'')+'</small><strong>'+esc(entry.title)+'</strong><span>'+esc(entry.paragraphs[0])+'</span></span>'+
           '</button>'
         ).join('')+'</div>'
@@ -443,7 +465,7 @@
     }
     return '<article class="atlas-detail">'+
       '<button type="button" class="atlas-back" id="atlasBack">← Voltar ao Atlas</button>'+
-      '<div class="atlas-hero"><img class="fit-'+esc(entry.imageFit||'cover')+'" src="'+esc(entry.image)+'" alt="'+esc(entry.imageAlt||entry.title)+'"></div>'+
+      '<div class="atlas-hero'+atlasMediaClass(entry)+'">'+atlasMediaMarkup(entry)+'</div>'+
       '<small class="atlas-detail-category">'+esc(atlasCategoryLabel(entry.category))+'</small>'+
       '<h3>'+esc(entry.title)+'</h3>'+
       entry.paragraphs.map(paragraph=>'<p>'+esc(paragraph)+'</p>').join('')+
@@ -493,7 +515,7 @@
       .map(key=>A.entry(key)?.title)
       .filter(Boolean);
     return '<div class="discovery-modal" role="presentation"><section class="discovery-card" role="dialog" aria-modal="true" aria-labelledby="discoveryTitle">'+
-      '<div class="discovery-image"><img class="fit-'+esc(entry.imageFit||'cover')+'" src="'+esc(entry.image)+'" alt="'+esc(entry.imageAlt||entry.title)+'"></div>'+
+      '<div class="discovery-image'+atlasMediaClass(entry)+'">'+atlasMediaMarkup(entry)+'</div>'+
       '<small>NOVA DESCOBERTA</small>'+
       '<h2 id="discoveryTitle">'+esc(entry.title)+'</h2>'+
       '<p>'+esc(entry.paragraphs[0])+'</p>'+
