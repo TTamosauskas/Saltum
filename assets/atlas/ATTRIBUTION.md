@@ -85,3 +85,24 @@ Source license: MIT, as published in the source repository's `LICENSE` file.
 Files are stored locally in this repository and are not hotlinked at runtime.
 
 For `fatty-acid.png`, the source image is lauric acid and is used as a representative fatty-acid structure rather than as a claim that the game's generic “Ácidos graxos” resource is specifically lauric acid.
+
+
+## Provisional molecular imagery — license review required
+
+The following files were intentionally added as **temporary review assets** to reduce visual repetition in the Atlas. Their scientific identity was checked against the source filename/content, but their redistribution license has **not yet been fully audited**. Review or replace each item before treating this asset set as publication-final.
+
+### Nucleosides
+
+- `adenosine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/AD_ABC/Adenosine-3D-balls.png`
+- `guanosine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/gn_gy/Guanosine-3D-balls.png`
+- `uridine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/u/Uridine_3D_ball.png`
+- `cytidine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/cy/Cytidine_3D_ball.png`
+
+### Nucleotides
+
+- `amp.png` — source repository: https://github.com/broadinstitute/BARD — source path: `BARD/web-app/marvin/help/sketch/abbgr_images/amp.png`
+- `gmp.png` — source repository: https://github.com/broadinstitute/BARD — source path: `BARD/web-app/marvin/help/sketch/abbgr_images/gmp.png`
+- `ump.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/u/Uridine_monophosphate_anion_3D_ball.png`
+- `cmp.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/cy/Cytidine_monophosphate_anion_3D_spacefill.png`
+
+Review status: **pending individual license verification**.
