@@ -1247,6 +1247,7 @@
 
   function primeBubbleSelection(sourceId){
     const previousSelected=state.selectedBubbleId;
+    const hasRecipes=recipesForSource(sourceId).length>0;
     state.selectedBubbleId=sourceId;
 
     document.querySelectorAll('.organic-bubble').forEach(node=>{
@@ -1255,7 +1256,7 @@
       const candidate=!selected&&G.availableCombos(state,sourceId,nodeId).length>0;
       node.classList.toggle('selected',selected);
       node.classList.toggle('candidate',candidate);
-      node.classList.toggle('drag-armed',selected&&recipesForSource(sourceId).length>0);
+      node.classList.toggle('drag-armed',selected&&hasRecipes);
       if(!candidate) node.classList.remove('drag-target');
       node.setAttribute('aria-pressed',selected?'true':'false');
     });
