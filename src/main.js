@@ -1251,39 +1251,28 @@
 
   function updateDragReactionTarget(sourceId,clientX,clientY,compatibleTargetIds){
     const target=reactionDropTarget(sourceId,clientX,clientY,compatibleTargetIds);
-    document.querySelectorAll('.organic-bubble.reaction-partner-active').forEach(node=>{
-      node.classList.remove('reaction-partner-active','drag-target');
-    });
-    if(target) target.classList.add('reaction-partner-active','drag-target');
+    document.querySelectorAll('.organic-bubble.drag-target').forEach(node=>node.classList.remove('drag-target'));
+    if(target) target.classList.add('drag-target');
     return target?.dataset.bubbleId||null;
-  }
-
-  function clearTransientReactionPartners(){
-    document.querySelectorAll('.organic-bubble').forEach(node=>{
-      node.classList.remove('candidate','reaction-partner','reaction-partner-active','drag-target','drag-armed');
-      node.setAttribute('aria-pressed',node.dataset.bubbleId===state.selectedBubbleId?'true':'false');
-    });
   }
 
   function primeBubbleSelection(sourceId){
     const previousSelected=state.selectedBubbleId;
-    const compatibleTargetIds=compatibleTargetIdsFor(sourceId);
     const hasRecipes=recipesForSource(sourceId).length>0;
     state.selectedBubbleId=sourceId;
 
     document.querySelectorAll('.organic-bubble').forEach(node=>{
       const nodeId=node.dataset.bubbleId;
       const selected=nodeId===sourceId;
-      const partner=!selected&&compatibleTargetIds.has(nodeId);
+      const candidate=!selected&&G.availableCombos(state,sourceId,nodeId).length>0;
       node.classList.toggle('selected',selected);
-      node.classList.toggle('candidate',partner);
-      node.classList.toggle('reaction-partner',partner);
+      node.classList.toggle('candidate',candidate);
       node.classList.toggle('drag-armed',selected&&hasRecipes);
-      node.classList.remove('reaction-partner-active','drag-target');
-      node.setAttribute('aria-pressed',(selected||partner)?'true':'false');
+      if(!candidate) node.classList.remove('drag-target');
+      node.setAttribute('aria-pressed',selected?'true':'false');
     });
 
-    return {previousSelected,compatibleTargetIds};
+    return previousSelected;
   }
 
   function startDrag(event,el){
@@ -1304,12 +1293,12 @@
       return;
     }
 
-    const primed=primeBubbleSelection(id);
+    const previousSelected=primeBubbleSelection(id);
     drag={
       id,
       el,
-      previousSelected:primed.previousSelected,
-      compatibleTargetIds:primed.compatibleTargetIds,
+      previousSelected,
+      compatibleTargetIds:compatibleTargetIdsFor(id),
       startX:event.clientX,
       startY:event.clientY,
       moved:false,
@@ -1349,7 +1338,7 @@
     const compatibleTargetIds=drag.compatibleTargetIds;
     const trackedTargetId=drag.targetId;
 
-    drag.el.classList.remove('dragging');
+    drag.el.classList.remove('dragging','drag-armed');
     drag.el.style.transform='';
     drag.el.style.pointerEvents='none';
     const finalTarget=reactionDropTarget(sourceId,event.clientX,event.clientY,compatibleTargetIds);
@@ -1358,28 +1347,14 @@
     const finalTargetId=finalTarget?.dataset?.bubbleId||null;
     const trackedIsCompatible=trackedTargetId&&compatibleTargetIds.has(trackedTargetId);
     drag=null;
-    clearTransientReactionPartners();
+
+    document.querySelectorAll('.organic-bubble').forEach(node=>{
+      node.classList.remove('candidate','drag-target','drag-armed','reaction-partner','reaction-partner-active');
+    });
 
     if(!moved){
-      state.selectedBubbleId=sourceId;
-
-      if(previousSelected===sourceId){
-        const selfRecipes=G.availableCombos(state,sourceId,sourceId);
-        if(selfRecipes.length===1){
-          await performReaction(sourceId,sourceId,selfRecipes[0].id);
-          return;
-        }
-        if(selfRecipes.length>1){
-          pendingChoice={sourceId,targetId:sourceId,recipes:selfRecipes};
-          render();
-          return;
-        }
-      }
-
-      const preferred=preferredRecipeForSource(sourceId);
-      if(preferred) M?.arm?.(preferred);
-      else M?.cancel?.();
-      render();
+      state.selectedBubbleId=previousSelected;
+      await handleBubbleTap(sourceId);
       return;
     }
 
