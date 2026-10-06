@@ -66,7 +66,9 @@
   }
 
   // Moléculas bem definidas recebem sua própria estrutura química.
+  assignEditorialImage('hydrogen.png',['H₂']);
   assignEditorialImage('water.png',['H₂O']);
+  assignEditorialImage('carbon-monoxide.png',['CO']);
   assignEditorialImage('methane.png',['CH₄']);
   assignEditorialImage('ammonia.png',['NH₃']);
   assignEditorialImage('formaldehyde.png',['Formaldeído']);
@@ -90,7 +92,7 @@
 
   // Conceitos coletivos, recursos abstratos e famílias químicas mantêm contexto visual.
   assignEditorialImage('lightning.jpg',[
-    'H','C','O','N','H₂','CO','Cianeto'
+    'H','C','O','N','Cianeto'
   ]);
   assignEditorialImage('black-smoker.jpg',['P','Fosfato']);
   assignEditorialImage('dry-mud.jpg',[
@@ -101,12 +103,14 @@
   ]);
   assignEditorialImage('rna-bases.webp',[
     'Pool A/U','Pool C/G','Pool de RNA',
-    'Nucleotídeos ativados','Trinucleotídeos ativados','Oligômero de RNA',
-    'RNA molde','RNA catalítico','QT45','Fita complementar','Cópia de QT45','RNA autorreplicante'
+    'Nucleotídeos ativados','Trinucleotídeos ativados'
   ]);
+  assignEditorialImage('rna-hairpin.png',['Oligômero de RNA','RNA molde']);
+  assignEditorialImage('ribozyme.jpg',['RNA catalítico','QT45']);
+  assignEditorialImage('rna-duplex.png',['Fita complementar','Cópia de QT45','RNA autorreplicante']);
 
   const MOLECULAR_IMAGE_FILES=new Set([
-    'water.png','methane.png','ammonia.png','formaldehyde.png','ribose.png',
+    'hydrogen.png','water.png','carbon-monoxide.png','methane.png','ammonia.png','formaldehyde.png','ribose.png',
     'glycine.png','aspartic-acid.png','glutamine.png','fatty-acid.png',
     'adenine.png','guanine.png','uracil.png','cytosine.png',
     'adenosine.png','guanosine.png','uridine.png','cytidine.png',
@@ -117,12 +121,17 @@
     return EDITORIAL_IMAGE[resource]||'lightning.jpg';
   }
 
+  const CONTAIN_IMAGE_FILES=new Set(['rna-bases.webp','solar-spectrum.png','rna-hairpin.png','rna-duplex.png','ribozyme.jpg']);
+
   function imageFit(filename){
-    return MOLECULAR_IMAGE_FILES.has(filename)||/(?:rna-bases|solar-spectrum)/.test(filename)?'contain':'cover';
+    return MOLECULAR_IMAGE_FILES.has(filename)||CONTAIN_IMAGE_FILES.has(filename)?'contain':'cover';
   }
 
   function imageAlt(resource,filename){
     if(filename==='fatty-acid.png') return 'Estrutura molecular representativa de um ácido graxo';
+    if(filename==='rna-hairpin.png') return 'Estrutura tridimensional de RNA dobrado';
+    if(filename==='rna-duplex.png') return 'Diagrama de duas fitas de RNA pareadas';
+    if(filename==='ribozyme.jpg') return 'Representação estrutural de uma ribozima';
     return MOLECULAR_IMAGE_FILES.has(filename)
       ? 'Estrutura molecular de '+resource
       : 'Imagem científica contextual relacionada a '+resource;
