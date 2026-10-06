@@ -65,31 +65,76 @@
     for(const resource of resources) EDITORIAL_IMAGE[resource]=filename;
   }
 
+  // Moléculas bem definidas recebem sua própria estrutura química.
+  assignEditorialImage('hydrogen.png',['H₂']);
+  assignEditorialImage('water.png',['H₂O']);
+  assignEditorialImage('carbon-monoxide.png',['CO']);
+  assignEditorialImage('methane.png',['CH₄']);
+  assignEditorialImage('ammonia.png',['NH₃']);
+  assignEditorialImage('formaldehyde.png',['Formaldeído']);
+  assignEditorialImage('ribose.png',['Ribose']);
+  assignEditorialImage('glycine.png',['Glicina']);
+  assignEditorialImage('aspartic-acid.png',['Aspartato']);
+  assignEditorialImage('glutamine.png',['Glutamina']);
+  assignEditorialImage('fatty-acid.png',['Ácidos graxos']);
+  assignEditorialImage('adenine.png',['Adenina']);
+  assignEditorialImage('guanine.png',['Guanina']);
+  assignEditorialImage('uracil.png',['Uracila']);
+  assignEditorialImage('cytosine.png',['Citosina']);
+  assignEditorialImage('adenosine.png',['Adenosina']);
+  assignEditorialImage('guanosine.png',['Guanosina']);
+  assignEditorialImage('uridine.png',['Uridina']);
+  assignEditorialImage('cytidine.png',['Citidina']);
+  assignEditorialImage('amp.png',['AMP']);
+  assignEditorialImage('gmp.png',['GMP']);
+  assignEditorialImage('ump.png',['UMP']);
+  assignEditorialImage('cmp.png',['CMP']);
+
+  // Conceitos coletivos, recursos abstratos e famílias químicas mantêm contexto visual.
   assignEditorialImage('lightning.jpg',[
-    'H','C','O','N','H₂','CO','CH₄','NH₃','Formaldeído','Cianeto',
-    'Glicina','Aspartato','Glutamina'
+    'H','C','O','N','Cianeto'
   ]);
-  assignEditorialImage('black-smoker.jpg',['P','H₂O','Fosfato']);
+  assignEditorialImage('black-smoker.jpg',['P','Fosfato']);
   assignEditorialImage('dry-mud.jpg',[
-    'Açúcares','Ribose','Peptídeo curto','Peptídeo catalítico'
+    'Açúcares','Peptídeo curto','Peptídeo catalítico'
   ]);
   assignEditorialImage('liposome-microscopy.png',[
-    'Ácidos graxos','Lipídio simples','Vesícula','Protobionte','Sistema autorreplicante'
+    'Lipídio simples','Vesícula','Protobionte','Sistema autorreplicante'
   ]);
   assignEditorialImage('rna-bases.webp',[
-    'Adenina','Guanina','Uracila','Citosina',
-    'Adenosina','Guanosina','Uridina','Citidina',
-    'AMP','GMP','UMP','CMP','Pool A/U','Pool C/G','Pool de RNA',
-    'Nucleotídeos ativados','Trinucleotídeos ativados','Oligômero de RNA',
-    'RNA molde','RNA catalítico','QT45','Fita complementar','Cópia de QT45','RNA autorreplicante'
+    'Pool A/U','Pool C/G','Pool de RNA',
+    'Nucleotídeos ativados','Trinucleotídeos ativados'
+  ]);
+  assignEditorialImage('rna-hairpin.png',['Oligômero de RNA','RNA molde']);
+  assignEditorialImage('ribozyme.jpg',['RNA catalítico','QT45']);
+  assignEditorialImage('rna-duplex.png',['Fita complementar','Cópia de QT45','RNA autorreplicante']);
+
+  const MOLECULAR_IMAGE_FILES=new Set([
+    'hydrogen.png','water.png','carbon-monoxide.png','methane.png','ammonia.png','formaldehyde.png','ribose.png',
+    'glycine.png','aspartic-acid.png','glutamine.png','fatty-acid.png',
+    'adenine.png','guanine.png','uracil.png','cytosine.png',
+    'adenosine.png','guanosine.png','uridine.png','cytidine.png',
+    'amp.png','gmp.png','ump.png','cmp.png'
   ]);
 
   function imageFilename(resource){
     return EDITORIAL_IMAGE[resource]||'lightning.jpg';
   }
 
+  const CONTAIN_IMAGE_FILES=new Set(['rna-bases.webp','solar-spectrum.png','rna-hairpin.png','rna-duplex.png','ribozyme.jpg']);
+
   function imageFit(filename){
-    return /(?:rna-bases|solar-spectrum)/.test(filename)?'contain':'cover';
+    return MOLECULAR_IMAGE_FILES.has(filename)||CONTAIN_IMAGE_FILES.has(filename)?'contain':'cover';
+  }
+
+  function imageAlt(resource,filename){
+    if(filename==='fatty-acid.png') return 'Estrutura molecular representativa de um ácido graxo';
+    if(filename==='rna-hairpin.png') return 'Estrutura tridimensional de RNA dobrado';
+    if(filename==='rna-duplex.png') return 'Diagrama de duas fitas de RNA pareadas';
+    if(filename==='ribozyme.jpg') return 'Representação estrutural de uma ribozima';
+    return MOLECULAR_IMAGE_FILES.has(filename)
+      ? 'Estrutura molecular de '+resource
+      : 'Imagem científica contextual relacionada a '+resource;
   }
 
   const IMAGE_BY_RESOURCE={};
@@ -114,7 +159,7 @@
       title:resource,
       image:IMG+imageFilename(resource),
       imageFit:imageFit(imageFilename(resource)),
-      imageAlt:'Imagem científica contextual relacionada a '+resource,
+      imageAlt:imageAlt(resource,imageFilename(resource)),
       paragraphs:[info[0],info[1]],
       wikipedia:info[2],
       resource

@@ -59,3 +59,60 @@ Author: Robert A. Rohde
 License: GNU Free Documentation License 1.2 or later  
 Full license text: [GFDL-1.2.txt](GFDL-1.2.txt)  
 Repository copy used for transfer: https://github.com/brian-rose/ClimateModeling_courseware
+
+
+## Molecular structure imagery
+
+The following local PNG files are used for Atlas entries that represent a specific, well-defined molecule or representative fatty acid structure:
+
+- `water.png`
+- `methane.png`
+- `ammonia.png`
+- `formaldehyde.png`
+- `ribose.png`
+- `glycine.png`
+- `aspartic-acid.png`
+- `glutamine.png`
+- `fatty-acid.png`
+- `adenine.png`
+- `guanine.png`
+- `uracil.png`
+- `cytosine.png`
+
+Source repository: https://github.com/MSEP-one/msep.one  
+Source paths: `godot_project/chemical_structures/`  
+Source license: MIT, as published in the source repository's `LICENSE` file.  
+Files are stored locally in this repository and are not hotlinked at runtime.
+
+For `fatty-acid.png`, the source image is lauric acid and is used as a representative fatty-acid structure rather than as a claim that the game's generic “Ácidos graxos” resource is specifically lauric acid.
+
+
+## Provisional molecular imagery — license review required
+
+The following files were intentionally added as **temporary review assets** to reduce visual repetition in the Atlas. Their scientific identity was checked against the source filename/content, but their redistribution license has **not yet been fully audited**. Review or replace each item before treating this asset set as publication-final.
+
+### Nucleosides
+
+- `adenosine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/AD_ABC/Adenosine-3D-balls.png`
+- `guanosine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/gn_gy/Guanosine-3D-balls.png`
+- `uridine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/u/Uridine_3D_ball.png`
+- `cytidine.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/cy/Cytidine_3D_ball.png`
+
+### Nucleotides
+
+- `amp.png` — source repository: https://github.com/broadinstitute/BARD — source path: `BARD/web-app/marvin/help/sketch/abbgr_images/amp.png`
+- `gmp.png` — source repository: https://github.com/broadinstitute/BARD — source path: `BARD/web-app/marvin/help/sketch/abbgr_images/gmp.png`
+- `ump.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/u/Uridine_monophosphate_anion_3D_ball.png`
+- `cmp.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/cy/Cytidine_monophosphate_anion_3D_spacefill.png`
+
+Review status: **pending individual license verification**.
+
+### Additional provisional structures
+
+- `hydrogen.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/di/Dihydrogen-3D-vdW.png`
+- `carbon-monoxide.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/ca/Carbon-monoxide-3D-balls.png`
+- `rna-hairpin.png` — source repository: https://github.com/MooersLab/pymolsnips — source path: `images/5d99AOD.png` — used as a representative folded RNA structure
+- `rna-duplex.png` — source repository: https://github.com/rice8y/ribon — source path: `package/examples/multi-strand.png` — used as a representative RNA duplex
+- `ribozyme.jpg` — source repository: https://github.com/jchavannes/timeline — source path: `web/img/rna.jpg` — used as a representative ribozyme image
+
+These five files are also **pending individual license verification**.
