@@ -106,3 +106,13 @@ The following files were intentionally added as **temporary review assets** to r
 - `cmp.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/cy/Cytidine_monophosphate_anion_3D_spacefill.png`
 
 Review status: **pending individual license verification**.
+
+### Additional provisional structures
+
+- `hydrogen.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/di/Dihydrogen-3D-vdW.png`
+- `carbon-monoxide.png` — source repository: https://github.com/barionleg/PC — source path: `compounds/i/m/ca/Carbon-monoxide-3D-balls.png`
+- `rna-hairpin.png` — source repository: https://github.com/MooersLab/pymolsnips — source path: `images/5d99AOD.png` — used as a representative folded RNA structure
+- `rna-duplex.png` — source repository: https://github.com/rice8y/ribon — source path: `package/examples/multi-strand.png` — used as a representative RNA duplex
+- `ribozyme.jpg` — source repository: https://github.com/jchavannes/timeline — source path: `web/img/rna.jpg` — used as a representative ribozyme image
+
+These five files are also **pending individual license verification**.
