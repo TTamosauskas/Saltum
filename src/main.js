@@ -1352,7 +1352,7 @@
     return ids;
   }
 
-  function reactionDropTarget(sourceId,clientX,clientY,compatibleTargetIds){
+  function reactionDropTarget(sourceId,clientX,clientY,compatibleTargetIds,sourceEl){
     const compatible=compatibleTargetIds instanceof Set
       ? compatibleTargetIds
       : new Set(compatibleTargetIds||compatibleTargetIdsFor(sourceId));
@@ -1360,28 +1360,43 @@
     const directId=direct?.dataset?.bubbleId||null;
     if(directId&&directId!==sourceId&&compatible.has(directId)) return direct;
 
+    const sourceRect=sourceEl?.getBoundingClientRect?.()||null;
     let best=null;
-    let bestDistance=Infinity;
+    let bestScore=-Infinity;
+
     document.querySelectorAll('.organic-bubble').forEach(candidate=>{
       const candidateId=candidate.dataset.bubbleId;
       if(candidateId===sourceId||!compatible.has(candidateId)) return;
+
       const rect=candidate.getBoundingClientRect();
-      const pad=22;
-      const within=clientX>=rect.left-pad&&clientX<=rect.right+pad&&clientY>=rect.top-pad&&clientY<=rect.bottom+pad;
-      if(!within) return;
+      const pad=18;
+      const withinPointer=
+        clientX>=rect.left-pad&&clientX<=rect.right+pad&&
+        clientY>=rect.top-pad&&clientY<=rect.bottom+pad;
+
+      let overlapArea=0;
+      if(sourceRect){
+        const overlapX=Math.max(0,Math.min(sourceRect.right,rect.right)-Math.max(sourceRect.left,rect.left));
+        const overlapY=Math.max(0,Math.min(sourceRect.bottom,rect.bottom)-Math.max(sourceRect.top,rect.top));
+        overlapArea=overlapX*overlapY;
+      }
+
+      if(!withinPointer&&overlapArea<=0) return;
+
       const cx=rect.left+rect.width/2;
       const cy=rect.top+rect.height/2;
       const distance=Math.hypot(clientX-cx,clientY-cy);
-      if(distance<bestDistance){
+      const score=(overlapArea*1000)-distance;
+      if(score>bestScore){
         best=candidate;
-        bestDistance=distance;
+        bestScore=score;
       }
     });
     return best;
   }
 
-  function updateDragReactionTarget(sourceId,clientX,clientY,compatibleTargetIds){
-    const target=reactionDropTarget(sourceId,clientX,clientY,compatibleTargetIds);
+  function updateDragReactionTarget(sourceId,clientX,clientY,compatibleTargetIds,sourceEl){
+    const target=reactionDropTarget(sourceId,clientX,clientY,compatibleTargetIds,sourceEl);
     document.querySelectorAll('.organic-bubble.drag-target').forEach(node=>node.classList.remove('drag-target'));
     if(target) target.classList.add('drag-target');
     return target?.dataset.bubbleId||null;
@@ -1446,9 +1461,15 @@
     const dx=event.clientX-drag.startX;
     const dy=event.clientY-drag.startY;
     if(Math.abs(dx)+Math.abs(dy)>7) drag.moved=true;
-    drag.el.style.transform='translate('+dx+'px,'+dy+'px) scale(1.08)';
+    drag.el.style.transform='translate(-50%,-50%) translate('+dx+'px,'+dy+'px) scale(1.08)';
     if(drag.moved){
-      drag.targetId=updateDragReactionTarget(drag.id,event.clientX,event.clientY,drag.compatibleTargetIds);
+      drag.targetId=updateDragReactionTarget(
+        drag.id,
+        event.clientX,
+        event.clientY,
+        drag.compatibleTargetIds,
+        drag.el
+      );
       if(drag.targetId){
         const recipes=G.availableCombos(state,drag.id,drag.targetId);
         const objective=G.phaseRecipe(state);
@@ -1470,10 +1491,16 @@
     const trackedTargetId=drag.targetId;
 
     drag.el.classList.remove('dragging','drag-armed');
-    drag.el.style.transform='';
     drag.el.style.pointerEvents='none';
-    const finalTarget=reactionDropTarget(sourceId,event.clientX,event.clientY,compatibleTargetIds);
+    const finalTarget=reactionDropTarget(
+      sourceId,
+      event.clientX,
+      event.clientY,
+      compatibleTargetIds,
+      drag.el
+    );
     drag.el.style.pointerEvents='';
+    drag.el.style.transform='';
 
     const finalTargetId=finalTarget?.dataset?.bubbleId||null;
     const trackedIsCompatible=trackedTargetId&&compatibleTargetIds.has(trackedTargetId);
