@@ -61,8 +61,14 @@
   };
 
   const EDITORIAL_IMAGE={};
+  const EDITORIAL_GALLERY={};
+
   function assignEditorialImage(filename,resources){
     for(const resource of resources) EDITORIAL_IMAGE[resource]=filename;
+  }
+
+  function assignEditorialGallery(filenames,resources){
+    for(const resource of resources) EDITORIAL_GALLERY[resource]=[...filenames];
   }
 
   // Moléculas bem definidas recebem sua própria estrutura química.
@@ -90,24 +96,39 @@
   assignEditorialImage('ump.png',['UMP']);
   assignEditorialImage('cmp.png',['CMP']);
 
-  // Conceitos coletivos, recursos abstratos e famílias químicas mantêm contexto visual.
-  assignEditorialImage('lightning.jpg',[
-    'H','C','O','N','Cianeto'
-  ]);
-  assignEditorialImage('black-smoker.jpg',['P','Fosfato']);
-  assignEditorialImage('dry-mud.jpg',[
-    'Açúcares','Peptídeo curto','Peptídeo catalítico'
-  ]);
-  assignEditorialImage('liposome-microscopy.png',[
-    'Lipídio simples','Vesícula','Protobionte','Sistema autorreplicante'
-  ]);
-  assignEditorialImage('rna-bases.webp',[
-    'Pool A/U','Pool C/G','Pool de RNA',
-    'Nucleotídeos ativados','Trinucleotídeos ativados'
-  ]);
-  assignEditorialImage('rna-hairpin.png',['Oligômero de RNA','RNA molde']);
-  assignEditorialImage('ribozyme.jpg',['RNA catalítico','QT45']);
-  assignEditorialImage('rna-duplex.png',['Fita complementar','Cópia de QT45','RNA autorreplicante']);
+  // Um conceito que ainda não possui estrutura raster específica mantém uma imagem contextual.
+  assignEditorialImage('lightning.jpg',['Cianeto']);
+  assignEditorialImage('liposome-microscopy.png',['Vesícula']);
+  assignEditorialImage('rna-hairpin.png',['Oligômero de RNA']);
+  assignEditorialImage('rna-duplex.png',['RNA molde']);
+  assignEditorialImage('ribozyme.jpg',['RNA catalítico']);
+
+  // Elementos e conceitos coletivos usam mosaicos de estruturas relacionadas,
+  // evitando repetir a mesma fotografia em cartões consecutivos.
+  assignEditorialGallery(['hydrogen.png','water.png'],['H']);
+  assignEditorialGallery(['methane.png','carbon-monoxide.png'],['C']);
+  assignEditorialGallery(['water.png','formaldehyde.png'],['O']);
+  assignEditorialGallery(['ammonia.png','adenine.png'],['N']);
+  assignEditorialGallery(['amp.png','gmp.png'],['P']);
+  assignEditorialGallery(['ump.png','cmp.png'],['Fosfato']);
+
+  assignEditorialGallery(['ribose.png','formaldehyde.png'],['Açúcares']);
+  assignEditorialGallery(['fatty-acid.png','liposome-microscopy.png'],['Lipídio simples']);
+  assignEditorialGallery(['glycine.png','aspartic-acid.png'],['Peptídeo curto']);
+  assignEditorialGallery(['glutamine.png','glycine.png'],['Peptídeo catalítico']);
+  assignEditorialGallery(['liposome-microscopy.png','glycine.png'],['Protobionte']);
+
+  assignEditorialGallery(['amp.png','ump.png'],['Pool A/U']);
+  assignEditorialGallery(['cmp.png','gmp.png'],['Pool C/G']);
+  assignEditorialGallery(['rna-bases.webp','ribose.png'],['Pool de RNA']);
+  assignEditorialGallery(['amp.png','gmp.png','ump.png','cmp.png'],['Nucleotídeos ativados']);
+  assignEditorialGallery(['rna-hairpin.png','amp.png','gmp.png'],['Trinucleotídeos ativados']);
+
+  assignEditorialGallery(['ribozyme.jpg','rna-hairpin.png'],['QT45']);
+  assignEditorialGallery(['rna-duplex.png','rna-bases.webp'],['Fita complementar']);
+  assignEditorialGallery(['rna-duplex.png','ribozyme.jpg'],['Cópia de QT45']);
+  assignEditorialGallery(['rna-duplex.png','rna-hairpin.png'],['RNA autorreplicante']);
+  assignEditorialGallery(['liposome-microscopy.png','rna-duplex.png','ribozyme.jpg'],['Sistema autorreplicante']);
 
   const MOLECULAR_IMAGE_FILES=new Set([
     'hydrogen.png','water.png','carbon-monoxide.png','methane.png','ammonia.png','formaldehyde.png','ribose.png',
@@ -118,7 +139,11 @@
   ]);
 
   function imageFilename(resource){
-    return EDITORIAL_IMAGE[resource]||'lightning.jpg';
+    return EDITORIAL_IMAGE[resource]||EDITORIAL_GALLERY[resource]?.[0]||STRUCTURE_INFO[resource]?.[3]||'miller-urey.png';
+  }
+
+  function mediaFilenames(resource){
+    return EDITORIAL_GALLERY[resource]||[imageFilename(resource)];
   }
 
   const CONTAIN_IMAGE_FILES=new Set(['rna-bases.webp','solar-spectrum.png','rna-hairpin.png','rna-duplex.png','ribozyme.jpg']);
@@ -153,13 +178,22 @@
       wiki('Origem da vida'),
       'miller-urey.png'
     ];
+    const filenames=mediaFilenames(resource);
+    const images=filenames.map(filename=>({
+      src:IMG+filename,
+      fit:imageFit(filename),
+      alt:filenames.length>1
+        ? 'Estrutura ou contexto representativo relacionado a '+resource
+        : imageAlt(resource,filename)
+    }));
     return {
       key:structureKey(resource),
       category:'structures',
       title:resource,
-      image:IMG+imageFilename(resource),
-      imageFit:imageFit(imageFilename(resource)),
-      imageAlt:imageAlt(resource,imageFilename(resource)),
+      image:images[0].src,
+      imageFit:images[0].fit,
+      imageAlt:images[0].alt,
+      images,
       paragraphs:[info[0],info[1]],
       wikipedia:info[2],
       resource
@@ -182,6 +216,7 @@
       image:product.image,
       imageFit:product.imageFit,
       imageAlt:'Contexto visual da reação '+recipe.label,
+      images:product.images,
       paragraphs:[
         'Na Sopa Primordial, esta receita representa a transformação '+recipe.label+'. Ela é a ação jogável que libera '+recipe.out+' pela primeira vez.',
         (phase?.hint||'A transformação resume uma rede química mais ampla.')+' A equação do jogo deve ser lida como uma abstração estratégica, não como uma descrição estequiométrica completa da química real.'
