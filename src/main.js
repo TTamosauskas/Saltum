@@ -134,7 +134,7 @@
       (candidate?' candidate':'')+
       (pairing?' canonical-pair':'')+
       (photolysisEligible?' photolysis-eligible':'')+
-      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" data-count="'+quantity+'" style="'+bubbleStyle(b)+'" aria-label="'+esc(b.resource)+' · '+quantity+' unidade(s) · '+esc(visual.family)+'">'+
+      '" data-bubble-id="'+b.id+'" data-resource="'+esc(b.resource)+'" data-count="'+quantity+'" style="'+bubbleStyle(b)+'" aria-pressed="'+(selected?'true':'false')+'" aria-label="'+esc(b.resource)+' · '+quantity+' unidade(s) · '+esc(visual.family)+'">'+
       '<span class="molecule-object-art">'+V.render(b.resource,'field')+'</span>'+
       (quantity>1?'<span class="resource-count" aria-label="'+quantity+' unidades">×'+quantity+'</span>':'')+
       (pairing?'<span class="hydrogen-bond-hint" aria-hidden="true">'+(pairing.bonds===2?'··':'···')+'<small>'+pairing.label+'</small></span>':'')+
@@ -299,7 +299,7 @@
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
-        (context.available.length?'<p class="drag-reaction-hint">Qualquer ingrediente pode ser arrastado diretamente. Leve-o até um parceiro destacado para completar a receita.</p>':'')+
+        (context.available.length?'<p class="drag-reaction-hint">O ingrediente selecionado pode ser arrastado até um parceiro destacado; você também pode arrastar o outro ingrediente até ele.</p>':'')+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
@@ -1245,6 +1245,25 @@
     return target?.dataset.bubbleId||null;
   }
 
+  function primeBubbleSelection(sourceId){
+    const previousSelected=state.selectedBubbleId;
+    const hasRecipes=recipesForSource(sourceId).length>0;
+    state.selectedBubbleId=sourceId;
+
+    document.querySelectorAll('.organic-bubble').forEach(node=>{
+      const nodeId=node.dataset.bubbleId;
+      const selected=nodeId===sourceId;
+      const candidate=!selected&&G.availableCombos(state,sourceId,nodeId).length>0;
+      node.classList.toggle('selected',selected);
+      node.classList.toggle('candidate',candidate);
+      node.classList.toggle('drag-armed',selected&&hasRecipes);
+      if(!candidate) node.classList.remove('drag-target');
+      node.setAttribute('aria-pressed',selected?'true':'false');
+    });
+
+    return previousSelected;
+  }
+
   function startDrag(event,el){
     if(event.button!==undefined&&event.button!==0) return;
     if(reactionBusy||state.stageComplete) return;
@@ -1262,11 +1281,12 @@
       }
       return;
     }
+
+    const previousSelected=primeBubbleSelection(id);
     drag={
       id,
       el,
-      previousSelected:state.selectedBubbleId,
-      selectedSource:state.selectedBubbleId===id,
+      previousSelected,
       startX:event.clientX,
       startY:event.clientY,
       moved:false,
@@ -1276,12 +1296,6 @@
     };
     el.setPointerCapture&&el.setPointerCapture(event.pointerId);
     el.classList.add('dragging','selected');
-    if(recipesForSource(id).length) el.classList.add('drag-armed');
-
-    document.querySelectorAll('.organic-bubble').forEach(other=>{
-      if(other.dataset.bubbleId===id) return;
-      if(G.availableCombos(state,id,other.dataset.bubbleId).length) other.classList.add('candidate');
-    });
   }
 
   function moveDrag(event){
