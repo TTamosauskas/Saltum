@@ -1260,7 +1260,7 @@
 
   function clearTransientReactionPartners(){
     document.querySelectorAll('.organic-bubble').forEach(node=>{
-      node.classList.remove('reaction-partner','reaction-partner-active','drag-target','drag-armed');
+      node.classList.remove('candidate','reaction-partner','reaction-partner-active','drag-target','drag-armed');
       node.setAttribute('aria-pressed',node.dataset.bubbleId===state.selectedBubbleId?'true':'false');
     });
   }
