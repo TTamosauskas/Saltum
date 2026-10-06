@@ -79,6 +79,14 @@
   assignEditorialImage('guanine.png',['Guanina']);
   assignEditorialImage('uracil.png',['Uracila']);
   assignEditorialImage('cytosine.png',['Citosina']);
+  assignEditorialImage('adenosine.png',['Adenosina']);
+  assignEditorialImage('guanosine.png',['Guanosina']);
+  assignEditorialImage('uridine.png',['Uridina']);
+  assignEditorialImage('cytidine.png',['Citidina']);
+  assignEditorialImage('amp.png',['AMP']);
+  assignEditorialImage('gmp.png',['GMP']);
+  assignEditorialImage('ump.png',['UMP']);
+  assignEditorialImage('cmp.png',['CMP']);
 
   // Conceitos coletivos, recursos abstratos e famílias químicas mantêm contexto visual.
   assignEditorialImage('lightning.jpg',[
@@ -92,8 +100,7 @@
     'Lipídio simples','Vesícula','Protobionte','Sistema autorreplicante'
   ]);
   assignEditorialImage('rna-bases.webp',[
-    'Adenosina','Guanosina','Uridina','Citidina',
-    'AMP','GMP','UMP','CMP','Pool A/U','Pool C/G','Pool de RNA',
+    'Pool A/U','Pool C/G','Pool de RNA',
     'Nucleotídeos ativados','Trinucleotídeos ativados','Oligômero de RNA',
     'RNA molde','RNA catalítico','QT45','Fita complementar','Cópia de QT45','RNA autorreplicante'
   ]);
@@ -101,7 +108,9 @@
   const MOLECULAR_IMAGE_FILES=new Set([
     'water.png','methane.png','ammonia.png','formaldehyde.png','ribose.png',
     'glycine.png','aspartic-acid.png','glutamine.png','fatty-acid.png',
-    'adenine.png','guanine.png','uracil.png','cytosine.png'
+    'adenine.png','guanine.png','uracil.png','cytosine.png',
+    'adenosine.png','guanosine.png','uridine.png','cytidine.png',
+    'amp.png','gmp.png','ump.png','cmp.png'
   ]);
 
   function imageFilename(resource){
