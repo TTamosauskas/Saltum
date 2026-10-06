@@ -299,7 +299,7 @@
         '<small>'+esc(visual.family)+' · '+esc(visual.formula)+'</small>'+
       '</div>'+
       '<div class="info-copy"><div class="info-context-title">Pode reagir agora com</div>'+available+blocked+pairNote+
-        (context.available.length?'<p class="drag-reaction-hint">Qualquer ingrediente pode ser arrastado diretamente. Leve-o até um parceiro destacado para completar a receita.</p>':'')+
+        (context.available.length?'<p class="drag-reaction-hint">O ingrediente selecionado pode ser arrastado até um parceiro destacado; você também pode arrastar o outro ingrediente até ele.</p>':'')+
         '<div class="context-actions"><button id="clearSelection" class="context-action secondary">Limpar seleção</button></div>'+
       '</div>'+
     '</section>';
@@ -1287,7 +1287,6 @@
       id,
       el,
       previousSelected,
-      selectedSource:previousSelected===id,
       startX:event.clientX,
       startY:event.clientY,
       moved:false,
