@@ -65,18 +65,22 @@
     for(const resource of resources) EDITORIAL_IMAGE[resource]=filename;
   }
 
-  // Moléculas bem definidas recebem sua própria estrutura química.
-  assignEditorialImage('hydrogen.png',['H₂']);
-  assignEditorialImage('water.png',['H₂O']);
+  // Estruturas químicas específicas e representantes diretos.
+  assignEditorialImage('hydrogen.png',['H','H₂']);
+  assignEditorialImage('methane.png',['C','CH₄']);
+  assignEditorialImage('water.png',['O','H₂O']);
+  assignEditorialImage('ammonia.png',['N','NH₃']);
+  assignEditorialImage('black-smoker.jpg',['P','Fosfato']);
   assignEditorialImage('carbon-monoxide.png',['CO']);
-  assignEditorialImage('methane.png',['CH₄']);
-  assignEditorialImage('ammonia.png',['NH₃']);
   assignEditorialImage('formaldehyde.png',['Formaldeído']);
-  assignEditorialImage('ribose.png',['Ribose']);
-  assignEditorialImage('glycine.png',['Glicina']);
+  assignEditorialImage('lightning.jpg',['Cianeto']);
+  assignEditorialImage('ribose.png',['Açúcares','Ribose']);
+  assignEditorialImage('glycine.png',['Glicina','Peptídeo curto']);
   assignEditorialImage('aspartic-acid.png',['Aspartato']);
-  assignEditorialImage('glutamine.png',['Glutamina']);
-  assignEditorialImage('fatty-acid.png',['Ácidos graxos']);
+  assignEditorialImage('glutamine.png',['Glutamina','Peptídeo catalítico']);
+  assignEditorialImage('fatty-acid.png',['Ácidos graxos','Lipídio simples']);
+  assignEditorialImage('liposome-microscopy.png',['Vesícula','Sistema autorreplicante']);
+
   assignEditorialImage('adenine.png',['Adenina']);
   assignEditorialImage('guanine.png',['Guanina']);
   assignEditorialImage('uracil.png',['Uracila']);
@@ -85,29 +89,41 @@
   assignEditorialImage('guanosine.png',['Guanosina']);
   assignEditorialImage('uridine.png',['Uridina']);
   assignEditorialImage('cytidine.png',['Citidina']);
-  assignEditorialImage('amp.png',['AMP']);
-  assignEditorialImage('gmp.png',['GMP']);
-  assignEditorialImage('ump.png',['UMP']);
-  assignEditorialImage('cmp.png',['CMP']);
 
-  // Conceitos coletivos, recursos abstratos e famílias químicas mantêm contexto visual.
-  assignEditorialImage('lightning.jpg',[
-    'H','C','O','N','Cianeto'
-  ]);
-  assignEditorialImage('black-smoker.jpg',['P','Fosfato']);
-  assignEditorialImage('dry-mud.jpg',[
-    'Açúcares','Peptídeo curto','Peptídeo catalítico'
-  ]);
-  assignEditorialImage('liposome-microscopy.png',[
-    'Lipídio simples','Vesícula','Protobionte','Sistema autorreplicante'
-  ]);
-  assignEditorialImage('rna-bases.webp',[
-    'Pool A/U','Pool C/G','Pool de RNA',
-    'Nucleotídeos ativados','Trinucleotídeos ativados'
-  ]);
+  assignEditorialImage('amp.png',['AMP','Pool A/U']);
+  assignEditorialImage('gmp.png',['GMP','Pool C/G']);
+  assignEditorialImage('ump.png',['UMP','Nucleotídeos ativados']);
+  assignEditorialImage('cmp.png',['CMP','Trinucleotídeos ativados']);
+  assignEditorialImage('rna-bases.webp',['Pool de RNA','Cópia de QT45']);
+
   assignEditorialImage('rna-hairpin.png',['Oligômero de RNA','RNA molde']);
   assignEditorialImage('ribozyme.jpg',['RNA catalítico','QT45']);
-  assignEditorialImage('rna-duplex.png',['Fita complementar','Cópia de QT45','RNA autorreplicante']);
+  assignEditorialImage('rna-duplex.png',['Fita complementar','RNA autorreplicante']);
+
+  // Conceitos de sistema recebem contexto visual próprio, evitando repetir a micrografia de vesículas.
+  assignEditorialImage('dry-mud.jpg',['Protobionte']);
+
+  const REPRESENTATIVE_IMAGE_ALT={
+    H:'Molécula de H₂ usada como referência visual do elemento hidrogênio',
+    C:'Molécula de metano usada como referência visual do carbono em uma estrutura orgânica simples',
+    O:'Molécula de água usada como referência visual de uma estrutura contendo oxigênio',
+    N:'Molécula de amônia usada como referência visual de uma estrutura contendo nitrogênio',
+    P:'Ambiente mineral usado como contexto visual para a disponibilidade prebiótica de fósforo',
+    Fosfato:'Ambiente mineral usado como contexto visual para fontes prebióticas de fosfato',
+    Cianeto:'Descarga elétrica usada como contexto visual para química prebiótica envolvendo cianeto',
+    Açúcares:'Estrutura de ribose usada como representante da família dos açúcares',
+    'Peptídeo curto':'Estrutura de glicina usada como representante de um precursor de peptídeos',
+    'Peptídeo catalítico':'Estrutura de glutamina usada como representante de um componente aminoacídico',
+    'Lipídio simples':'Estrutura de ácido graxo usada como representante de anfifílicos simples',
+    Protobionte:'Ambiente prebiótico usado como contexto visual para sistemas protocelulares',
+    'Pool A/U':'Estrutura de AMP usada como representante visual do pool A/U',
+    'Pool C/G':'Estrutura de GMP usada como representante visual do pool C/G',
+    'Pool de RNA':'Conjunto de bases de RNA usado como representação do pool de monômeros',
+    'Nucleotídeos ativados':'Estrutura de UMP usada como representante visual de nucleotídeos',
+    'Trinucleotídeos ativados':'Estrutura de CMP usada como representante visual de monômeros do RNA',
+    'Cópia de QT45':'Conjunto de bases de RNA usado como contexto visual para uma cópia de sequência',
+    'Sistema autorreplicante':'Micrografia de vesículas usada como contexto visual de um sistema compartimentalizado'
+  };
 
   const MOLECULAR_IMAGE_FILES=new Set([
     'hydrogen.png','water.png','carbon-monoxide.png','methane.png','ammonia.png','formaldehyde.png','ribose.png',
@@ -128,6 +144,7 @@
   }
 
   function imageAlt(resource,filename){
+    if(REPRESENTATIVE_IMAGE_ALT[resource]) return REPRESENTATIVE_IMAGE_ALT[resource];
     if(filename==='fatty-acid.png') return 'Estrutura molecular representativa de um ácido graxo';
     if(filename==='rna-hairpin.png') return 'Estrutura tridimensional de RNA dobrado';
     if(filename==='rna-duplex.png') return 'Diagrama de duas fitas de RNA pareadas';
