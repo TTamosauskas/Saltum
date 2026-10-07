@@ -1,4 +1,4 @@
-/* Sopa Primordial — audiovisual reaction motif inspired by Ardua's objective motif. */
+/* Saltum — audiovisual reaction motif inspired by Ardua's objective motif. */
 (function () {
   'use strict';
 
