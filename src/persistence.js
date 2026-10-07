@@ -1,4 +1,4 @@
-/* Sopa Primordial — versioned local persistence for campaign + discoveries. */
+/* Saltum — versioned local persistence for campaign + discoveries. */
 (function(){
   'use strict';
 
