@@ -116,3 +116,7 @@ Review status: **pending individual license verification**.
 - `ribozyme.jpg` — source repository: https://github.com/jchavannes/timeline — source path: `web/img/rna.jpg` — used as a representative ribozyme image
 
 These five files are also **pending individual license verification**.
+
+## Editorial reuse policy
+
+Atlas structure cards deliberately limit image reuse to at most two structure entries per asset. Reuse is reserved for closely related concepts or for explicitly representative/contextual imagery (for example, an amino-acid structure representing a peptide precursor or a nucleotide representing a pool). The runtime `alt` text identifies these representative cases so they are not presented as exact molecular structures.
