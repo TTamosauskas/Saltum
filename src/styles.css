@@ -2028,6 +2028,18 @@ h1,h2,p{margin-top:0}
   font-size:8px;
   font-weight:1000;
 }
+.menu-hamburger{
+  display:grid!important;
+  place-items:center!important;
+  position:relative;
+}
+.menu-hamburger .menu-unread-badge{
+  position:absolute;
+  top:-5px;
+  right:-5px;
+  margin:0;
+}
+
 .menu-primary-tabs{
   display:grid;
   grid-template-columns:1fr 1fr;
