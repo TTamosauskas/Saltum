@@ -314,6 +314,30 @@
     }[status]||status;
   }
 
+  function hamburgerIcon(){
+    return '<span class="hamburger-icon" aria-hidden="true"><i></i><i></i><i></i></span>';
+  }
+
+  function renderCampaignTrail(){
+    let previousChapter='';
+    return G.PHASES.map((p,index)=>{
+      const rawStatus=G.phaseStatus(state,index);
+      const status=state.editorMode&&rawStatus==='locked'?'available':rawStatus;
+      const clickable=state.editorMode||status!=='locked';
+      const period=G.PERIODS[p.period];
+      const chapter=p.chapter!==previousChapter
+        ? '<div class="trail-chapter"><span></span><strong>'+esc(p.chapter)+'</strong><em>'+String(index+1).padStart(2,'0')+'</em></div>'
+        : '';
+      previousChapter=p.chapter;
+      return chapter+
+        '<button type="button" class="trail-node '+status+(state.editorMode?' editor-clickable':'')+'" data-home-phase="'+index+'" aria-label="'+esc(state.editorMode?'Testar fase '+(index+1)+': '+p.title:'Abrir fase '+(index+1)+': '+p.title)+'" '+(clickable?'':'disabled')+'>'+
+          '<span class="trail-dot" aria-hidden="true"></span>'+
+          '<span class="trail-node-copy"><small>FASE '+(index+1)+' · '+esc(period.name)+'</small><span class="trail-product">'+V.render(p.target,'trail')+'<strong>'+esc(p.title)+'</strong></span><em>'+esc(p.formula)+'</em></span>'+
+          '<span class="trail-state">'+esc(state.editorMode?'Testar':phaseStateLabel(status))+'</span>'+
+        '</button>';
+    }).join('');
+  }
+
   function homeMatterMarkup(){
     return ['H','C','N','O','P'].map((resource,index)=>
       '<span class="home-matter-token token-'+(index+1)+'" aria-hidden="true">'+
@@ -328,39 +352,34 @@
     const progress=G.phaseProgress(state);
     const progressMax=Math.max(1,progress.max);
     const progressPct=Math.min(100,(progress.value/progressMax)*100);
-    const atlasCounts=A?.counts?.(atlasState,editorMode);
-    const atlasKnown=(atlasCounts?.structures.known||0)+(atlasCounts?.reactions.known||0)+(atlasCounts?.processes.known||0);
-    const atlasUnread=atlasCounts?.unread||0;
+    const atlasUnread=A?.counts?.(atlasState,editorMode)?.unread||0;
 
     app.innerHTML=
       '<main class="campaign-home saltum-home">'+
         '<header class="saltum-home-top">'+
-          '<p class="eyebrow">CONTINUAÇÃO DE ARDUA</p>'+
-          '<span class="campaign-mode-chip">'+(state.editorMode?'Modo editor':'Campanha')+'</span>'+
+          '<div class="saltum-home-brand"><strong>SALTUM</strong><span><em>Natura non facit saltum.</em></span></div>'+
+          '<button type="button" id="homeMenu" class="home-menu-trigger" aria-label="Abrir menu" aria-haspopup="dialog">'+hamburgerIcon()+(atlasUnread?'<b class="home-menu-unread">'+atlasUnread+'</b>':'')+'</button>'+
         '</header>'+
-        '<section class="saltum-home-hero" aria-labelledby="saltumTitle">'+
-          '<div class="home-cosmos-thread" aria-hidden="true"><span>ARDUA</span><i></i><strong>SALTUM</strong></div>'+
+        '<section class="saltum-home-hero" aria-label="Química prebiótica">'+
           '<div class="home-matter-field" aria-hidden="true">'+homeMatterMarkup()+'<span class="home-matter-core"></span></div>'+
           '<div class="home-title-copy">'+
-            '<h1 id="saltumTitle">Saltum</h1>'+
-            '<p class="home-latin">Natura non facit saltum.</p>'+
             '<p class="home-thesis">A matéria já foi forjada.<br>Agora ela precisa se organizar.</p>'+
             '<p class="home-story">Da química prebiótica a sistemas capazes de armazenar informação, formar compartimentos e produzir novas cópias de si.</p>'+
           '</div>'+
         '</section>'+
         '<section class="campaign-home-current">'+
           '<div class="home-current-visual" aria-hidden="true">'+V.render(current.target,'trail')+'</div>'+
-          '<div class="home-current-copy"><small>CONTINUAR · FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+'</small><strong>'+esc(current.title)+'</strong><span>'+esc(current.objective)+'</span>'+
+          '<div class="home-current-copy"><small>FASE ATUAL · '+(state.phaseIndex+1)+' DE '+G.PHASES.length+'</small><strong>'+esc(current.title)+'</strong><span>'+esc(current.objective)+'</span>'+
             '<div class="home-current-progress"><div><i style="width:'+progressPct+'%"></i></div><em>'+esc(progress.label)+'</em></div>'+
           '</div>'+
           '<button type="button" id="continueCampaign">Continuar</button>'+
         '</section>'+
-        '<nav class="saltum-home-actions" aria-label="Navegação principal">'+
-          '<button type="button" id="homeMenu"><small>EXPLORAR</small><strong>Menu</strong><span>Fases, receitas e registro químico</span></button>'+
-          '<button type="button" id="homeAtlas"><small>DESCOBERTAS</small><strong>Atlas'+(atlasUnread?'<b>'+atlasUnread+'</b>':'')+'</strong><span>'+atlasKnown+' registros científicos</span></button>'+
-        '</nav>'+
-        '<p class="home-lineage">ARDUA acompanha a origem dos elementos. SALTUM acompanha o que acontece quando esses elementos passam a construir complexidade.</p>'+
-        (state.editorMode?'<p class="editor-note">#editor ativo · todas as fases e entradas do Atlas ficam disponíveis para inspeção sem alterar o save da campanha.</p>':'')+
+        '<section class="campaign-trail-heading"><div><p class="eyebrow">CAMPANHA</p><h2>Fases</h2></div><span>'+G.PHASES.length+' etapas</span></section>'+
+        '<section class="campaign-trail-home" aria-label="Fases da campanha">'+
+          '<div class="trail-line" aria-hidden="true"></div>'+
+          renderCampaignTrail()+
+        '</section>'+
+        (state.editorMode?'<p class="editor-note">#editor ativo · todas as fases podem ser abertas diretamente e o save da campanha permanece preservado.</p>':'')+
       '</main>'+
       renderMenu();
     bindHome();
@@ -399,13 +418,9 @@
       render();
     };
 
-    const homeAtlas=document.getElementById('homeAtlas');
-    if(homeAtlas) homeAtlas.onclick=()=>{
-      menuView='atlas';
-      atlasSelectedKey=null;
-      menuOpen=true;
-      render();
-    };
+    document.querySelectorAll('[data-home-phase]').forEach(el=>{
+      el.onclick=()=>{ openPhase(Number(el.dataset.homePhase)); };
+    });
   }
 
   function renderPhaseMenu(){
@@ -490,34 +505,21 @@
       '</section>';
   }
 
-  function unlockedPhaseCount(){
-    if(state.editorMode) return G.PHASES.length;
-    return G.PHASES.reduce((count,p,index)=>count+(G.phaseStatus(state,index)==='locked'?0:1),0);
-  }
-
   function renderMenuHub(){
     const counts=A?.counts?.(atlasState,editorMode);
     const unread=counts?.unread||0;
     const atlasKnown=(counts?.structures.known||0)+(counts?.reactions.known||0)+(counts?.processes.known||0);
     const p=G.phase(state);
-    return '<p class="menu-intro menu-hub-intro">A mesma jornada científica de Ardua continua em outra escala: da matéria cósmica para redes químicas, compartimentos e replicação.</p>'+
-      '<div class="menu-hub-grid">'+
-        '<button type="button" class="menu-hub-entry" data-menu-view="phases"><span class="menu-hub-index">01</span><span class="menu-hub-copy"><small>CAMPANHA</small><strong>Fases</strong><em>'+unlockedPhaseCount()+'/'+G.PHASES.length+' acessíveis · atual: '+esc(p.title)+'</em></span><b>→</b></button>'+
-        '<button type="button" class="menu-hub-entry" data-menu-view="atlas"><span class="menu-hub-index">02</span><span class="menu-hub-copy"><small>MEMÓRIA CIENTÍFICA</small><strong>Atlas de descobertas'+(unread?'<i>'+unread+'</i>':'')+'</strong><em>'+atlasKnown+' registros encontrados</em></span><b>→</b></button>'+
-        '<button type="button" class="menu-hub-entry" data-menu-view="recipes"><span class="menu-hub-index">03</span><span class="menu-hub-copy"><small>REPERTÓRIO</small><strong>Receitas</strong><em>'+G.COMBOS.length+' transformações na campanha</em></span><b>→</b></button>'+
-        '<button type="button" class="menu-hub-entry" data-menu-view="history"><span class="menu-hub-index">04</span><span class="menu-hub-copy"><small>REGISTRO</small><strong>Histórico químico</strong><em>'+state.log.length+' eventos recentes no save atual</em></span><b>→</b></button>'+
+    return '<div class="menu-hub-grid">'+
+        '<button type="button" class="menu-hub-entry" data-menu-view="atlas"><span class="menu-hub-index">01</span><span class="menu-hub-copy"><small>MEMÓRIA CIENTÍFICA</small><strong>Atlas de descobertas'+(unread?'<i>'+unread+'</i>':'')+'</strong><em>'+atlasKnown+' registros encontrados</em></span><b>→</b></button>'+
+        '<button type="button" class="menu-hub-entry" data-menu-view="recipes"><span class="menu-hub-index">02</span><span class="menu-hub-copy"><small>REPERTÓRIO</small><strong>Receitas</strong><em>'+G.COMBOS.length+' transformações na campanha</em></span><b>→</b></button>'+
+        '<button type="button" class="menu-hub-entry" data-menu-view="history"><span class="menu-hub-index">03</span><span class="menu-hub-copy"><small>REGISTRO</small><strong>Histórico químico</strong><em>'+state.log.length+' eventos recentes no save atual</em></span><b>→</b></button>'+
       '</div>'+
       '<section class="menu-hub-actions">'+
         (!homeOpen?'<button type="button" id="menuHome" class="menu-action">Página inicial</button>':'')+
         '<button type="button" id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button>'+
         '<button type="button" id="restartCampaign" class="menu-action danger">Reiniciar campanha</button>'+
       '</section>';
-  }
-
-  function renderPhaseMenuView(){
-    return '<p class="menu-intro">Cada fase introduz uma transformação principal. O repertório aprendido permanece disponível e a matéria formada segue adiante como legado molecular.</p>'+
-      (editorMode?'<p class="atlas-editor-note">#editor · todas as fases podem ser abertas diretamente sem alterar a progressão persistida.</p>':'')+
-      '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>';
   }
 
   function renderRecipeMenuView(){
@@ -528,24 +530,23 @@
   function renderHistoryMenuView(){
     return '<p class="menu-intro">O registro químico resume as transformações e marcos mais recentes deste save.</p>'+
       '<section class="menu-section"><strong>Eventos recentes</strong><div class="history-list">'+
-        (state.log.length?state.log.slice(0,30).map(line=>'<p>'+esc(line)+'</p>').join(''):'<p>Nenhum evento registrado ainda.</p>')+
+        (state.log.length?state.log.slice(0,30).map(line=>'<p>'+esc(line)+'</p>').join(''):'<p>O registro começa com as primeiras transformações da campanha.</p>')+
       '</div></section>';
   }
 
   function menuTitle(){
-    return {hub:'Menu',phases:'Fases',atlas:'Atlas de Descobertas',recipes:'Receitas',history:'Registro químico'}[menuView]||'Menu';
+    return {hub:'Menu',atlas:'Atlas de Descobertas',recipes:'Receitas',history:'Registro químico'}[menuView]||'Menu';
   }
 
   function renderMenu(){
     if(!menuOpen) return '';
     const body=menuView==='atlas'?renderAtlasMenu()
-      :menuView==='phases'?renderPhaseMenuView()
       :menuView==='recipes'?renderRecipeMenuView()
       :menuView==='history'?renderHistoryMenuView()
       :renderMenuHub();
-    return '<div class="modal-backdrop"><div class="menu-card saltum-menu-card">'+
-      '<div class="menu-head"><div><p class="eyebrow">'+(menuView==='hub'?'Saltum · Continuação de Ardua':'Saltum')+'</p><h2>'+esc(menuTitle())+'</h2></div>'+
-        '<div class="menu-head-actions">'+(menuView!=='hub'?'<button type="button" id="menuBackHub" class="menu-close">← Menu</button>':'')+'<button id="closeMenu" class="menu-close">Voltar</button></div></div>'+
+    return '<div class="modal-backdrop menu-backdrop"><div class="menu-card saltum-menu-card" role="dialog" aria-modal="true" aria-labelledby="saltumMenuTitle">'+
+      '<div class="menu-head"><div><p class="eyebrow">SALTUM</p><h2 id="saltumMenuTitle">'+esc(menuTitle())+'</h2></div>'+
+        '<div class="menu-head-actions">'+(menuView!=='hub'?'<button type="button" id="menuBackHub" class="menu-close menu-back">← Menu</button>':'')+'<button id="closeMenu" class="menu-close menu-x" aria-label="Fechar menu">×</button></div></div>'+
       body+
     '</div></div>';
   }
@@ -604,7 +605,7 @@
 
     app.innerHTML=
       '<div class="app single-app">'+
-        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+[...new Set(G.wanderingResources(state))].map(esc).join(' · ')+'</span></div><button class="menu-btn" id="openMenu">Menu'+((A?.counts?.(atlasState,editorMode)?.unread||0)?'<span class="menu-unread-badge">'+A.counts(atlasState,editorMode).unread+'</span>':'')+'</button></header>'+
+        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+[...new Set(G.wanderingResources(state))].map(esc).join(' · ')+'</span></div><button class="menu-btn menu-hamburger" id="openMenu" aria-label="Abrir menu">'+hamburgerIcon()+((A?.counts?.(atlasState,editorMode)?.unread||0)?'<span class="menu-unread-badge">'+A.counts(atlasState,editorMode).unread+'</span>':'')+'</button></header>'+
         objectiveMarkup(objective)+
         progressMarkup(objective)+
         renderEventStatus()+
