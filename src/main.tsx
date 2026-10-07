@@ -39,7 +39,7 @@ function App() {
     <header className="hero">
       <div>
         <p className="eyebrow">Protótipo 0.1</p>
-        <h1>Sopa Primordial</h1>
+        <h1>Saltum</h1>
         <p className="subtitle">Dispute matéria, altere o futuro ambiental e integre metabolismo, compartimento e informação até a vida emergente.</p>
       </div>
       <button className="ghost" onClick={reset}>Nova partida</button>
@@ -86,7 +86,7 @@ function App() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Oferta compartilhada</p>
-            <h2>Sopa</h2>
+            <h2>Ambiente prebiótico</h2>
           </div>
           <p>Uma coleta por turno.</p>
         </div>

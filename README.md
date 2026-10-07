@@ -1,6 +1,6 @@
-# Sopa Primordial
+# Saltum
 
-Protótipo web estático e singleplayer de **Sopa Primordial**, um jogo de construção progressiva inspirado em química prebiótica.
+**Saltum** é a continuação de **Ardua**: um jogo web estático e singleplayer de construção progressiva em química prebiótica, inspirado pela expressão latina *Natura non facit saltum*.
 
 ## Campanha com 44 fases
 
