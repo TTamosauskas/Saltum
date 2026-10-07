@@ -363,8 +363,7 @@
         '<section class="saltum-home-hero" aria-label="Química prebiótica">'+
           '<div class="home-matter-field" aria-hidden="true">'+homeMatterMarkup()+'<span class="home-matter-core"></span></div>'+
           '<div class="home-title-copy">'+
-            '<p class="home-thesis">A matéria já foi forjada.<br>Agora ela precisa se organizar.</p>'+
-            '<p class="home-story">Da química prebiótica a sistemas capazes de armazenar informação, formar compartimentos e produzir novas cópias de si.</p>'+
+            '<p class="home-thesis">A matéria já foi forjada.<br>Agora ela precisa originar a vida.</p>'+
           '</div>'+
         '</section>'+
         '<section class="campaign-home-current">'+
