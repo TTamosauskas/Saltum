@@ -1,4 +1,4 @@
-/* Sopa Primordial — editorial discovery atlas. Images are local repository assets. */
+/* Saltum — editorial discovery atlas. Images are local repository assets. */
 (function(){
   'use strict';
 
@@ -36,7 +36,7 @@
     'Citosina':['Citosina é uma base pirimídica nitrogenada que pareia com guanina em RNA e DNA.','A citosina é quimicamente menos estável que algumas outras bases em certos ambientes, tornando sua produção e persistência um ponto relevante em cenários prebióticos.',wiki('Citosina'),'cytosine.png'],
     'Peptídeo curto':['Peptídeos são cadeias de aminoácidos unidos por ligações peptídicas; uma cadeia curta já pode apresentar propriedades diferentes de seus monômeros.','Ciclos de secagem, superfícies minerais e fontes de energia são investigados como maneiras de favorecer condensação de aminoácidos antes de enzimas modernas.',wiki('Peptídeo'),'glycine.png'],
     'Peptídeo catalítico':['“Peptídeo catalítico” representa uma pequena cadeia capaz de favorecer alguma transformação química.','O jogo usa essa estrutura como ponte entre moléculas simples e sistemas mais funcionais; não corresponde a uma enzima moderna específica.',wiki('Catálise enzimática'),'glutamine.png'],
-    'Protobionte':['Protobionte é um termo usado para modelos de sistemas pré-celulares que combinam compartimento e química interna organizada.','Na Sopa, o protobionte integra uma vesícula já existente com componentes peptídicos, simbolizando a emergência de cooperação entre fronteira e química interna.',wiki('Pré-célula'),'fatty-acid.png'],
+    'Protobionte':['Protobionte é um termo usado para modelos de sistemas pré-celulares que combinam compartimento e química interna organizada.','Em Saltum, o protobionte integra uma vesícula já existente com componentes peptídicos, simbolizando a emergência de cooperação entre fronteira e química interna.',wiki('Pré-célula'),'fatty-acid.png'],
     'Adenosina':['Adenosina é um nucleosídeo formado pela ligação da adenina à ribose.','Nucleosídeos conectam bases informacionais a açúcares e preparam a arquitetura usada por nucleotídeos de RNA.',wiki('Adenosina'),'adenine.png'],
     'Guanosina':['Guanosina é o nucleosídeo formado por guanina e ribose.','Sua formação representa a integração entre duas famílias de precursores — açúcares e bases — que precisam coexistir em um mesmo ambiente químico.',wiki('Guanosina'),'guanine.png'],
     'Uridina':['Uridina é um nucleosídeo composto por uracila ligada a ribose.','Como os demais ribonucleosídeos, é um passo estrutural entre uma base livre e os nucleotídeos usados para construir RNA.',wiki('Uridina'),'uracil.png'],
@@ -53,7 +53,7 @@
     'Oligômero de RNA':['Um oligômero de RNA é uma cadeia curta de ribonucleotídeos conectados por ligações fosfodiéster.','Cadeias curtas já podem parear com sequências complementares e adotar estruturas locais, abrindo caminho para seleção e catálise.',wiki('Ácido ribonucleico'),'ribose.png'],
     'RNA molde':['RNA molde é uma cadeia cuja sequência orienta o pareamento de novos nucleotídeos ou oligômeros complementares.','A cópia dirigida por molde é uma ideia central para transformar química de polímeros em um sistema capaz de transmitir informação.',wiki('Replicação'),'ribose.png'],
     'RNA catalítico':['RNA catalítico, ou ribozima, é uma molécula de RNA cuja estrutura tridimensional acelera uma reação química.','Ribozimas demonstram que uma mesma classe de molécula pode combinar informação e função catalítica, fundamento importante do cenário do mundo de RNA.',wiki('Ribozima'),'ribose.png'],
-    QT45:['QT45 é a ribozima polimerase usada como marco experimental na campanha da Sopa Primordial.','No jogo ela representa uma etapa em que RNA catalítico consegue estender sequências com substratos ativados; detalhes do experimento são comprimidos para gameplay.',wiki('Ribozima'),'ribose.png'],
+    QT45:['QT45 é a ribozima polimerase usada como marco experimental na campanha de Saltum.','No jogo ela representa uma etapa em que RNA catalítico consegue estender sequências com substratos ativados; detalhes do experimento são comprimidos para gameplay.',wiki('Ribozima'),'ribose.png'],
     'Fita complementar':['Uma fita complementar possui bases capazes de parear com as da sequência molde seguindo regras de complementaridade.','Formar a fita complementar cria um intermediário necessário para ciclos de cópia em que informação pode ser recuperada em outra molécula.',wiki('Ácido ribonucleico'),'ribose.png'],
     'Cópia de QT45':['A cópia de QT45 representa uma nova molécula com a sequência correspondente à ribozima original.','A etapa fecha a segunda direção da replicação modelada no jogo: produzir uma sequência funcional a partir de sua complementar.',wiki('Replicação'),'ribose.png'],
     'RNA autorreplicante':['RNA autorreplicante representa um sistema de moléculas de RNA capaz de sustentar as duas direções necessárias para produzir novas cópias.','Autorreplicação com herança e variação é um requisito central para evolução darwiniana, embora sistemas experimentais reais ainda dependam de condições cuidadosamente controladas.',wiki('Hipótese do mundo de ARN'),'ribose.png'],
@@ -165,7 +165,7 @@
 
   function structureEntry(resource){
     const info=STRUCTURE_INFO[resource]||[
-      resource+' é uma estrutura representada no modelo progressivo da Sopa Primordial.',
+      resource+' é uma estrutura representada no modelo progressivo de Saltum.',
       'Esta entrada funciona como uma abstração didática para acompanhar a complexidade acumulada durante a campanha.',
       wiki('Origem da vida'),
       'miller-urey.png'
@@ -200,7 +200,7 @@
       imageFit:product.imageFit,
       imageAlt:'Contexto visual da reação '+recipe.label,
       paragraphs:[
-        'Na Sopa Primordial, esta receita representa a transformação '+recipe.label+'. Ela é a ação jogável que libera '+recipe.out+' pela primeira vez.',
+        'Em Saltum, esta receita representa a transformação '+recipe.label+'. Ela é a ação jogável que libera '+recipe.out+' pela primeira vez.',
         (phase?.hint||'A transformação resume uma rede química mais ampla.')+' A equação do jogo deve ser lida como uma abstração estratégica, não como uma descrição estequiométrica completa da química real.'
       ],
       wikipedia:product.wikipedia,
@@ -217,7 +217,7 @@
       imageAlt:'Espectro da radiação solar',
       paragraphs:[
         'Fotólise é a quebra ou transformação de moléculas provocada pela absorção de luz. Fótons suficientemente energéticos podem abrir rotas químicas que não ocorreriam no escuro.',
-        'Na Sopa, a Fotólise desmonta uma estrutura em seus precursores imediatos como ferramenta didática. Na química real, os produtos dependem da molécula, do comprimento de onda e do ambiente.'
+        'Em Saltum, a Fotólise desmonta uma estrutura em seus precursores imediatos como ferramenta didática. Na química real, os produtos dependem da molécula, do comprimento de onda e do ambiente.'
       ],
       wikipedia:wiki('Fotólise')
     },
