@@ -271,7 +271,7 @@
         '</section>';
       }
       return '<section class="info-panel panel">'+
-        '<div class="info-tile idle"><span>SOPA</span><strong>+</strong><small>capture matéria</small></div>'+
+        '<div class="info-tile idle"><span>AMBIENTE</span><strong>+</strong><small>capture matéria</small></div>'+
         '<div class="info-copy"><strong>Capture matéria do fluxo</strong><p>Todos os elementos flutuantes podem ser arrastados. Leve matéria diretamente a um ingrediente compatível para reagir, arraste para uma área livre para apenas capturar ou arraste uma bolha para fora para devolvê-la ao fluxo. O clique permanece como alternativa.</p></div>'+
       '</section>';
     }
@@ -339,7 +339,7 @@
     const current=G.phase(state);
     app.innerHTML=
       '<main class="campaign-home">'+
-        '<header class="campaign-home-head"><div><p class="eyebrow">Sopa Primordial</p><h1>Trilha da vida</h1><p>A matéria se acumula enquanto você transforma átomos em sistemas cada vez mais complexos.</p></div>'+
+        '<header class="campaign-home-head"><div><p class="eyebrow">CONTINUAÇÃO DE ARDUA</p><h1>Saltum</h1><p><em>Natura non facit saltum.</em> Da matéria forjada no cosmos à química capaz de se organizar e replicar.</p></div>'+
         '<span class="campaign-mode-chip">'+(state.editorMode?'Modo editor':'Campanha')+'</span></header>'+
         '<section class="campaign-home-current"><small>CONTINUAR</small><strong>'+esc(current.title)+'</strong><span>'+esc(current.objective)+' · '+esc(G.phaseProgress(state).label)+'</span>'+
         '<button type="button" id="continueCampaign">Entrar na fase</button></section>'+
@@ -468,14 +468,14 @@
       '<section class="menu-section"><div class="phase-list">'+renderPhaseMenu()+'</div></section>'+
       '<section class="menu-actions"><button id="openTrail" class="menu-action">Trilha de fases</button><button id="restartPhase" class="menu-action">Reiniciar '+esc(p.title)+'</button><button id="restartCampaign" class="menu-action danger">Reiniciar campanha</button></section>'+
       '<section class="menu-section"><strong>Receitas disponíveis</strong><div class="recipe-catalog">'+renderRecipeCatalog()+'</div></section>'+
-      '<section class="menu-section"><strong>Registro da sopa</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>';
+      '<section class="menu-section"><strong>Registro químico</strong><div class="history-list">'+state.log.slice(0,20).map(line=>'<p>'+esc(line)+'</p>').join('')+'</div></section>';
   }
 
   function renderMenu(){
     if(!menuOpen) return '';
     const unread=A?.counts?.(atlasState,editorMode)?.unread||0;
     return '<div class="modal-backdrop"><div class="menu-card">'+
-      '<div class="menu-head"><div><p class="eyebrow">Sopa Primordial</p><h2>'+(menuView==='atlas'?'Atlas de Descobertas':'Campanha')+'</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
+      '<div class="menu-head"><div><p class="eyebrow">Saltum</p><h2>'+(menuView==='atlas'?'Atlas de Descobertas':'Campanha')+'</h2></div><button id="closeMenu" class="menu-close">Voltar</button></div>'+
       '<div class="menu-primary-tabs">'+
         '<button type="button" id="menuCampaignTab" class="'+(menuView==='campaign'?'active':'')+'">Campanha</button>'+
         '<button type="button" id="menuAtlasTab" class="'+(menuView==='atlas'?'active':'')+'">Atlas'+(unread?'<span>'+unread+'</span>':'')+'</button>'+
