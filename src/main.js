@@ -2,6 +2,7 @@
   const G=window.SopaGame;
   const V=window.SopaVisuals;
   const M=window.SopaReactionMotif;
+  const D=window.SopaDiscoveries;
   const P=window.SopaPersistence;
   const A=window.SopaAtlas;
   const editorMode=window.location.hash.toLowerCase().startsWith('#editor');
@@ -205,7 +206,8 @@
       '<strong>'+esc(objective.title)+'</strong>'+
       '<small class="objective-recipe-kicker" id="objectiveRecipeKicker">'+(view.contextual?'PRÓXIMA RECEITA POSSÍVEL':'RECEITA DA FASE')+'</small>'+
       '<span class="objective-formula" id="objectiveFormula" data-recipe-id="'+esc(view.recipe?.id||'')+'">'+esc(view.label)+'</span>'+
-      '<div id="objectiveConditions">'+conditionMarkup(view.conditions)+'</div>'+
+      '<div id="objectiveConditions">'+conditionMarkup(view.conditions)+'</div>'+ 
+      '<div class="discovery-feedback" id="discoveryFeedback" role="status" aria-live="polite"></div>'+
     '</section>';
   }
 
@@ -1347,6 +1349,8 @@
     }
 
     const reactants=[reactantSnapshot(source),reactantSnapshot(target)];
+    const progressBefore=G.phaseProgress(state).value;
+    const completeBefore=state.stageComplete;
     reactionBusy=true;
     state.selectedBubbleId=null;
     pendingChoice=null;
@@ -1360,6 +1364,7 @@
       return false;
     }
 
+    const discovery=D?.describe({phase:G.phase(state),recipe,progressBefore,progressAfter:G.phaseProgress(state).value,completed:!completeBefore&&state.stageComplete});
     const product={
       id:result.born.id,
       resource:result.born.resource,
@@ -1381,6 +1386,7 @@
       );
       scheduleSave();
       render();
+      if(discovery) D?.present(discovery,document.getElementById('discoveryFeedback'),document.getElementById('objectiveCard'));
     }
     return true;
   }
