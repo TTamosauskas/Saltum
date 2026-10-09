@@ -208,7 +208,7 @@
     if(p.id==='h2')return 'Forme moléculas de hidrogênio';
     if(p.id==='vesicle')return 'Forme a primeira vesícula';
     if(p.id==='replicating-system')return 'Construa um sistema autorreplicante';
-    return p.objective.replace(/^(Forme|Produza) [0-9]+ /,'$1 ');
+    return p.objective.replace(/\b[0-9]+\b\s*/g,'').replace(/\s+/g,' ').trim();
   }
   function recipeMarkup(recipe){
     if(!recipe)return '';
