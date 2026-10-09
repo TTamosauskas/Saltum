@@ -10,6 +10,7 @@
   let state=G.restoreGame?.(persisted?.campaign,editorMode)||G.createGame(editorMode);
   let atlasState=A?.createState?.(persisted?.discoveries,editorMode);
   let homeOpen=true;
+  let phaseIntroOpen=false;
   let drag=null;
   let pendingChoice=null;
   let menuOpen=false;
@@ -223,7 +224,7 @@
     return '<section class="objective-card'+(view.contextual?' contextual-guidance':'')+'" id="objectiveCard">'+
       '<div class="objective-formula" id="objectiveFormula" data-recipe-id="'+esc(view.recipe?.id||'')+'">'+recipeMarkup(view.recipe)+'</div>'+
       '<div id="objectiveConditions">'+conditionMarkup(view.conditions)+'</div>'+
-      '<div class="discovery-feedback" id="discoveryFeedback" role="status" aria-live="polite"></div>'+
+
     '</section>';
   }
   function refreshContextualObjective(){
@@ -403,6 +404,7 @@
     if(!state.editorMode&&G.phaseStatus(state,index)==='locked') return false;
     if(index!==state.phaseIndex&&!G.jumpToPhase(state,index)) return false;
     homeOpen=false;
+    phaseIntroOpen=true;
     pendingChoice=null;
     menuOpen=false;
     lastToastEventId=null;
@@ -417,6 +419,7 @@
     const continueBtn=document.getElementById('continueCampaign');
     if(continueBtn) continueBtn.onclick=()=>{
       homeOpen=false;
+      phaseIntroOpen=true;
       menuOpen=false;
       render();
       restartRain();
@@ -563,6 +566,19 @@
     '</div></div>';
   }
 
+  function renderPhaseIntro(){
+    if(!phaseIntroOpen)return '';
+    const p=G.phase(state);
+    return '<div class="phase-intro-overlay"><section class="phase-intro-card" role="dialog" aria-modal="true" aria-labelledby="phaseIntroTitle">'+
+      '<small>FASE '+(state.phaseIndex+1)+' · '+esc(p.chapter)+'</small>'+
+      '<h2 id="phaseIntroTitle">'+esc(p.title)+'</h2>'+
+      '<div class="phase-intro-art" aria-hidden="true">'+V.render(p.target,'detail')+'</div>'+
+      '<p class="phase-intro-context">'+esc(p.hint)+'</p>'+
+      '<strong class="phase-intro-goal">'+esc(phaseGoal(p))+'</strong>'+
+      '<button type="button" id="phaseIntroStart" class="phase-intro-start">COMEÇAR FASE →</button>'+
+    '</section></div>';
+  }
+
   function renderDiscoveryModal(){
     if(!activeDiscovery||!A) return '';
     const entry=A.entry(activeDiscovery.primaryKey);
@@ -629,7 +645,7 @@
         '</div></section>'+
         renderContext()+
       '</div>'+
-      renderMenu()+renderChoice()+renderDiscoveryModal();
+      renderMenu()+renderChoice()+renderDiscoveryModal()+renderPhaseIntro();
 
     bind();
     emitEventToast();
@@ -1397,7 +1413,7 @@
       );
       scheduleSave();
       render();
-      if(discovery) D?.present(discovery,document.getElementById('discoveryFeedback'),document.getElementById('objectiveCard'));
+      // O painel de receitas permanece dedicado à combinação molecular.
     }
     return true;
   }
@@ -1631,6 +1647,12 @@
   }
 
   function bind(){
+    const startIntro=document.getElementById('phaseIntroStart');
+    if(startIntro)startIntro.onclick=()=>{
+      phaseIntroOpen=false;
+      render();
+      restartRain();
+    };
     const openMenu=document.getElementById('openMenu');
     if(openMenu) openMenu.onclick=()=>{menuView='hub';atlasSelectedKey=null;menuOpen=true;render();};
     const next=document.getElementById('nextPhase');
@@ -1639,6 +1661,7 @@
         pendingChoice=null;
         menuOpen=false;
         lastToastEventId=null;
+        phaseIntroOpen=true;
         scheduleSave();
         render();
         restartRain();
@@ -1691,6 +1714,7 @@
     const menuHome=document.getElementById('menuHome');
     if(menuHome) menuHome.onclick=()=>{
       homeOpen=true;
+      phaseIntroOpen=false;
       menuOpen=false;
       menuView='hub';
       rainGeneration+=1;
@@ -1702,6 +1726,7 @@
     const restartPhase=document.getElementById('restartPhase');
     if(restartPhase) restartPhase.onclick=()=>{
       G.restartPhase(state);
+      phaseIntroOpen=true;
       menuOpen=false;pendingChoice=null;lastToastEventId=null;
       scheduleSave();
       render();restartRain();
