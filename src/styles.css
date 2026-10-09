@@ -2338,3 +2338,17 @@ h1,h2,p{margin-top:0}
 @media(prefers-reduced-motion:reduce){
   .discovery-modal{backdrop-filter:none}
 }
+
+/* Layout das fases: objetivo e receita molecular */
+.phase-card{display:flex;align-items:center;min-height:56px;padding:11px 14px}
+.phase-card strong{margin:0;font-size:clamp(16px,3.7vw,21px);line-height:1.25}
+.objective-card{gap:8px;padding:12px 10px}
+.objective-formula{display:block;width:100%;font-size:inherit}
+.phase-recipe-names{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:5px;font-size:clamp(12px,3vw,17px);line-height:1.4;color:#e8f7f4;font-weight:600}
+.phase-recipe-names strong{color:#b8f2db;font-weight:900}
+.phase-recipe-names b{font-weight:800;color:#8bada8}
+.phase-recipe-visual{display:flex;align-items:center;justify-content:center;gap:clamp(6px,2vw,16px);min-height:64px;width:100%}
+.phase-recipe-visual>b{color:#e3faf5;font-size:23px;font-weight:900}
+.phase-recipe-molecule{display:flex;align-items:center;justify-content:center;min-width:48px;min-height:54px}
+.phase-recipe-molecule .resource-visual,.phase-recipe-molecule svg{max-width:70px;max-height:60px}
+@media(max-width:420px){.phase-recipe-molecule .resource-visual,.phase-recipe-molecule svg{max-width:58px;max-height:52px}.phase-recipe-names{gap:3px}.phase-recipe-visual>b{font-size:19px}}
