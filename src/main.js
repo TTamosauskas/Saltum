@@ -200,34 +200,45 @@
     };
   }
 
+
+  const RESOURCE_NAMES={H:'Hidrogênio',C:'Carbono',O:'Oxigênio',N:'Nitrogênio',P:'Fósforo','H₂':'Hidrogênio molecular','H₂O':'Água','CO':'Monóxido de carbono','CH₄':'Metano','NH₃':'Amônia'};
+  function resourceName(resource){return RESOURCE_NAMES[resource]||resource;}
+  function phaseGoal(p){
+    if(p.id==='water')return 'Forme moléculas de água';
+    if(p.id==='h2')return 'Forme moléculas de hidrogênio';
+    if(p.id==='vesicle')return 'Forme a primeira vesícula';
+    if(p.id==='replicating-system')return 'Construa um sistema autorreplicante';
+    return p.objective.replace(/^(Forme|Produza) [0-9]+ /,'$1 ');
+  }
+  function recipeMarkup(recipe){
+    if(!recipe)return '';
+    const names=[resourceName(recipe.a),resourceName(recipe.b),resourceName(recipe.out)];
+    const icon=resource=>'<span class="phase-recipe-molecule" aria-hidden="true">'+V.render(resource,'trail')+'</span>';
+    return '<div class="phase-recipe-names"><span>'+esc(names[0])+'</span><b> + </b><span>'+esc(names[1])+'</span><b> → </b><strong>'+esc(names[2])+'</strong></div>'+
+      '<div class="phase-recipe-visual" aria-label="'+esc(names[0]+' mais '+names[1]+' resulta em '+names[2])+'">'+
+      icon(recipe.a)+'<b aria-hidden="true">+</b>'+icon(recipe.b)+'<b aria-hidden="true">→</b>'+icon(recipe.out)+'</div>';
+  }
   function objectiveMarkup(objective){
     const view=contextualRecipeView();
     return '<section class="objective-card'+(view.contextual?' contextual-guidance':'')+'" id="objectiveCard">'+
-      '<strong>'+esc(objective.title)+'</strong>'+
-      '<small class="objective-recipe-kicker" id="objectiveRecipeKicker">'+(view.contextual?'PRÓXIMA RECEITA POSSÍVEL':'RECEITA DA FASE')+'</small>'+
-      '<span class="objective-formula" id="objectiveFormula" data-recipe-id="'+esc(view.recipe?.id||'')+'">'+esc(view.label)+'</span>'+
-      '<div id="objectiveConditions">'+conditionMarkup(view.conditions)+'</div>'+ 
+      '<div class="objective-formula" id="objectiveFormula" data-recipe-id="'+esc(view.recipe?.id||'')+'">'+recipeMarkup(view.recipe)+'</div>'+
+      '<div id="objectiveConditions">'+conditionMarkup(view.conditions)+'</div>'+
       '<div class="discovery-feedback" id="discoveryFeedback" role="status" aria-live="polite"></div>'+
     '</section>';
   }
-
   function refreshContextualObjective(){
-    if(homeOpen||reactionBusy) return;
+    if(homeOpen||reactionBusy)return;
     const formula=document.getElementById('objectiveFormula');
-    const kicker=document.getElementById('objectiveRecipeKicker');
     const conditions=document.getElementById('objectiveConditions');
     const card=document.getElementById('objectiveCard');
-    if(!formula||!kicker||!conditions||!card) return;
-
+    if(!formula||!conditions||!card)return;
     const view=contextualRecipeView();
     const nextId=view.recipe?.id||'';
     const changed=formula.dataset.recipeId!==nextId;
     formula.dataset.recipeId=nextId;
-    formula.textContent=view.label;
-    kicker.textContent=view.contextual?'PRÓXIMA RECEITA POSSÍVEL':'RECEITA DA FASE';
+    if(changed)formula.innerHTML=recipeMarkup(view.recipe);
     conditions.innerHTML=conditionMarkup(view.conditions);
     card.classList.toggle('contextual-guidance',view.contextual);
-
     if(changed){
       formula.classList.remove('contextual-recipe-shift');
       void formula.offsetWidth;
@@ -606,7 +617,7 @@
 
     app.innerHTML=
       '<div class="app single-app">'+
-        '<header class="topbar"><div class="phase-card"><small>FASE '+(state.phaseIndex+1)+' DE '+G.PHASES.length+' · '+esc(period.name)+'</small><strong>'+esc(p.title)+'</strong><span>Fluxo: '+[...new Set(G.wanderingResources(state))].map(esc).join(' · ')+'</span></div><button class="menu-btn menu-hamburger" id="openMenu" aria-label="Abrir menu">'+hamburgerIcon()+((A?.counts?.(atlasState,editorMode)?.unread||0)?'<span class="menu-unread-badge">'+A.counts(atlasState,editorMode).unread+'</span>':'')+'</button></header>'+
+        '<header class="topbar"><div class="phase-card"><strong>'+esc(phaseGoal(p))+'</strong></div><button class="menu-btn menu-hamburger" id="openMenu" aria-label="Abrir menu">'+hamburgerIcon()+((A?.counts?.(atlasState,editorMode)?.unread||0)?'<span class="menu-unread-badge">'+A.counts(atlasState,editorMode).unread+'</span>':'')+'</button></header>'+
         objectiveMarkup(objective)+
         progressMarkup(objective)+
         renderEventStatus()+
